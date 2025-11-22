@@ -44,25 +44,6 @@ if (process.env.DATABASE_URL) {
 // PostgreSQL connection
 const pool = new Pool(poolConfig);
 
-// Обновите проверку переменных окружения
-const requiredEnvVars = ['JWT_SECRET'];
-if (!process.env.DATABASE_URL && !process.env.DB_USER) {
-  requiredEnvVars.push('DATABASE_URL or DB_USER, DB_HOST, DB_NAME, DB_PASSWORD');
-}
-
-const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
-
-if (missingEnvVars.length > 0 && process.env.NODE_ENV === 'production') {
-    console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
-    console.error('💡 Please check your environment variables in Vercel');
-} else if (missingEnvVars.length > 0) {
-    console.warn('⚠️ Missing environment variables in development:', missingEnvVars.join(', '));
-}
-
-if (!GOOGLE_CLIENT_ID) {
-    console.warn('⚠️  GOOGLE_CLIENT_ID not set - Google OAuth will be disabled');
-}
-
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -113,7 +94,7 @@ async function initializeDatabase() {
             )
         `);
 
-        // Ads table
+        // Ads table with seller_info for anonymous users
         await pool.query(`
             CREATE TABLE IF NOT EXISTS ads (
                 id SERIAL PRIMARY KEY,
@@ -124,6 +105,7 @@ async function initializeDatabase() {
                 user_id INTEGER REFERENCES users(id),
                 location VARCHAR(100),
                 image_urls TEXT[],
+                seller_info JSONB,
                 is_urgent BOOLEAN DEFAULT FALSE,
                 is_active BOOLEAN DEFAULT TRUE,
                 views INTEGER DEFAULT 0,
@@ -200,10 +182,22 @@ async function initializeDatabase() {
             console.log('✅ Admin user created');
         }
 
+        // Add test ads if none exist
+        const adsResult = await pool.query('SELECT COUNT(*) FROM ads');
+        if (parseInt(adsResult.rows[0].count) === 0) {
+            await pool.query(`
+                INSERT INTO ads (title, description, price, category_id, user_id, location, image_urls, is_urgent, views) VALUES
+                ('iPhone 15 Pro 256GB', 'Новый iPhone 15 Pro в идеальном состоянии. Титан, камера 48МП, всегда включенный дисплей.', 95000.00, 1, 1, 'Москва', ARRAY['https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400'], true, 25),
+                ('Ноутбук MacBook Air M2', 'MacBook Air с чипом M2, 8GB RAM, 256GB SSD. Почти новый, использовался 2 месяца.', 120000.00, 1, 1, 'Санкт-Петербург', ARRAY['https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=400'], false, 18),
+                ('Квартира 45м² в новостройке', 'Студия в новом ЖК с отделкой. Евроремонт, современная техника, панорамные окна.', 8500000.00, 2, 1, 'Москва, ЦАО', ARRAY['https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400'], true, 42),
+                ('Toyota Camry 2020', 'Toyota Camry 2020 года, автомат, полный электропакет, кожаный салон. Один владелец, без ДТП.', 2200000.00, 3, 1, 'Москва', ARRAY['https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400'], false, 31)
+            `);
+            console.log('✅ Test ads created');
+        }
+
         console.log('✅ Database initialized successfully');
     } catch (error) {
         console.error('❌ Error initializing database:', error);
-        // Не прерываем выполнение в production
         if (process.env.NODE_ENV !== 'production') {
             throw error;
         }
@@ -227,6 +221,21 @@ const authenticateToken = (req, res, next) => {
         next();
     });
 };
+
+// Utility function to format time ago
+function formatTimeAgo(date) {
+    const now = new Date();
+    const diffMs = now - new Date(date);
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'только что';
+    if (diffMins < 60) return `${diffMins} мин назад`;
+    if (diffHours < 24) return `${diffHours} ч назад`;
+    if (diffDays < 7) return `${diffDays} дн назад`;
+    return new Date(date).toLocaleDateString('ru-RU');
+}
 
 // Routes
 
@@ -492,18 +501,21 @@ app.post('/api/auth/google', async (req, res) => {
     }
 });
 
-// Ads routes
+// Ads routes - UPDATED FOR ANONYMOUS USERS
 app.get('/api/ads', async (req, res) => {
     try {
         const { page = 1, limit = 20, category, search } = req.query;
         const offset = (page - 1) * limit;
 
+        console.log('🔍 GET /api/ads called with:', { page, limit, category, search });
+
         let query = `
             SELECT 
                 a.*,
-                u.username as seller_username,
-                u.full_name as seller_name,
-                u.rating as seller_rating,
+                COALESCE(u.username, a.seller_info->>'name') as seller_username,
+                COALESCE(u.full_name, a.seller_info->>'name') as seller_name,
+                COALESCE(u.rating, 5.0) as seller_rating,
+                COALESCE(u.phone, a.seller_info->>'phone') as seller_phone,
                 c.name as category_name,
                 c.icon as category_icon,
                 COUNT(*) OVER() as total_count
@@ -529,6 +541,8 @@ app.get('/api/ads', async (req, res) => {
 
         query += ` ORDER BY a.created_at DESC LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
         params.push(parseInt(limit), offset);
+
+        console.log('🔍 Query:', query, 'Params:', params);
 
         const result = await pool.query(query, params);
 
@@ -564,7 +578,8 @@ app.get('/api/ads', async (req, res) => {
                 seller: {
                     username: ad.seller_username,
                     name: ad.seller_name,
-                    rating: ad.seller_rating
+                    rating: ad.seller_rating,
+                    phone: ad.seller_phone
                 },
                 image: ad.image_urls && ad.image_urls.length > 0 ? ad.image_urls[0] : null,
                 time: formatTimeAgo(ad.created_at),
@@ -593,10 +608,10 @@ app.get('/api/ads/:id', async (req, res) => {
         const result = await pool.query(`
             SELECT 
                 a.*,
-                u.username as seller_username,
-                u.full_name as seller_name,
-                u.rating as seller_rating,
-                u.phone as seller_phone,
+                COALESCE(u.username, a.seller_info->>'name') as seller_username,
+                COALESCE(u.full_name, a.seller_info->>'name') as seller_name,
+                COALESCE(u.rating, 5.0) as seller_rating,
+                COALESCE(u.phone, a.seller_info->>'phone') as seller_phone,
                 u.created_at as seller_since,
                 c.name as category_name
             FROM ads a
@@ -657,23 +672,47 @@ app.get('/api/ads/:id', async (req, res) => {
     }
 });
 
-app.post('/api/ads', authenticateToken, async (req, res) => {
+// UPDATED: Allow both authenticated and anonymous ad creation
+app.post('/api/ads', async (req, res) => {
     try {
-        const { title, description, price, category_id, location, image_urls, is_urgent } = req.body;
-        const user_id = req.user.userId;
-
+        const { title, description, price, category_id, location, image_urls, is_urgent, seller_info } = req.body;
+        
         // Validation
         if (!title || !description || !category_id) {
             return res.status(400).json({ error: 'Title, description and category are required' });
         }
 
-        const result = await pool.query(`
-            INSERT INTO ads (title, description, price, category_id, user_id, location, image_urls, is_urgent)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-            RETURNING *
-        `, [title, description, price, category_id, user_id, location, image_urls || [], is_urgent || false]);
+        // Determine user_id - either from token or null for anonymous
+        let user_id = null;
+        let actual_seller_info = seller_info || {};
 
-        console.log('✅ Ad created:', title);
+        const authHeader = req.headers['authorization'];
+        if (authHeader) {
+            const token = authHeader.split(' ')[1];
+            try {
+                const decoded = jwt.verify(token, JWT_SECRET);
+                user_id = decoded.userId;
+            } catch (error) {
+                // Token is invalid, continue as anonymous
+                console.log('⚠️ Invalid token, creating anonymous ad');
+            }
+        }
+
+        // For anonymous ads, validate contact info
+        if (!user_id) {
+            if (!seller_info || !seller_info.phone) {
+                return res.status(400).json({ error: 'Phone number is required for anonymous ads' });
+            }
+            actual_seller_info = seller_info;
+        }
+
+        const result = await pool.query(`
+            INSERT INTO ads (title, description, price, category_id, user_id, location, image_urls, is_urgent, seller_info)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING *
+        `, [title, description, price, category_id, user_id, location, image_urls || [], is_urgent || false, actual_seller_info]);
+
+        console.log('✅ Ad created:', title, user_id ? '(by user)' : '(anonymous)');
 
         res.json({
             message: 'Ad created successfully',
@@ -695,9 +734,9 @@ app.get('/api/favorites', authenticateToken, async (req, res) => {
         const result = await pool.query(`
             SELECT 
                 a.*,
-                u.username as seller_username,
-                u.full_name as seller_name,
-                u.rating as seller_rating,
+                COALESCE(u.username, a.seller_info->>'name') as seller_username,
+                COALESCE(u.full_name, a.seller_info->>'name') as seller_name,
+                COALESCE(u.rating, 5.0) as seller_rating,
                 c.name as category_name,
                 c.icon as category_icon,
                 COUNT(*) OVER() as total_count
@@ -1038,6 +1077,45 @@ app.put('/api/profile', authenticateToken, async (req, res) => {
     }
 });
 
+// Debug routes
+app.get('/api/debug/database', async (req, res) => {
+    try {
+        // Проверим все таблицы
+        const usersCount = await pool.query('SELECT COUNT(*) as count FROM users');
+        const categoriesCount = await pool.query('SELECT COUNT(*) as count FROM categories');
+        const adsCount = await pool.query('SELECT COUNT(*) as count FROM ads');
+        const activeAdsCount = await pool.query('SELECT COUNT(*) as count FROM ads WHERE is_active = TRUE');
+        
+        // Получим несколько объявлений для примера
+        const sampleAds = await pool.query(`
+            SELECT a.id, a.title, a.is_active, c.name as category_name 
+            FROM ads a 
+            LEFT JOIN categories c ON a.category_id = c.id 
+            LIMIT 5
+        `);
+
+        res.json({
+            database_status: 'connected',
+            tables: {
+                users: parseInt(usersCount.rows[0].count),
+                categories: parseInt(categoriesCount.rows[0].count),
+                ads: {
+                    total: parseInt(adsCount.rows[0].count),
+                    active: parseInt(activeAdsCount.rows[0].count)
+                }
+            },
+            sample_ads: sampleAds.rows,
+            connection_info: {
+                database: process.env.DB_NAME || 'from DATABASE_URL',
+                host: process.env.DB_HOST || 'from DATABASE_URL'
+            }
+        });
+    } catch (error) {
+        console.error('❌ Debug endpoint error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
     try {
@@ -1057,21 +1135,6 @@ app.get('/api/health', async (req, res) => {
         });
     }
 });
-
-// Utility function to format time ago
-function formatTimeAgo(date) {
-    const now = new Date();
-    const diffMs = now - new Date(date);
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'только что';
-    if (diffMins < 60) return `${diffMins} мин назад`;
-    if (diffHours < 24) return `${diffHours} ч назад`;
-    if (diffDays < 7) return `${diffDays} дн назад`;
-    return new Date(date).toLocaleDateString('ru-RU');
-}
 
 // Error handling middleware
 app.use((error, req, res, next) => {
@@ -1109,6 +1172,35 @@ if (process.env.NODE_ENV !== 'production') {
             console.log('');
             console.log('🎉 Server started successfully!');
             console.log('📍 Running on http://localhost:' + PORT);
+            console.log('');
+            console.log('📊 Available pages:');
+            console.log('   GET  /              - Главная страница');
+            console.log('   GET  /favorites     - Избранное');
+            console.log('   GET  /ad-details    - Детали объявления');
+            console.log('   GET  /add-ad        - Добавить объявление');
+            console.log('   GET  /messages      - Сообщения');
+            console.log('   GET  /profile       - Профиль');
+            console.log('   GET  /register      - Регистрация');
+            console.log('   GET  /login         - Вход');
+            console.log('');
+            console.log('🔐 Available API endpoints:');
+            console.log('   POST /api/register          - Регистрация');
+            console.log('   POST /api/login             - Вход');
+            console.log('   POST /api/auth/google       - Google OAuth');
+            console.log('   GET  /api/ads               - Список объявлений');
+            console.log('   GET  /api/ads/:id           - Детали объявления');
+            console.log('   POST /api/ads               - Создать объявление (анонимно или с авторизацией)');
+            console.log('   GET  /api/favorites         - Избранные объявления');
+            console.log('   POST /api/favorites/:adId   - Добавить в избранное');
+            console.log('   DELETE /api/favorites/:adId - Удалить из избранного');
+            console.log('   GET  /api/categories        - Категории');
+            console.log('   GET  /api/messages/chats    - Список чатов');
+            console.log('   GET  /api/messages/chat/:id - Сообщения чата');
+            console.log('   POST /api/messages          - Отправить сообщение');
+            console.log('   GET  /api/profile           - Профиль пользователя');
+            console.log('   PUT  /api/profile           - Обновить профиль');
+            console.log('   GET  /api/debug/database    - Отладочная информация');
+            console.log('   GET  /api/health            - Проверка здоровья');
             console.log('');
         });
     }
