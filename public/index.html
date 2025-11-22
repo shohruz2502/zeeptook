@@ -698,19 +698,19 @@
         let isLoading = false;
         let token = localStorage.getItem('token');
 
-        // API базовый URL
-        const API_BASE = 'http://localhost:3000/api';
+        // API базовый URL - исправлено для работы с текущим сервером
+        const API_BASE = window.location.origin + '/api';
 
         // Функция для проверки подключения к БД
         async function checkDBConnection() {
             try {
-                const response = await fetch(`${API_BASE}/ads?page=1&limit=1`);
-                const isConnected = response.ok;
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
                 
                 const statusIndicator = document.getElementById('db-status');
                 const statusText = document.getElementById('status-text');
                 
-                if (isConnected) {
+                if (data.status === 'OK') {
                     statusIndicator.className = 'status-indicator connected';
                     statusText.textContent = 'Онлайн';
                 } else {
@@ -759,7 +759,28 @@
                 
             } catch (error) {
                 console.error('Error loading categories:', error);
+                // Если категории не загрузились, показываем базовые
+                showDefaultCategories();
             }
+        }
+
+        // Функция для показа базовых категорий
+        function showDefaultCategories() {
+            const container = document.getElementById('categories-container');
+            const defaultCategories = [
+                'Электроника', 'Недвижимость', 'Авто', 'Работа', 
+                'Услуги', 'Мебель', 'Одежда', 'Спорт'
+            ];
+            
+            defaultCategories.forEach(category => {
+                const categoryElement = document.createElement('div');
+                categoryElement.className = 'category';
+                categoryElement.textContent = category;
+                categoryElement.setAttribute('data-category', category);
+                container.appendChild(categoryElement);
+            });
+            
+            setupCategories();
         }
 
         // Функция для получения объявлений с сервера
@@ -793,6 +814,8 @@
                     url += `&search=${encodeURIComponent(search)}`;
                 }
 
+                console.log('🔍 Fetching ads from:', url);
+
                 const options = {
                     method: 'GET',
                     headers: {}
@@ -811,6 +834,8 @@
 
                 const data = await response.json();
                 
+                console.log('📊 Received ads:', data.ads);
+
                 // Обновляем информацию о пагинации
                 currentPage = data.page;
                 totalPages = data.totalPages;
@@ -863,22 +888,33 @@
         function createAdElement(ad) {
             const adElement = document.createElement('div');
             adElement.className = 'ad-card';
+            
+            // Форматируем цену
+            const priceFormatted = ad.price ? 
+                new Intl.NumberFormat('ru-RU').format(ad.price) + ' ₽' : 
+                'Цена не указана';
+            
+            // Используем реальное изображение если есть, иначе заглушку
+            const imageHtml = ad.image ? 
+                `<img src="${ad.image}" alt="${ad.title}" style="width: 100%; height: 100%; object-fit: cover;">` :
+                `<i class="fa fa-camera" style="font-size: 24px; opacity: 0.7;"></i>`;
+            
             adElement.innerHTML = `
                 <div class="ad-image">
                     ${ad.isUrgent ? '<div class="ad-badge">СРОЧНО</div>' : ''}
-                    <i class="fa fa-camera" style="font-size: 24px; opacity: 0.7;"></i>
+                    ${imageHtml}
                 </div>
                 <div class="ad-content">
                     <div class="ad-header">
-                        <div class="ad-category">${ad.category}</div>
+                        <div class="ad-category">${ad.category || 'Без категории'}</div>
                         <div class="ad-favorite ${ad.isFavorite ? 'active' : ''}">
                             <i class="fa fa-heart"></i>
                         </div>
                     </div>
-                    <div class="ad-title">${ad.title}</div>
-                    <div class="ad-description">${ad.description}</div>
+                    <div class="ad-title">${ad.title || 'Без названия'}</div>
+                    <div class="ad-description">${ad.description || 'Описание отсутствует'}</div>
                     <div class="ad-footer">
-                        <div class="ad-price">${ad.price ? new Intl.NumberFormat('ru-RU').format(ad.price) + ' ₽' : 'Цена не указана'}</div>
+                        <div class="ad-price">${priceFormatted}</div>
                         <div class="ad-meta">
                             <i class="fa fa-map-marker"></i>
                             <span>${ad.location || 'Не указано'}</span>
@@ -957,6 +993,15 @@
             searchInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
                     performSearch();
+                }
+            });
+            
+            // Очистка поиска при клике на крестик (в мобильных браузерах)
+            searchInput.addEventListener('input', function() {
+                if (this.value === '') {
+                    currentSearch = '';
+                    currentPage = 1;
+                    fetchAds(1, currentCategory, '');
                 }
             });
         }
@@ -1044,6 +1089,7 @@
         
         // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Initializing Zeeptook app...');
             checkDBConnection();
             loadCategories();
             fetchAds();
@@ -1051,9 +1097,11 @@
             
             // Настройка кнопки "Загрузить еще"
             const loadMoreBtn = document.getElementById('load-more-btn');
-            loadMoreBtn.addEventListener('click', () => {
-                fetchAds(currentPage + 1, currentCategory, currentSearch);
-            });
+            if (loadMoreBtn) {
+                loadMoreBtn.addEventListener('click', () => {
+                    fetchAds(currentPage + 1, currentCategory, currentSearch);
+                });
+            }
             
             // Pull-to-refresh
             let startY;
@@ -1074,6 +1122,11 @@
                     startY = null;
                 }
             });
+            
+            // Отладочная информация
+            console.log('✅ App initialized successfully');
+            console.log('🔑 Token exists:', !!token);
+            console.log('🌐 API Base:', API_BASE);
         });
     </script>
 </body>
