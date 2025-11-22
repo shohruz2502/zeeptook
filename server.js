@@ -10,17 +10,53 @@ const app = express();
 
 // Configuration from .env
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-for-development';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 
-// Validate required environment variables
-const requiredEnvVars = ['DB_USER', 'DB_HOST', 'DB_NAME', 'DB_PASSWORD', 'JWT_SECRET'];
+// Поддержка как DATABASE_URL (для Vercel + Neon), так и отдельных переменных
+let poolConfig;
+
+if (process.env.DATABASE_URL) {
+  // Используем DATABASE_URL от Neon
+  poolConfig = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false
+    },
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
+    max: 10
+  };
+} else {
+  // Используем отдельные переменные (для разработки)
+  poolConfig = {
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASSWORD,
+    port: process.env.DB_PORT || 5432,
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
+    max: 10
+  };
+}
+
+// PostgreSQL connection
+const pool = new Pool(poolConfig);
+
+// Обновите проверку переменных окружения
+const requiredEnvVars = ['JWT_SECRET'];
+if (!process.env.DATABASE_URL && !process.env.DB_USER) {
+  requiredEnvVars.push('DATABASE_URL or DB_USER, DB_HOST, DB_NAME, DB_PASSWORD');
+}
+
 const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
 
-if (missingEnvVars.length > 0) {
+if (missingEnvVars.length > 0 && process.env.NODE_ENV === 'production') {
     console.error('❌ Missing required environment variables:', missingEnvVars.join(', '));
-    console.error('💡 Please check your .env file');
-    process.exit(1);
+    console.error('💡 Please check your environment variables in Vercel');
+} else if (missingEnvVars.length > 0) {
+    console.warn('⚠️ Missing environment variables in development:', missingEnvVars.join(', '));
 }
 
 if (!GOOGLE_CLIENT_ID) {
@@ -32,19 +68,6 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-
-// PostgreSQL connection
-const pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT || 5432,
-    // Optional: Add connection timeout and retry settings
-    connectionTimeoutMillis: 5000,
-    idleTimeoutMillis: 30000,
-    max: 20
-});
 
 // Test database connection
 async function testDatabaseConnection() {
@@ -180,7 +203,10 @@ async function initializeDatabase() {
         console.log('✅ Database initialized successfully');
     } catch (error) {
         console.error('❌ Error initializing database:', error);
-        throw error;
+        // Не прерываем выполнение в production
+        if (process.env.NODE_ENV !== 'production') {
+            throw error;
+        }
     }
 }
 
@@ -1063,76 +1089,35 @@ app.use((req, res) => {
     res.status(404).send('Page not found');
 });
 
-// Start server
-async function startServer() {
-    console.log('🚀 Starting Zeeptook server...');
-    console.log('📁 Environment:', process.env.NODE_ENV || 'development');
-    
-    // Test database connection first
-    const dbConnected = await testDatabaseConnection();
-    if (!dbConnected) {
-        console.error('❌ Cannot start server without database connection');
-        process.exit(1);
+// Start server только в development
+if (process.env.NODE_ENV !== 'production') {
+    async function startServer() {
+        console.log('🚀 Starting Zeeptook server in development mode...');
+        console.log('📁 Environment:', process.env.NODE_ENV || 'development');
+        
+        // Test database connection first
+        const dbConnected = await testDatabaseConnection();
+        if (!dbConnected) {
+            console.error('❌ Cannot start server without database connection');
+            process.exit(1);
+        }
+
+        // Initialize database
+        await initializeDatabase();
+        
+        app.listen(PORT, () => {
+            console.log('');
+            console.log('🎉 Server started successfully!');
+            console.log('📍 Running on http://localhost:' + PORT);
+            console.log('');
+        });
     }
 
-    // Initialize database
-    await initializeDatabase();
-    
-    app.listen(PORT, () => {
-        console.log('');
-        console.log('🎉 Server started successfully!');
-        console.log('📍 Running on http://localhost:' + PORT);
-        console.log('');
-        console.log('📊 Available pages:');
-        console.log('   GET  /              - Главная страница');
-        console.log('   GET  /favorites     - Избранное');
-        console.log('   GET  /ad-details    - Детали объявления');
-        console.log('   GET  /add-ad        - Добавить объявление');
-        console.log('   GET  /messages      - Сообщения');
-        console.log('   GET  /profile       - Профиль');
-        console.log('   GET  /register      - Регистрация');
-        console.log('   GET  /login         - Вход');
-        console.log('');
-        console.log('🔐 Available API endpoints:');
-        console.log('   POST /api/register          - Регистрация');
-        console.log('   POST /api/login             - Вход');
-        console.log('   POST /api/auth/google       - Google OAuth');
-        console.log('   GET  /api/ads               - Список объявлений');
-        console.log('   GET  /api/ads/:id           - Детали объявления');
-        console.log('   POST /api/ads               - Создать объявление');
-        console.log('   GET  /api/favorites         - Избранные объявления');
-        console.log('   POST /api/favorites/:adId   - Добавить в избранное');
-        console.log('   DELETE /api/favorites/:adId - Удалить из избранного');
-        console.log('   GET  /api/categories        - Категории');
-        console.log('   GET  /api/messages/chats    - Список чатов');
-        console.log('   GET  /api/messages/chat/:id - Сообщения чата');
-        console.log('   POST /api/messages          - Отправить сообщение');
-        console.log('   GET  /api/profile           - Профиль пользователя');
-        console.log('   PUT  /api/profile           - Обновить профиль');
-        console.log('   GET  /api/health            - Проверка здоровья');
-        console.log('');
-        console.log('⚙️  Configuration:');
-        console.log('   Database: ' + process.env.DB_NAME + '@' + process.env.DB_HOST);
-        console.log('   Google OAuth: ' + (GOOGLE_CLIENT_ID ? 'Enabled' : 'Disabled'));
-        console.log('   JWT Secret: ' + (JWT_SECRET ? 'Set' : 'Not set'));
-        console.log('');
+    startServer().catch(error => {
+        console.error('❌ Failed to start server:', error);
+        process.exit(1);
     });
 }
 
-// Handle graceful shutdown
-process.on('SIGINT', async () => {
-    console.log('🛑 Shutting down server gracefully...');
-    await pool.end();
-    process.exit(0);
-});
-
-process.on('SIGTERM', async () => {
-    console.log('🛑 Shutting down server gracefully...');
-    await pool.end();
-    process.exit(0);
-});
-
-startServer().catch(error => {
-    console.error('❌ Failed to start server:', error);
-    process.exit(1);
-});
+// Export for Vercel
+module.exports = app;
