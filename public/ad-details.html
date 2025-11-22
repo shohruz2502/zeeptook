@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Детали объявления - Zeeptook</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        :root {
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --gray: #95a5a6;
+            --white: #ffffff;
+        }
+        
+        body {
+            background: #f8f9fa;
+            color: var(--dark);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: var(--white);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .back-btn {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 18px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:active {
+            background: var(--light);
+        }
+        
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+        
+        .ad-details {
+            padding: 20px;
+        }
+        
+        .ad-image {
+            height: 250px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 16px;
+            position: relative;
+        }
+        
+        .ad-badge {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: var(--accent);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .ad-content {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .ad-price {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--success);
+            margin-bottom: 15px;
+        }
+        
+        .ad-title {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+        
+        .ad-meta {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            color: var(--gray);
+        }
+        
+        .ad-description {
+            line-height: 1.6;
+            margin-bottom: 25px;
+            font-size: 15px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--gray);
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--light);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="#" class="back-btn" onclick="goBack()">
+            <i class="fa fa-arrow-left"></i>
+        </a>
+        <div class="page-title">Детали объявления</div>
+    </div>
+    
+    <div class="ad-details" id="ad-details">
+        <div class="loading">
+            <div class="loading-spinner"></div>
+            <div>Загрузка деталей объявления...</div>
+        </div>
+    </div>
+
+    <script>
+        // Получаем ID объявления из URL параметров
+        const urlParams = new URLSearchParams(window.location.search);
+        const adId = urlParams.get('id');
+        const source = urlParams.get('source');
+        
+        // Функция для загрузки деталей объявления
+        async function loadAdDetails() {
+            const detailsContainer = document.getElementById('ad-details');
+            
+            if (!adId) {
+                detailsContainer.innerHTML = `
+                    <div class="loading">
+                        <i class="fa fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                        <div>Объявление не найдено</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            try {
+                // Имитация загрузки с сервера
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // В реальном приложении здесь будет запрос к API:
+                // const response = await fetch(`/api/ads/${adId}`);
+                // const ad = await response.json();
+                
+                // Моковые данные для демонстрации
+                const ad = {
+                    id: parseInt(adId),
+                    title: "Продам MacBook Air",
+                    description: "Ноутбук в отличном состоянии, 2020 года выпуска. Батарея держит до 8 часов. Комплектация полная: оригинальная коробка, зарядное устройство. Использовался аккуратно, следов использования практически нет. Технические характеристики: процессор Apple M1, 8GB RAM, 256GB SSD, 13-дюймовый дисплей Retina.",
+                    price: "65 000 руб.",
+                    category: "Электроника",
+                    location: "Казань",
+                    time: "4 дня назад",
+                    views: 124,
+                    isUrgent: false,
+                    seller: {
+                        name: "Александр Петров",
+                        rating: 4.8,
+                        reviews: 47,
+                        joined: "2022"
+                    }
+                };
+                
+                // Отображаем детали объявления
+                detailsContainer.innerHTML = `
+                    <div class="ad-image">
+                        ${ad.isUrgent ? '<div class="ad-badge">СРОЧНО</div>' : ''}
+                        <i class="fa fa-laptop" style="font-size: 48px; opacity: 0.8;"></i>
+                    </div>
+                    
+                    <div class="ad-content">
+                        <div class="ad-price">${ad.price}</div>
+                        <h1 class="ad-title">${ad.title}</h1>
+                        
+                        <div class="ad-meta">
+                            <div class="meta-item">
+                                <i class="fa fa-map-marker"></i>
+                                <span>${ad.location}</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fa fa-eye"></i>
+                                <span>${ad.views} просмотров</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fa fa-clock-o"></i>
+                                <span>${ad.time}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="ad-description">
+                            ${ad.description}
+                        </div>
+                        
+                        <div class="seller-info">
+                            <h3 style="margin-bottom: 10px;">Продавец</h3>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                                <div style="width: 40px; height: 40px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">
+                                    <i class="fa fa-user"></i>
+                                </div>
+                                <div>
+                                    <div style="font-weight: 600;">${ad.seller.name}</div>
+                                    <div style="font-size: 12px; color: var(--gray);">
+                                        ⭐ ${ad.seller.rating} (${ad.seller.reviews} отзывов)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <button class="btn btn-outline">
+                                <i class="fa fa-heart-o"></i>
+                                В избранное
+                            </button>
+                            <button class="btn btn-primary">
+                                <i class="fa fa-comment"></i>
+                                Написать
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.error('Ошибка при загрузке деталей объявления:', error);
+                detailsContainer.innerHTML = `
+                    <div class="loading">
+                        <i class="fa fa-exclamation-triangle" style="font-size: 48px; margin-bottom: 15px;"></i>
+                        <div>Ошибка загрузки</div>
+                        <button onclick="loadAdDetails()" style="margin-top: 15px; padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer;">
+                            Попробовать снова
+                        </button>
+                    </div>
+                `;
+            }
+        }
+        
+        // Функция для возврата назад
+        function goBack() {
+            if (source === 'favorites') {
+                window.location.href = 'favorites.html';
+            } else {
+                window.location.href = 'index.html';
+            }
+        }
+        
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAdDetails();
+        });
+    </script>
+</body>
+</html>

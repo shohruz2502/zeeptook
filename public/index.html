@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeeptook - Главная</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        :root {
+            --primary: #3498db;
+            --primary-dark: #2980b9;
+            --secondary: #2c3e50;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --gray: #95a5a6;
+            --gray-light: #bdc3c7;
+            --white: #ffffff;
+            --shadow: 0 2px 15px rgba(0,0,0,0.1);
+            --radius: 16px;
+            --radius-sm: 12px;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--dark);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        .app-container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            color: var(--secondary);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .logo i {
+            margin-right: 8px;
+            font-size: 22px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .profile-status {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            background: var(--light);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .connected {
+            background-color: var(--success);
+        }
+        
+        .disconnected {
+            background-color: var(--accent);
+        }
+        
+        .search-section {
+            padding: 20px 15px 15px;
+        }
+        
+        .search-container {
+            position: relative;
+        }
+        
+        .search-box {
+            display: flex;
+            width: 100%;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        .search-box input {
+            flex-grow: 1;
+            padding: 16px 20px;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            outline: none;
+            color: var(--dark);
+        }
+        
+        .search-box input::placeholder {
+            color: var(--gray);
+        }
+        
+        .search-box button {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 0 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 60px;
+        }
+        
+        .search-box button:active {
+            transform: scale(0.95);
+        }
+        
+        .categories-scroll {
+            display: flex;
+            overflow-x: auto;
+            padding: 15px;
+            gap: 8px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+        
+        .categories-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .category {
+            flex: 0 0 auto;
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
+        
+        .category.active {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+        }
+        
+        .category-more {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 0 15px 20px;
+        }
+        
+        .action-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .action-card:active {
+            transform: scale(0.98);
+        }
+        
+        .action-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: white;
+            font-size: 20px;
+        }
+        
+        .action-info h3 {
+            font-size: 15px;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+        
+        .action-info p {
+            font-size: 12px;
+            color: var(--gray);
+        }
+        
+        .main-content {
+            padding: 0 15px 20px;
+        }
+        
+        .content-section {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255,255,255,0.2);
+            overflow: hidden;
+        }
+        
+        .section-header {
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--secondary);
+        }
+        
+        .view-all {
+            font-size: 14px;
+            color: var(--primary);
+            font-weight: 500;
+            text-decoration: none;
+        }
+        
+        .ads-grid {
+            padding: 15px;
+        }
+        
+        .ad-card {
+            background: var(--white);
+            border-radius: var(--radius-sm);
+            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.05);
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        .ad-card:active {
+            transform: scale(0.98);
+        }
+        
+        .ad-image {
+            height: 160px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .ad-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: var(--accent);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        .ad-content {
+            padding: 15px;
+        }
+        
+        .ad-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        
+        .ad-category {
+            font-size: 11px;
+            background: var(--light);
+            padding: 4px 10px;
+            border-radius: 12px;
+            color: var(--dark);
+            font-weight: 500;
+        }
+        
+        .ad-favorite {
+            color: var(--gray-light);
+            font-size: 18px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .ad-favorite.active {
+            color: var(--accent);
+            transform: scale(1.1);
+        }
+        
+        .ad-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--dark);
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .ad-description {
+            color: var(--gray);
+            margin-bottom: 15px;
+            font-size: 13px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .ad-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .ad-price {
+            font-weight: 700;
+            color: var(--success);
+            font-size: 17px;
+        }
+        
+        .ad-meta {
+            font-size: 11px;
+            color: var(--gray);
+            display: flex;
+            align-items: center;
+        }
+        
+        .ad-meta i {
+            margin-right: 4px;
+            font-size: 10px;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            box-shadow: 0 -2px 20px rgba(0,0,0,0.1);
+            z-index: 1000;
+            border-top: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: var(--gray);
+            font-size: 11px;
+            padding: 5px;
+            transition: all 0.3s ease;
+            flex: 1;
+            position: relative;
+        }
+        
+        .nav-btn i {
+            font-size: 20px;
+            margin-bottom: 3px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-btn.active {
+            color: var(--primary);
+        }
+        
+        .nav-btn.active i {
+            transform: translateY(-2px);
+        }
+        
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--gray);
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--light);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .load-more {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .load-more button {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            padding: 14px 35px;
+            border-radius: 25px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .load-more button:active {
+            transform: scale(0.95);
+        }
+        
+        .load-more button:disabled {
+            background: var(--gray-light);
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .error-message {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--accent);
+        }
+        
+        .error-message i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: var(--accent);
+        }
+        
+        .retry-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        
+        /* Анимации */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .ad-card {
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        /* Адаптивность для очень маленьких экранов */
+        @media (max-width: 360px) {
+            .header {
+                padding: 12px 15px;
+            }
+            
+            .logo {
+                font-size: 18px;
+            }
+            
+            .search-section {
+                padding: 15px 12px 12px;
+            }
+            
+            .quick-actions {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .action-card {
+                padding: 15px;
+            }
+        }
+        
+        /* Адаптивность для планшетов */
+        @media (min-width: 768px) {
+            .app-container {
+                max-width: 750px;
+                margin: 0 auto;
+            }
+            
+            .quick-actions {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .ads-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 15px;
+            }
+            
+            .ad-card {
+                margin-bottom: 0;
+            }
+        }
+        
+        /* Адаптивность для десктопов */
+        @media (min-width: 1024px) {
+            .app-container {
+                max-width: 900px;
+            }
+            
+            .ads-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* Улучшения для iOS */
+        @supports (-webkit-touch-callout: none) {
+            body {
+                background-attachment: fixed;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <div class="logo">
+                <i class="fa fa-diamond"></i>
+                <span>Zeeptook</span>
+            </div>
+            <div class="profile-status">
+                <div class="status-indicator connected" id="db-status"></div>
+                <span id="status-text">Онлайн</span>
+            </div>
+        </div>
+        
+        <div class="search-section">
+            <div class="search-container">
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="🔍 Поиск объявлений...">
+                    <button id="search-btn">
+                        <i class="fa fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="categories-scroll" id="categories-container">
+            <div class="category active" data-category="all">Все</div>
+            <!-- Категории будут загружены с сервера -->
+        </div>
+        
+        <div class="quick-actions">
+            <div class="action-card">
+                <div class="action-icon">
+                    <i class="fa fa-star"></i>
+                </div>
+                <div class="action-info">
+                    <h3>Премиум</h3>
+                    <p>Повышенный спрос</p>
+                </div>
+            </div>
+            <div class="action-card">
+                <div class="action-icon" style="background: linear-gradient(135deg, var(--accent), #c0392b);">
+                    <i class="fa fa-bolt"></i>
+                </div>
+                <div class="action-info">
+                    <h3>Срочно</h3>
+                    <p>Ограничено</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="content-section">
+                <div class="section-header">
+                    <div class="section-title">Рекомендуемые</div>
+                    <a href="#" class="view-all">Все</a>
+                </div>
+                <div class="ads-grid" id="ads-container">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <div>Загрузка объявлений...</div>
+                    </div>
+                </div>
+                <div class="load-more">
+                    <button id="load-more-btn" style="display: none;">Показать ещё</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bottom-nav">
+        <a href="index.html" class="nav-btn active">
+            <i class="fa fa-home"></i>
+            <span>Главная</span>
+        </a>
+        <a href="favorites.html" class="nav-btn">
+            <i class="fa fa-heart"></i>
+            <span>Избранное</span>
+        </a>
+        <a href="add-ad.html" class="nav-btn">
+            <i class="fa fa-plus"></i>
+            <span>Добавить</span>
+        </a>
+        <a href="messages.html" class="nav-btn">
+            <i class="fa fa-comment"></i>
+            <span>Чаты</span>
+        </a>
+        <a href="profile.html" class="nav-btn">
+            <i class="fa fa-user"></i>
+            <span>Профиль</span>
+        </a>
+    </div>
+
+    <script>
+        // Переменные для управления загрузкой объявлений
+        let currentPage = 1;
+        let totalPages = 1;
+        let currentCategory = 'all';
+        let currentSearch = '';
+        let isLoading = false;
+        let token = localStorage.getItem('token');
+
+        // API базовый URL
+        const API_BASE = 'http://localhost:3000/api';
+
+        // Функция для проверки подключения к БД
+        async function checkDBConnection() {
+            try {
+                const response = await fetch(`${API_BASE}/ads?page=1&limit=1`);
+                const isConnected = response.ok;
+                
+                const statusIndicator = document.getElementById('db-status');
+                const statusText = document.getElementById('status-text');
+                
+                if (isConnected) {
+                    statusIndicator.className = 'status-indicator connected';
+                    statusText.textContent = 'Онлайн';
+                } else {
+                    statusIndicator.className = 'status-indicator disconnected';
+                    statusText.textContent = 'Офлайн';
+                }
+            } catch (error) {
+                const statusIndicator = document.getElementById('db-status');
+                const statusText = document.getElementById('status-text');
+                statusIndicator.className = 'status-indicator disconnected';
+                statusText.textContent = 'Офлайн';
+            }
+        }
+
+        // Функция для загрузки категорий с сервера
+        async function loadCategories() {
+            try {
+                const response = await fetch(`${API_BASE}/categories`);
+                if (!response.ok) throw new Error('Failed to load categories');
+                
+                const categories = await response.json();
+                const container = document.getElementById('categories-container');
+                
+                // Очищаем контейнер, оставляя только "Все"
+                const allCategory = container.querySelector('[data-category="all"]');
+                container.innerHTML = '';
+                container.appendChild(allCategory);
+                
+                // Добавляем категории с сервера
+                categories.forEach(category => {
+                    const categoryElement = document.createElement('div');
+                    categoryElement.className = 'category';
+                    categoryElement.textContent = category.name;
+                    categoryElement.setAttribute('data-category', category.name);
+                    container.appendChild(categoryElement);
+                });
+                
+                // Добавляем кнопку "Ещё"
+                const moreCategory = document.createElement('div');
+                moreCategory.className = 'category category-more';
+                moreCategory.textContent = 'Ещё';
+                moreCategory.setAttribute('data-category', 'more');
+                container.appendChild(moreCategory);
+                
+                setupCategories();
+                
+            } catch (error) {
+                console.error('Error loading categories:', error);
+            }
+        }
+
+        // Функция для получения объявлений с сервера
+        async function fetchAds(page = 1, category = 'all', search = '') {
+            if (isLoading) return;
+            
+            isLoading = true;
+            const adsContainer = document.getElementById('ads-container');
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            
+            try {
+                // Показываем индикатор загрузки при первой загрузке
+                if (page === 1) {
+                    adsContainer.innerHTML = `
+                        <div class="loading">
+                            <div class="loading-spinner"></div>
+                            <div>Загрузка объявлений...</div>
+                        </div>
+                    `;
+                } else {
+                    loadMoreBtn.disabled = true;
+                    loadMoreBtn.textContent = 'Загрузка...';
+                }
+
+                // Формируем URL для запроса
+                let url = `${API_BASE}/ads?page=${page}&limit=6`;
+                if (category !== 'all') {
+                    url += `&category=${encodeURIComponent(category)}`;
+                }
+                if (search) {
+                    url += `&search=${encodeURIComponent(search)}`;
+                }
+
+                const options = {
+                    method: 'GET',
+                    headers: {}
+                };
+
+                // Добавляем токен авторизации, если есть
+                if (token) {
+                    options.headers['Authorization'] = `Bearer ${token}`;
+                }
+
+                const response = await fetch(url, options);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // Обновляем информацию о пагинации
+                currentPage = data.page;
+                totalPages = data.totalPages;
+                
+                // Отображаем объявления
+                displayAds(data.ads, page === 1);
+                
+                // Управляем кнопкой "Загрузить еще"
+                if (currentPage < totalPages) {
+                    loadMoreBtn.style.display = 'block';
+                    loadMoreBtn.disabled = false;
+                    loadMoreBtn.textContent = 'Показать ещё';
+                } else {
+                    loadMoreBtn.style.display = 'none';
+                }
+                
+            } catch (error) {
+                console.error('Ошибка при загрузке объявлений:', error);
+                showError('Не удалось загрузить объявления. Проверьте подключение к интернету.');
+            } finally {
+                isLoading = false;
+            }
+        }
+        
+        // Функция для отображения объявлений
+        function displayAds(ads, clearContainer = true) {
+            const adsContainer = document.getElementById('ads-container');
+            
+            if (clearContainer) {
+                adsContainer.innerHTML = '';
+            }
+            
+            if (ads.length === 0 && clearContainer) {
+                adsContainer.innerHTML = `
+                    <div class="loading">
+                        <i class="fa fa-inbox" style="font-size: 48px; margin-bottom: 15px; color: var(--gray-light);"></i>
+                        <div>Объявления не найдены</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            ads.forEach(ad => {
+                const adElement = createAdElement(ad);
+                adsContainer.appendChild(adElement);
+            });
+        }
+        
+        // Функция для создания элемента объявления
+        function createAdElement(ad) {
+            const adElement = document.createElement('div');
+            adElement.className = 'ad-card';
+            adElement.innerHTML = `
+                <div class="ad-image">
+                    ${ad.isUrgent ? '<div class="ad-badge">СРОЧНО</div>' : ''}
+                    <i class="fa fa-camera" style="font-size: 24px; opacity: 0.7;"></i>
+                </div>
+                <div class="ad-content">
+                    <div class="ad-header">
+                        <div class="ad-category">${ad.category}</div>
+                        <div class="ad-favorite ${ad.isFavorite ? 'active' : ''}">
+                            <i class="fa fa-heart"></i>
+                        </div>
+                    </div>
+                    <div class="ad-title">${ad.title}</div>
+                    <div class="ad-description">${ad.description}</div>
+                    <div class="ad-footer">
+                        <div class="ad-price">${ad.price ? new Intl.NumberFormat('ru-RU').format(ad.price) + ' ₽' : 'Цена не указана'}</div>
+                        <div class="ad-meta">
+                            <i class="fa fa-map-marker"></i>
+                            <span>${ad.location || 'Не указано'}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Добавляем обработчики событий
+            const favoriteBtn = adElement.querySelector('.ad-favorite');
+            favoriteBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                await toggleFavorite(ad.id, favoriteBtn);
+            });
+            
+            adElement.addEventListener('click', () => {
+                openAdDetails(ad.id);
+            });
+            
+            return adElement;
+        }
+        
+        // Функция для добавления/удаления из избранного
+        async function toggleFavorite(adId, favoriteBtn) {
+            if (!token) {
+                showNotification('Для добавления в избранное необходимо авторизоваться', 'error');
+                return;
+            }
+            
+            try {
+                const isCurrentlyFavorite = favoriteBtn.classList.contains('active');
+                
+                const url = `${API_BASE}/favorites/${adId}`;
+                const options = {
+                    method: isCurrentlyFavorite ? 'DELETE' : 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                };
+                
+                const response = await fetch(url, options);
+                
+                if (response.ok) {
+                    favoriteBtn.classList.toggle('active');
+                    showNotification(
+                        isCurrentlyFavorite ? 'Удалено из избранного' : 'Добавлено в избранное'
+                    );
+                } else {
+                    throw new Error('Failed to update favorites');
+                }
+            } catch (error) {
+                console.error('Error updating favorites:', error);
+                showNotification('Ошибка при обновлении избранного', 'error');
+            }
+        }
+        
+        // Функция для открытия деталей объявления
+        function openAdDetails(adId) {
+            window.location.href = `ad-details.html?id=${adId}`;
+        }
+        
+        // Функция для поиска
+        function setupSearch() {
+            const searchInput = document.getElementById('search-input');
+            const searchBtn = document.getElementById('search-btn');
+            
+            const performSearch = () => {
+                const query = searchInput.value.trim();
+                currentSearch = query;
+                currentPage = 1;
+                fetchAds(1, currentCategory, currentSearch);
+            };
+            
+            searchBtn.addEventListener('click', performSearch);
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+        }
+        
+        // Функция для настройки категорий
+        function setupCategories() {
+            const categories = document.querySelectorAll('.category');
+            categories.forEach(category => {
+                category.addEventListener('click', function() {
+                    const categoryValue = this.getAttribute('data-category');
+                    
+                    if (categoryValue === 'more') {
+                        showNotification('Открывается меню всех категорий');
+                        return;
+                    }
+                    
+                    categories.forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    currentCategory = categoryValue;
+                    currentPage = 1;
+                    fetchAds(1, currentCategory, currentSearch);
+                });
+            });
+        }
+        
+        // Функция для показа ошибок
+        function showError(message) {
+            const adsContainer = document.getElementById('ads-container');
+            adsContainer.innerHTML = `
+                <div class="error-message">
+                    <i class="fa fa-exclamation-triangle"></i>
+                    <div>${message}</div>
+                    <button class="retry-btn" onclick="fetchAds(1, currentCategory, currentSearch)">Попробовать снова</button>
+                </div>
+            `;
+        }
+        
+        // Функция для показа уведомлений
+        function showNotification(message, type = 'success') {
+            // Создаем элемент уведомления
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'error' ? 'var(--accent)' : 'var(--success)'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 25px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                z-index: 10000;
+                font-weight: 500;
+                animation: slideDown 0.3s ease-out;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Удаляем уведомление через 3 секунды
+            setTimeout(() => {
+                notification.style.animation = 'slideUp 0.3s ease-in';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        // Добавляем стили для анимации уведомлений
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideDown {
+                from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+                to { transform: translateX(-50%) translateY(0); opacity: 1; }
+            }
+            @keyframes slideUp {
+                from { transform: translateX(-50%) translateY(0); opacity: 1; }
+                to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            checkDBConnection();
+            loadCategories();
+            fetchAds();
+            setupSearch();
+            
+            // Настройка кнопки "Загрузить еще"
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            loadMoreBtn.addEventListener('click', () => {
+                fetchAds(currentPage + 1, currentCategory, currentSearch);
+            });
+            
+            // Pull-to-refresh
+            let startY;
+            document.addEventListener('touchstart', (e) => {
+                startY = e.touches[0].clientY;
+            });
+            
+            document.addEventListener('touchmove', (e) => {
+                if (!startY) return;
+                
+                const currentY = e.touches[0].clientY;
+                const diff = currentY - startY;
+                
+                if (diff > 100 && window.scrollY === 0) {
+                    // Пользователь потянул вниз для обновления
+                    currentPage = 1;
+                    fetchAds(1, currentCategory, currentSearch);
+                    startY = null;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
