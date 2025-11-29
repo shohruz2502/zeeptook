@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Добавить объявление - Zeeptook</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        :root {
+            --primary: #00f2fe;
+            --primary-dark: #4facfe;
+            --secondary: #0f172a;
+            --accent: #ff6b6b;
+            --google: #4285f4;
+            --dark: #1e293b;
+            --darker: #0f172a;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --gray-light: #cbd5e1;
+            --white: #ffffff;
+            --gradient: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            --gradient-dark: linear-gradient(135deg, var(--secondary) 0%, #1e3a8a 100%);
+            --shadow: 0 8px 32px rgba(0, 242, 254, 0.15);
+            --radius: 16px;
+            --radius-sm: 12px;
+        }
+        
+        body {
+            background: var(--gradient-dark);
+            color: var(--white);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(20px);
+            color: var(--white);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(0, 242, 254, 0.1);
+        }
+        
+        .back-btn {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 18px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        
+        .back-btn:active {
+            background: rgba(0, 242, 254, 0.1);
+        }
+        
+        .page-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--white);
+        }
+        
+        .add-ad-container {
+            padding: 20px;
+        }
+        
+        .form-step {
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(0, 242, 254, 0.1);
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        .step-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 242, 254, 0.1);
+        }
+        
+        .step-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--white);
+        }
+        
+        .step-counter {
+            font-size: 14px;
+            color: var(--gray);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--white);
+        }
+        
+        .form-input, .form-textarea, .form-select {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(0, 242, 254, 0.1);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            font-size: 16px;
+            color: var(--white);
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        .form-input:focus, .form-textarea:focus, .form-select:focus {
+            border-color: var(--primary);
+        }
+        
+        .form-textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+        
+        .char-counter {
+            font-size: 12px;
+            color: var(--gray);
+            text-align: right;
+            margin-top: 5px;
+        }
+        
+        .char-counter.warning {
+            color: var(--accent);
+        }
+        
+        .price-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .price-input {
+            flex: 1;
+        }
+        
+        .currency {
+            color: var(--gray);
+            font-size: 16px;
+        }
+        
+        .photos-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .photo-upload {
+            aspect-ratio: 1;
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px dashed rgba(0, 242, 254, 0.3);
+            border-radius: var(--radius-sm);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .photo-upload:active {
+            background: rgba(0, 242, 254, 0.1);
+            transform: scale(0.98);
+        }
+        
+        .photo-upload i {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .photo-preview {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+        
+        .photo-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .photo-remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 24px;
+            height: 24px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .category-option {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(0, 242, 254, 0.1);
+            border-radius: var(--radius-sm);
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .category-option:active {
+            transform: scale(0.98);
+        }
+        
+        .category-option.selected {
+            background: var(--gradient);
+            border-color: var(--primary);
+            color: white;
+        }
+        
+        .category-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .category-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .preview-container {
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(0, 242, 254, 0.1);
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        .preview-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--white);
+        }
+        
+        .preview-ad {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+        
+        .preview-image {
+            height: 200px;
+            background: var(--gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .preview-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .preview-content {
+            padding: 15px;
+        }
+        
+        .preview-price {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .preview-ad-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--white);
+        }
+        
+        .preview-description {
+            color: var(--gray-light);
+            font-size: 14px;
+            line-height: 1.4;
+            margin-bottom: 15px;
+        }
+        
+        .preview-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: var(--gray);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn:disabled {
+            background: var(--gray);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(30, 41, 59, 0.98);
+            backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            box-shadow: 0 -2px 20px rgba(0, 242, 254, 0.1);
+            z-index: 1000;
+            border-top: 1px solid rgba(0, 242, 254, 0.1);
+        }
+        
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: var(--gray);
+            font-size: 11px;
+            padding: 5px;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+        
+        .nav-btn i {
+            font-size: 20px;
+            margin-bottom: 3px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-btn.active {
+            color: var(--primary);
+        }
+        
+        .nav-btn.active i {
+            transform: translateY(-2px);
+        }
+        
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--gray);
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0, 242, 254, 0.2);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        /* Анимации */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 360px) {
+            .header {
+                padding: 12px 15px;
+            }
+            
+            .add-ad-container {
+                padding: 15px;
+            }
+            
+            .form-step, .preview-container {
+                padding: 15px;
+            }
+            
+            .categories-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .app-container {
+                max-width: 750px;
+                margin: 0 auto;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .app-container {
+                max-width: 900px;
+            }
+        }
+        
+        /* Улучшения для iOS */
+        @supports (-webkit-touch-callout: none) {
+            body {
+                background-attachment: fixed;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <a href="index.html" class="back-btn">
+                <i class="fa fa-arrow-left"></i>
+            </a>
+            <div class="page-title">Добавить объявление</div>
+        </div>
+        
+        <div class="add-ad-container" id="add-ad-container">
+            <!-- Шаг 1: Категория -->
+            <div class="form-step" id="step-category">
+                <div class="step-header">
+                    <div class="step-title">Выберите категорию</div>
+                    <div class="step-counter">Шаг 1 из 3</div>
+                </div>
+                
+                <div class="categories-grid" id="categories-grid">
+                    <!-- Категории будут загружены с сервера -->
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-outline" onclick="goToStep(2)" id="next-step-1" disabled>
+                        Далее
+                        <i class="fa fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Шаг 2: Основная информация -->
+            <div class="form-step" id="step-info" style="display: none;">
+                <div class="step-header">
+                    <div class="step-title">Заголовок и цена</div>
+                    <div class="step-counter">Шаг 2 из 3</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Заголовок объявления</label>
+                    <input type="text" class="form-input" id="ad-title" placeholder="Например: Игровой аккаунт PUBG Mobile с редкими скинами" maxlength="73">
+                    <div class="char-counter" id="title-counter">73 символов осталось</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Описание</label>
+                    <textarea class="form-textarea" id="ad-description" placeholder="Опишите ваш игровой аккаунт подробно..."></textarea>
+                    <div class="char-counter" id="description-counter">500 символов осталось</div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Цена</label>
+                    <div class="price-container">
+                        <input type="number" class="form-input price-input" id="ad-price" placeholder="2500">
+                        <div class="currency">₽</div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Местоположение</label>
+                    <input type="text" class="form-input" id="ad-location" placeholder="Город">
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-outline" onclick="goToStep(1)">
+                        <i class="fa fa-arrow-left"></i>
+                        Назад
+                    </button>
+                    <button class="btn btn-primary" onclick="goToStep(3)" id="next-step-2" disabled>
+                        Далее
+                        <i class="fa fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Шаг 3: Фотографии -->
+            <div class="form-step" id="step-photos" style="display: none;">
+                <div class="step-header">
+                    <div class="step-title">Добавить фотографии</div>
+                    <div class="step-counter">Шаг 3 из 3</div>
+                </div>
+                
+                <div class="form-group">
+                    <p style="color: var(--gray-light); margin-bottom: 15px; font-size: 14px;">
+                        Загрузите как можно больше фотографий. Это даст вашим объявлениям больше просмотров и откликов!
+                    </p>
+                    
+                    <div class="photos-container" id="photos-container">
+                        <div class="photo-upload" onclick="document.getElementById('photo-upload').click()">
+                            <i class="fa fa-camera"></i>
+                            <span>Добавить фото</span>
+                        </div>
+                        <!-- Остальные места для фото будут добавлены динамически -->
+                    </div>
+                    
+                    <input type="file" id="photo-upload" accept="image/*" style="display: none;" multiple>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-outline" onclick="goToStep(2)">
+                        <i class="fa fa-arrow-left"></i>
+                        Назад
+                    </button>
+                    <button class="btn btn-primary" onclick="showPreview()" id="preview-btn">
+                        Показать предпросмотр
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Предпросмотр -->
+            <div class="preview-container" id="preview-container" style="display: none;">
+                <div class="preview-title">Предпросмотр объявления</div>
+                
+                <div class="preview-ad" id="preview-ad">
+                    <!-- Предпросмотр будет сгенерирован здесь -->
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="btn btn-outline" onclick="goToStep(3)">
+                        <i class="fa fa-edit"></i>
+                        Редактировать
+                    </button>
+                    <button class="btn btn-primary" onclick="publishAd()" id="publish-btn">
+                        <i class="fa fa-paper-plane"></i>
+                        Опубликовать
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bottom-nav">
+        <a href="index.html" class="nav-btn">
+            <i class="fa fa-home"></i>
+            <span>Главная</span>
+        </a>
+        <a href="favorites.html" class="nav-btn">
+            <i class="fa fa-heart"></i>
+            <span>Избранное</span>
+        </a>
+        <a href="add-ad.html" class="nav-btn active">
+            <i class="fa fa-plus"></i>
+            <span>Добавить</span>
+        </a>
+        <a href="messages.html" class="nav-btn">
+            <i class="fa fa-comment"></i>
+            <span>Чаты</span>
+        </a>
+        <a href="profile.html" class="nav-btn">
+            <i class="fa fa-user"></i>
+            <span>Профиль</span>
+        </a>
+    </div>
+
+    <script>
+        // API базовый URL
+        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
+        
+        // Данные формы
+        let formData = {
+            category_id: null,
+            title: '',
+            description: '',
+            price: '',
+            location: '',
+            photos: []
+        };
+        
+        let categories = [];
+
+        // Функция для загрузки категорий
+        async function loadCategories() {
+            try {
+                const response = await fetch(`${API_BASE}/categories`);
+                if (!response.ok) throw new Error('Failed to load categories');
+                
+                categories = await response.json();
+                displayCategories();
+                
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                // Загружаем дефолтные категории игр
+                loadDefaultCategories();
+            }
+        }
+        
+        // Функция для загрузки дефолтных категорий игр
+        function loadDefaultCategories() {
+            categories = [
+                { id: 1, name: 'PUBG Mobile', icon: 'fa-mobile' },
+                { id: 2, name: 'Free Fire', icon: 'fa-gamepad' },
+                { id: 3, name: 'World of Tanks Blitz', icon: 'fa-tank' },
+                { id: 4, name: 'Call of Duty Mobile', icon: 'fa-crosshairs' },
+                { id: 5, name: 'Genshin Impact', icon: 'fa-magic' },
+                { id: 6, name: 'Mobile Legends', icon: 'fa-users' },
+                { id: 7, name: 'Clash of Clans', icon: 'fa-fort-awesome' },
+                { id: 8, name: 'Clash Royale', icon: 'fa-crown' },
+                { id: 9, name: 'Brawl Stars', icon: 'fa-star' },
+                { id: 10, name: 'Roblox', icon: 'fa-cube' }
+            ];
+            displayCategories();
+        }
+        
+        // Функция для отображения категорий
+        function displayCategories() {
+            const categoriesGrid = document.getElementById('categories-grid');
+            categoriesGrid.innerHTML = '';
+            
+            categories.forEach(category => {
+                const categoryElement = document.createElement('div');
+                categoryElement.className = 'category-option';
+                categoryElement.innerHTML = `
+                    <div class="category-icon">
+                        <i class="fa ${category.icon || 'fa-gamepad'}"></i>
+                    </div>
+                    <div class="category-name">${category.name}</div>
+                `;
+                
+                categoryElement.addEventListener('click', () => {
+                    selectCategory(category.id, categoryElement);
+                });
+                
+                categoriesGrid.appendChild(categoryElement);
+            });
+        }
+        
+        // Функция для выбора категории
+        function selectCategory(categoryId, element) {
+            // Снимаем выделение со всех категорий
+            document.querySelectorAll('.category-option').forEach(el => {
+                el.classList.remove('selected');
+            });
+            
+            // Выделяем выбранную категорию
+            element.classList.add('selected');
+            formData.category_id = categoryId;
+            
+            // Активируем кнопку "Далее"
+            document.getElementById('next-step-1').disabled = false;
+        }
+        
+        // Функция для перехода между шагами
+        function goToStep(step) {
+            // Скрываем все шаги
+            document.getElementById('step-category').style.display = 'none';
+            document.getElementById('step-info').style.display = 'none';
+            document.getElementById('step-photos').style.display = 'none';
+            document.getElementById('preview-container').style.display = 'none';
+            
+            // Показываем выбранный шаг
+            if (step === 1) {
+                document.getElementById('step-category').style.display = 'block';
+            } else if (step === 2) {
+                document.getElementById('step-info').style.display = 'block';
+                validateStep2();
+            } else if (step === 3) {
+                document.getElementById('step-photos').style.display = 'block';
+                setupPhotoUpload();
+            }
+        }
+        
+        // Функция для валидации шага 2
+        function validateStep2() {
+            const title = document.getElementById('ad-title').value.trim();
+            const price = document.getElementById('ad-price').value.trim();
+            const nextButton = document.getElementById('next-step-2');
+            
+            nextButton.disabled = !(title && price);
+        }
+        
+        // Функция для настройки загрузки фото
+        function setupPhotoUpload() {
+            const photoUpload = document.getElementById('photo-upload');
+            const photosContainer = document.getElementById('photos-container');
+            
+            // Очищаем контейнер, оставляя только кнопку загрузки
+            photosContainer.innerHTML = `
+                <div class="photo-upload" onclick="document.getElementById('photo-upload').click()">
+                    <i class="fa fa-camera"></i>
+                    <span>Добавить фото</span>
+                </div>
+            `;
+            
+            // Обработчик загрузки фото
+            photoUpload.addEventListener('change', function(e) {
+                const files = Array.from(e.target.files);
+                
+                files.forEach(file => {
+                    if (formData.photos.length >= 3) {
+                        showNotification('Максимум 3 фотографии', 'error');
+                        return;
+                    }
+                    
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        
+                        reader.onload = function(e) {
+                            const photoData = {
+                                id: Date.now(),
+                                data: e.target.result
+                            };
+                            
+                            formData.photos.push(photoData);
+                            addPhotoPreview(photoData);
+                        };
+                        
+                        reader.readAsDataURL(file);
+                    }
+                });
+                
+                // Сбрасываем input для возможности загрузки тех же файлов снова
+                photoUpload.value = '';
+            });
+        }
+        
+        // Функция для добавления превью фото
+        function addPhotoPreview(photoData) {
+            const photosContainer = document.getElementById('photos-container');
+            
+            const photoElement = document.createElement('div');
+            photoElement.className = 'photo-preview';
+            photoElement.innerHTML = `
+                <img src="${photoData.data}" alt="Preview">
+                <div class="photo-remove" onclick="removePhoto(${photoData.id})">
+                    <i class="fa fa-times"></i>
+                </div>
+            `;
+            
+            // Вставляем перед кнопкой загрузки
+            photosContainer.insertBefore(photoElement, photosContainer.firstChild);
+            
+            // Если достигли лимита, скрываем кнопку загрузки
+            if (formData.photos.length >= 3) {
+                photosContainer.lastElementChild.style.display = 'none';
+            }
+        }
+        
+        // Функция для удаления фото
+        function removePhoto(photoId) {
+            formData.photos = formData.photos.filter(photo => photo.id !== photoId);
+            
+            // Перерисовываем превью
+            setupPhotoUpload();
+            formData.photos.forEach(photo => addPhotoPreview(photo));
+        }
+        
+        // Функция для показа предпросмотра
+        function showPreview() {
+            // Сохраняем данные формы
+            formData.title = document.getElementById('ad-title').value.trim();
+            formData.description = document.getElementById('ad-description').value.trim();
+            formData.price = document.getElementById('ad-price').value.trim();
+            formData.location = document.getElementById('ad-location').value.trim();
+            
+            // Генерируем предпросмотр
+            generatePreview();
+            
+            // Показываем предпросмотр
+            document.getElementById('step-photos').style.display = 'none';
+            document.getElementById('preview-container').style.display = 'block';
+        }
+        
+        // Функция для генерации предпросмотра
+        function generatePreview() {
+            const previewAd = document.getElementById('preview-ad');
+            const category = categories.find(cat => cat.id === formData.category_id);
+            
+            const priceFormatted = formData.price ? 
+                new Intl.NumberFormat('ru-RU').format(formData.price) + ' ₽' : 
+                'Цена не указана';
+            
+            const mainImage = formData.photos.length > 0 ? 
+                `<img src="${formData.photos[0].data}" alt="${formData.title}">` :
+                `<i class="fa fa-gamepad" style="font-size: 48px; opacity: 0.7;"></i>`;
+            
+            previewAd.innerHTML = `
+                <div class="preview-image">
+                    ${mainImage}
+                </div>
+                <div class="preview-content">
+                    <div class="preview-price">${priceFormatted}</div>
+                    <div class="preview-ad-title">${formData.title || 'Без названия'}</div>
+                    <div class="preview-description">${formData.description || 'Описание отсутствует'}</div>
+                    <div class="preview-meta">
+                        <span>${category ? category.name : 'Категория не выбрана'}</span>
+                        <span>${formData.location || 'Местоположение не указано'}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Функция для публикации объявления
+        async function publishAd() {
+            const publishBtn = document.getElementById('publish-btn');
+            publishBtn.disabled = true;
+            publishBtn.innerHTML = '<div class="loading-spinner" style="width: 20px; height: 20px; border-width: 2px;"></div> Публикация...';
+            
+            try {
+                const token = localStorage.getItem('token');
+                
+                // Подготавливаем данные для отправки
+                const adData = {
+                    title: formData.title,
+                    description: formData.description,
+                    price: parseFloat(formData.price) || 0,
+                    category_id: formData.category_id,
+                    location: formData.location,
+                    image_urls: formData.photos.map(photo => photo.data),
+                    is_urgent: false
+                };
+                
+                // Если пользователь не авторизован, добавляем информацию о продавце
+                if (!token) {
+                    adData.seller_info = {
+                        contact: prompt('Введите ваш номер телефона для связи:') || 'Не указан'
+                    };
+                }
+                
+                const options = {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(adData)
+                };
+                
+                // Добавляем токен авторизации, если есть
+                if (token) {
+                    options.headers['Authorization'] = `Bearer ${token}`;
+                }
+                
+                const response = await fetch(`${API_BASE}/ads`, options);
+                
+                if (!response.ok) {
+                    throw new Error('Failed to publish ad');
+                }
+                
+                const result = await response.json();
+                
+                showNotification('Объявление успешно опубликовано!');
+                
+                // Перенаправляем на главную страницу через 2 секунды
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error publishing ad:', error);
+                showNotification('Ошибка при публикации объявления', 'error');
+                publishBtn.disabled = false;
+                publishBtn.innerHTML = '<i class="fa fa-paper-plane"></i> Опубликовать';
+            }
+        }
+        
+        // Функция для показа уведомлений
+        function showNotification(message, type = 'success') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'error' ? 'var(--accent)' : 'var(--primary)'};
+                color: white;
+                padding: 12px 20px;
+                border-radius: 25px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                z-index: 10000;
+                font-weight: 500;
+                animation: slideDown 0.3s ease-out;
+            `;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideUp 0.3s ease-in';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        // Инициализация при загрузке страницы
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Initializing add ad page...');
+            
+            // Загружаем категории
+            loadCategories();
+            
+            // Настройка счетчиков символов
+            const titleInput = document.getElementById('ad-title');
+            const descriptionInput = document.getElementById('ad-description');
+            const titleCounter = document.getElementById('title-counter');
+            const descriptionCounter = document.getElementById('description-counter');
+            
+            titleInput.addEventListener('input', function() {
+                const remaining = 73 - this.value.length;
+                titleCounter.textContent = `${remaining} символов осталось`;
+                titleCounter.className = `char-counter ${remaining < 10 ? 'warning' : ''}`;
+                validateStep2();
+            });
+            
+            descriptionInput.addEventListener('input', function() {
+                const remaining = 500 - this.value.length;
+                descriptionCounter.textContent = `${remaining} символов осталось`;
+                descriptionCounter.className = `char-counter ${remaining < 50 ? 'warning' : ''}`;
+            });
+            
+            // Настройка валидации полей
+            document.getElementById('ad-price').addEventListener('input', validateStep2);
+        });
+        
+        // Добавляем стили для анимации уведомлений
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideDown {
+                from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+                to { transform: translateX(-50%) translateY(0); opacity: 1; }
+            }
+            @keyframes slideUp {
+                from { transform: translateX(-50%) translateY(0); opacity: 1; }
+                to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
