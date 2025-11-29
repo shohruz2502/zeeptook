@@ -63,145 +63,19 @@ async function testDatabaseConnection() {
     }
 }
 
-// Initialize database tables
-async function initializeDatabase() {
-    try {
-        // Users table with Google OAuth support
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                username VARCHAR(50) UNIQUE NOT NULL,
-                email VARCHAR(100) UNIQUE NOT NULL,
-                password VARCHAR(255),
-                full_name VARCHAR(100),
-                phone VARCHAR(20),
-                birth_year INTEGER,
-                avatar_url VARCHAR(255),
-                google_id VARCHAR(100) UNIQUE,
-                rating DECIMAL(3,2) DEFAULT 5.0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
+// Utility function to format time ago
+function formatTimeAgo(date) {
+    const now = new Date();
+    const diffMs = now - new Date(date);
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
 
-        // Categories table
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS categories (
-                id SERIAL PRIMARY KEY,
-                name VARCHAR(50) NOT NULL,
-                icon VARCHAR(50),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-
-        // Ads table with seller_info for anonymous users
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS ads (
-                id SERIAL PRIMARY KEY,
-                title VARCHAR(200) NOT NULL,
-                description TEXT,
-                price DECIMAL(12,2),
-                category_id INTEGER REFERENCES categories(id),
-                user_id INTEGER REFERENCES users(id),
-                location VARCHAR(100),
-                image_urls TEXT[],
-                seller_info JSONB,
-                is_urgent BOOLEAN DEFAULT FALSE,
-                is_active BOOLEAN DEFAULT TRUE,
-                views INTEGER DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-
-        // Favorites table
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS favorites (
-                id SERIAL PRIMARY KEY,
-                user_id INTEGER REFERENCES users(id),
-                ad_id INTEGER REFERENCES ads(id),
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE(user_id, ad_id)
-            )
-        `);
-
-        // Messages table
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS messages (
-                id SERIAL PRIMARY KEY,
-                sender_id INTEGER REFERENCES users(id),
-                receiver_id INTEGER REFERENCES users(id),
-                ad_id INTEGER REFERENCES ads(id),
-                content TEXT NOT NULL,
-                is_read BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-
-        // Chats table for managing chats
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS chats (
-                id SERIAL PRIMARY KEY,
-                user1_id INTEGER REFERENCES users(id),
-                user2_id INTEGER REFERENCES users(id),
-                ad_id INTEGER REFERENCES ads(id),
-                last_message TEXT,
-                last_message_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                unread_count INTEGER DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-
-        // Insert default categories
-        const categoriesResult = await pool.query('SELECT COUNT(*) FROM categories');
-        if (parseInt(categoriesResult.rows[0].count) === 0) {
-            await pool.query(`
-                INSERT INTO categories (name, icon) VALUES 
-                ('Электроника', 'fa-laptop'),
-                ('Недвижимость', 'fa-home'),
-                ('Авто', 'fa-car'),
-                ('Работа', 'fa-briefcase'),
-                ('Услуги', 'fa-cogs'),
-                ('Мебель', 'fa-couch'),
-                ('Одежда', 'fa-tshirt'),
-                ('Спорт', 'fa-futbol-o'),
-                ('Хобби', 'fa-music'),
-                ('Животные', 'fa-paw')
-            `);
-            console.log('✅ Default categories inserted');
-        }
-
-        // Create default admin user
-        const usersResult = await pool.query('SELECT COUNT(*) FROM users WHERE username = $1', ['admin']);
-        if (parseInt(usersResult.rows[0].count) === 0) {
-            const hashedPassword = await bcrypt.hash('admin123', 10);
-            await pool.query(`
-                INSERT INTO users (username, email, password, full_name, phone) 
-                VALUES ('admin', 'admin@zeeptook.ru', $1, 'Администратор', '+79990000000')
-            `, [hashedPassword]);
-            console.log('✅ Admin user created');
-        }
-
-        // Add test ads if none exist
-        const adsResult = await pool.query('SELECT COUNT(*) FROM ads');
-        if (parseInt(adsResult.rows[0].count) === 0) {
-            await pool.query(`
-                INSERT INTO ads (title, description, price, category_id, user_id, location, image_urls, is_urgent, views) VALUES
-                ('iPhone 15 Pro 256GB', 'Новый iPhone 15 Pro в идеальном состоянии. Титан, камера 48МП, всегда включенный дисплей.', 95000.00, 1, 1, 'Москва', ARRAY['https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400'], true, 25),
-                ('Ноутбук MacBook Air M2', 'MacBook Air с чипом M2, 8GB RAM, 256GB SSD. Почти новый, использовался 2 месяца.', 120000.00, 1, 1, 'Санкт-Петербург', ARRAY['https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=400'], false, 18),
-                ('Квартира 45м² в новостройке', 'Студия в новом ЖК с отделкой. Евроремонт, современная техника, панорамные окна.', 8500000.00, 2, 1, 'Москва, ЦАО', ARRAY['https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400'], true, 42),
-                ('Toyota Camry 2020', 'Toyota Camry 2020 года, автомат, полный электропакет, кожаный салон. Один владелец, без ДТП.', 2200000.00, 3, 1, 'Москва', ARRAY['https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=400'], false, 31)
-            `);
-            console.log('✅ Test ads created');
-        }
-
-        console.log('✅ Database initialized successfully');
-    } catch (error) {
-        console.error('❌ Error initializing database:', error);
-        if (process.env.NODE_ENV !== 'production') {
-            throw error;
-        }
-    }
+    if (diffMins < 1) return 'только что';
+    if (diffMins < 60) return `${diffMins} мин назад`;
+    if (diffHours < 24) return `${diffHours} ч назад`;
+    if (diffDays < 7) return `${diffDays} дн назад`;
+    return new Date(date).toLocaleDateString('ru-RU');
 }
 
 // Authentication middleware
@@ -221,21 +95,6 @@ const authenticateToken = (req, res, next) => {
         next();
     });
 };
-
-// Utility function to format time ago
-function formatTimeAgo(date) {
-    const now = new Date();
-    const diffMs = now - new Date(date);
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return 'только что';
-    if (diffMins < 60) return `${diffMins} мин назад`;
-    if (diffHours < 24) return `${diffHours} ч назад`;
-    if (diffDays < 7) return `${diffDays} дн назад`;
-    return new Date(date).toLocaleDateString('ru-RU');
-}
 
 // Routes
 
@@ -270,6 +129,13 @@ app.get('/register', (req, res) => {
 
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+// Google Config endpoint
+app.get('/api/config/google', (req, res) => {
+    res.json({
+        googleClientId: process.env.GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID'
+    });
 });
 
 // Auth routes
@@ -1165,8 +1031,21 @@ if (process.env.NODE_ENV !== 'production') {
             process.exit(1);
         }
 
-        // Initialize database
-        await initializeDatabase();
+        // Check if tables exist and have data
+        try {
+            const usersCount = await pool.query('SELECT COUNT(*) as count FROM users');
+            const categoriesCount = await pool.query('SELECT COUNT(*) as count FROM categories');
+            const adsCount = await pool.query('SELECT COUNT(*) as count FROM ads');
+            
+            console.log('📊 Database status:');
+            console.log(`   👥 Users: ${parseInt(usersCount.rows[0].count)}`);
+            console.log(`   📂 Categories: ${parseInt(categoriesCount.rows[0].count)}`);
+            console.log(`   📢 Ads: ${parseInt(adsCount.rows[0].count)}`);
+            
+        } catch (error) {
+            console.error('❌ Error checking database tables:', error);
+            console.log('💡 Tip: Make sure all tables are created in your Neon database');
+        }
         
         app.listen(PORT, () => {
             console.log('');
@@ -1184,23 +1063,24 @@ if (process.env.NODE_ENV !== 'production') {
             console.log('   GET  /login         - Вход');
             console.log('');
             console.log('🔐 Available API endpoints:');
-            console.log('   POST /api/register          - Регистрация');
-            console.log('   POST /api/login             - Вход');
-            console.log('   POST /api/auth/google       - Google OAuth');
-            console.log('   GET  /api/ads               - Список объявлений');
-            console.log('   GET  /api/ads/:id           - Детали объявления');
-            console.log('   POST /api/ads               - Создать объявление (анонимно или с авторизацией)');
-            console.log('   GET  /api/favorites         - Избранные объявления');
-            console.log('   POST /api/favorites/:adId   - Добавить в избранное');
-            console.log('   DELETE /api/favorites/:adId - Удалить из избранного');
-            console.log('   GET  /api/categories        - Категории');
-            console.log('   GET  /api/messages/chats    - Список чатов');
-            console.log('   GET  /api/messages/chat/:id - Сообщения чата');
-            console.log('   POST /api/messages          - Отправить сообщение');
-            console.log('   GET  /api/profile           - Профиль пользователя');
-            console.log('   PUT  /api/profile           - Обновить профиль');
-            console.log('   GET  /api/debug/database    - Отладочная информация');
-            console.log('   GET  /api/health            - Проверка здоровья');
+            console.log('   GET  /api/config/google      - Google Client ID config');
+            console.log('   POST /api/register           - Регистрация');
+            console.log('   POST /api/login              - Вход');
+            console.log('   POST /api/auth/google        - Google OAuth');
+            console.log('   GET  /api/ads                - Список объявлений');
+            console.log('   GET  /api/ads/:id            - Детали объявления');
+            console.log('   POST /api/ads                - Создать объявление (анонимно или с авторизацией)');
+            console.log('   GET  /api/favorites          - Избранные объявления');
+            console.log('   POST /api/favorites/:adId    - Добавить в избранное');
+            console.log('   DELETE /api/favorites/:adId  - Удалить из избранного');
+            console.log('   GET  /api/categories         - Категории');
+            console.log('   GET  /api/messages/chats     - Список чатов');
+            console.log('   GET  /api/messages/chat/:id  - Сообщения чата');
+            console.log('   POST /api/messages           - Отправить сообщение');
+            console.log('   GET  /api/profile            - Профиль пользователя');
+            console.log('   PUT  /api/profile            - Обновить профиль');
+            console.log('   GET  /api/debug/database     - Отладочная информация');
+            console.log('   GET  /api/health             - Проверка здоровья');
             console.log('');
         });
     }
