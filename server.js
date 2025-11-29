@@ -142,7 +142,7 @@ app.get('/api/config/google', (req, res) => {
 app.post('/api/register', async (req, res) => {
     try {
         const { 
-            username, email, password, full_name, phone, birth_year, 
+            username, email, password, full_name, 
             avatar_url, google_id, auth_method = 'email' 
         } = req.body;
 
@@ -153,8 +153,8 @@ app.post('/api/register', async (req, res) => {
             return res.status(400).json({ error: 'Username and password are required for email registration' });
         }
 
-        if (!email || !full_name || !phone) {
-            return res.status(400).json({ error: 'Email, full name and phone are required' });
+        if (!email || !full_name) {
+            return res.status(400).json({ error: 'Email and full name are required' });
         }
 
         // Check if user exists
@@ -189,10 +189,10 @@ app.post('/api/register', async (req, res) => {
 
         // Create user
         const result = await pool.query(
-            `INSERT INTO users (username, email, password, full_name, phone, birth_year, avatar_url, google_id) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
-             RETURNING id, username, email, full_name, phone, birth_year, avatar_url, rating, created_at`,
-            [actualUsername, email, hashedPassword, full_name, phone, birth_year, avatar_url, google_id]
+            `INSERT INTO users (username, email, password, full_name, avatar_url, google_id) 
+             VALUES ($1, $2, $3, $4, $5, $6) 
+             RETURNING id, username, email, full_name, avatar_url, rating, created_at`,
+            [actualUsername, email, hashedPassword, full_name, avatar_url, google_id]
         );
 
         const user = result.rows[0];
@@ -208,10 +208,8 @@ app.post('/api/register', async (req, res) => {
                 username: user.username,
                 email: user.email,
                 full_name: user.full_name,
-                phone: user.phone,
-                birth_year: user.birth_year,
-                rating: user.rating,
                 avatar_url: user.avatar_url,
+                rating: user.rating,
                 created_at: user.created_at
             }
         });
@@ -273,10 +271,8 @@ app.post('/api/login', async (req, res) => {
                 username: user.username,
                 email: user.email,
                 full_name: user.full_name,
-                phone: user.phone,
-                birth_year: user.birth_year,
-                rating: user.rating,
-                avatar_url: user.avatar_url
+                avatar_url: user.avatar_url,
+                rating: user.rating
             }
         });
     } catch (error) {
@@ -346,10 +342,8 @@ app.post('/api/auth/google', async (req, res) => {
                     username: user.username,
                     email: user.email,
                     full_name: user.full_name,
-                    phone: user.phone,
-                    birth_year: user.birth_year,
-                    rating: user.rating,
-                    avatar_url: user.avatar_url
+                    avatar_url: user.avatar_url,
+                    rating: user.rating
                 }
             });
         } else {
@@ -373,7 +367,7 @@ app.post('/api/auth/google', async (req, res) => {
     }
 });
 
-// Ads routes - UPDATED FOR ANONYMOUS USERS
+// Ads routes - UPDATED FOR GAME ACCOUNTS
 app.get('/api/ads', async (req, res) => {
     try {
         const { page = 1, limit = 20, category, search } = req.query;
@@ -384,10 +378,9 @@ app.get('/api/ads', async (req, res) => {
         let query = `
             SELECT 
                 a.*,
-                COALESCE(u.username, a.seller_info->>'name') as seller_username,
-                COALESCE(u.full_name, a.seller_info->>'name') as seller_name,
-                COALESCE(u.rating, 5.0) as seller_rating,
-                COALESCE(u.phone, a.seller_info->>'phone') as seller_phone,
+                u.username as seller_username,
+                u.full_name as seller_name,
+                u.rating as seller_rating,
                 c.name as category_name,
                 c.icon as category_icon,
                 COUNT(*) OVER() as total_count
@@ -450,8 +443,7 @@ app.get('/api/ads', async (req, res) => {
                 seller: {
                     username: ad.seller_username,
                     name: ad.seller_name,
-                    rating: ad.seller_rating,
-                    phone: ad.seller_phone
+                    rating: ad.seller_rating
                 },
                 image: ad.image_urls && ad.image_urls.length > 0 ? ad.image_urls[0] : null,
                 time: formatTimeAgo(ad.created_at),
@@ -480,10 +472,9 @@ app.get('/api/ads/:id', async (req, res) => {
         const result = await pool.query(`
             SELECT 
                 a.*,
-                COALESCE(u.username, a.seller_info->>'name') as seller_username,
-                COALESCE(u.full_name, a.seller_info->>'name') as seller_name,
-                COALESCE(u.rating, 5.0) as seller_rating,
-                COALESCE(u.phone, a.seller_info->>'phone') as seller_phone,
+                u.username as seller_username,
+                u.full_name as seller_name,
+                u.rating as seller_rating,
                 u.created_at as seller_since,
                 c.name as category_name
             FROM ads a
@@ -533,7 +524,6 @@ app.get('/api/ads/:id', async (req, res) => {
                 username: ad.seller_username,
                 name: ad.seller_name,
                 rating: ad.seller_rating,
-                phone: ad.seller_phone,
                 since: formatTimeAgo(ad.seller_since)
             },
             time: formatTimeAgo(ad.created_at)
@@ -572,8 +562,8 @@ app.post('/api/ads', async (req, res) => {
 
         // For anonymous ads, validate contact info
         if (!user_id) {
-            if (!seller_info || !seller_info.phone) {
-                return res.status(400).json({ error: 'Phone number is required for anonymous ads' });
+            if (!seller_info || !seller_info.contact) {
+                return res.status(400).json({ error: 'Contact information is required for anonymous ads' });
             }
             actual_seller_info = seller_info;
         }
@@ -606,9 +596,9 @@ app.get('/api/favorites', authenticateToken, async (req, res) => {
         const result = await pool.query(`
             SELECT 
                 a.*,
-                COALESCE(u.username, a.seller_info->>'name') as seller_username,
-                COALESCE(u.full_name, a.seller_info->>'name') as seller_name,
-                COALESCE(u.rating, 5.0) as seller_rating,
+                u.username as seller_username,
+                u.full_name as seller_name,
+                u.rating as seller_rating,
                 c.name as category_name,
                 c.icon as category_icon,
                 COUNT(*) OVER() as total_count
@@ -695,7 +685,7 @@ app.delete('/api/favorites/:adId', authenticateToken, async (req, res) => {
     }
 });
 
-// Categories routes
+// Categories routes - UPDATED FOR GAMES
 app.get('/api/categories', async (req, res) => {
     try {
         const result = await pool.query(`
@@ -883,13 +873,13 @@ app.post('/api/messages/support', authenticateToken, async (req, res) => {
     }
 });
 
-// Profile routes
+// Profile routes - UPDATED FOR GAME PLATFORM
 app.get('/api/profile', authenticateToken, async (req, res) => {
     try {
         const user_id = req.user.userId;
 
         const userResult = await pool.query(`
-            SELECT id, username, email, full_name, phone, birth_year, avatar_url, rating, created_at
+            SELECT id, username, email, full_name, avatar_url, rating, created_at
             FROM users WHERE id = $1
         `, [user_id]);
 
@@ -928,14 +918,14 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
 app.put('/api/profile', authenticateToken, async (req, res) => {
     try {
         const user_id = req.user.userId;
-        const { full_name, phone, birth_year, avatar_url } = req.body;
+        const { full_name, avatar_url } = req.body;
 
         const result = await pool.query(`
             UPDATE users 
-            SET full_name = $1, phone = $2, birth_year = $3, avatar_url = $4, updated_at = CURRENT_TIMESTAMP
-            WHERE id = $5
-            RETURNING id, username, email, full_name, phone, birth_year, avatar_url, rating
-        `, [full_name, phone, birth_year, avatar_url, user_id]);
+            SET full_name = $1, avatar_url = $2, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $3
+            RETURNING id, username, email, full_name, avatar_url, rating
+        `, [full_name, avatar_url, user_id]);
 
         console.log(`✏️  Profile updated for user ${user_id}`);
 
