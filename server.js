@@ -5,8 +5,6 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
-const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 const app = express();
 
@@ -14,6 +12,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-for-development';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 // Поддержка как DATABASE_URL (для Vercel + Neon), так и отдельных переменных
 let poolConfig;
@@ -48,8 +48,8 @@ const pool = new Pool(poolConfig);
 
 // Middleware
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Test database connection
@@ -65,6 +65,7 @@ async function testDatabaseConnection() {
     }
 }
 
+// Функция для отправки в Telegram
 async function sendToTelegram(message, userInfo = null) {
     if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return false;
     
@@ -250,12 +251,6 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-app.get('/api/config/google', (req, res) => {
-    res.json({
-        googleClientId: process.env.GOOGLE_CLIENT_ID || 'not-configured'
-    });
-});
-
 app.post('/api/login', async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -397,7 +392,7 @@ app.post('/api/auth/google', async (req, res) => {
     }
 });
 
-// Ads routes - UPDATED FOR GAME ACCOUNTS
+// Ads routes - UPDATED WITH BASE64 PHOTO SUPPORT
 app.get('/api/ads', async (req, res) => {
     try {
         const { page = 1, limit = 20, category, search } = req.query;
@@ -413,7 +408,8 @@ app.get('/api/ads', async (req, res) => {
                 u.rating as seller_rating,
                 c.name as category_name,
                 c.icon as category_icon,
-                COUNT(*) OVER() as total_count
+                COUNT(*) OVER() as total_count,
+                (SELECT image_data FROM ad_photos WHERE ad_id = a.id ORDER BY display_order LIMIT 1) as main_image
             FROM ads a
             LEFT JOIN users u ON a.user_id = u.id
             LEFT JOIN categories c ON a.category_id = c.id
@@ -475,7 +471,7 @@ app.get('/api/ads', async (req, res) => {
                     name: ad.seller_name,
                     rating: ad.seller_rating
                 },
-                image: ad.image_urls && ad.image_urls.length > 0 ? ad.image_urls[0] : null,
+                image: ad.main_image || null,
                 time: formatTimeAgo(ad.created_at),
                 views: ad.views
             })),
@@ -499,13 +495,14 @@ app.get('/api/ads/:id', async (req, res) => {
             [id]
         );
 
-        const result = await pool.query(`
+        const adResult = await pool.query(`
             SELECT 
                 a.*,
                 u.username as seller_username,
                 u.full_name as seller_name,
                 u.rating as seller_rating,
                 u.created_at as seller_since,
+                u.avatar_url as seller_avatar,
                 c.name as category_name
             FROM ads a
             LEFT JOIN users u ON a.user_id = u.id
@@ -513,11 +510,19 @@ app.get('/api/ads/:id', async (req, res) => {
             WHERE a.id = $1 AND a.is_active = TRUE
         `, [id]);
 
-        if (result.rows.length === 0) {
+        if (adResult.rows.length === 0) {
             return res.status(404).json({ error: 'Ad not found' });
         }
 
-        const ad = result.rows[0];
+        const ad = adResult.rows[0];
+
+        // Get photos for this ad
+        const photosResult = await pool.query(`
+            SELECT id, image_data, display_order 
+            FROM ad_photos 
+            WHERE ad_id = $1 
+            ORDER BY display_order
+        `, [id]);
 
         // Check if favorite
         let isFavorite = false;
@@ -548,12 +553,13 @@ app.get('/api/ads/:id', async (req, res) => {
             isUrgent: ad.is_urgent,
             isFavorite: isFavorite,
             views: ad.views,
-            imageUrls: ad.image_urls || [],
+            imageUrls: photosResult.rows.map(photo => photo.image_data),
             seller: {
                 id: ad.user_id,
                 username: ad.seller_username,
                 name: ad.seller_name,
                 rating: ad.seller_rating,
+                avatar_url: ad.seller_avatar,
                 since: formatTimeAgo(ad.seller_since)
             },
             time: formatTimeAgo(ad.created_at)
@@ -564,14 +570,19 @@ app.get('/api/ads/:id', async (req, res) => {
     }
 });
 
-// UPDATED: Allow both authenticated and anonymous ad creation
+// UPDATED: Create ad with Base64 photo support
 app.post('/api/ads', async (req, res) => {
     try {
-        const { title, description, price, category_id, location, image_urls, is_urgent, seller_info } = req.body;
+        const { title, description, price, category_id, location, is_urgent, seller_info, photos = [] } = req.body;
         
         // Validation
         if (!title || !description || !category_id) {
             return res.status(400).json({ error: 'Title, description and category are required' });
+        }
+
+        // Validate photos limit
+        if (photos.length > 3) {
+            return res.status(400).json({ error: 'Maximum 3 photos allowed per ad' });
         }
 
         // Determine user_id - either from token or null for anonymous
@@ -598,20 +609,163 @@ app.post('/api/ads', async (req, res) => {
             actual_seller_info = seller_info;
         }
 
-        const result = await pool.query(`
-            INSERT INTO ads (title, description, price, category_id, user_id, location, image_urls, is_urgent, seller_info)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-            RETURNING *
-        `, [title, description, price, category_id, user_id, location, image_urls || [], is_urgent || false, actual_seller_info]);
+        // Start transaction
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
 
-        console.log('✅ Ad created:', title, user_id ? '(by user)' : '(anonymous)');
+            // Create ad
+            const adResult = await client.query(`
+                INSERT INTO ads (title, description, price, category_id, user_id, location, is_urgent, seller_info)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                RETURNING *
+            `, [title, description, price, category_id, user_id, location, is_urgent || false, actual_seller_info]);
 
-        res.json({
-            message: 'Ad created successfully',
-            ad: result.rows[0]
-        });
+            const ad = adResult.rows[0];
+
+            // Save photos as Base64
+            if (photos && photos.length > 0) {
+                for (let i = 0; i < photos.length; i++) {
+                    const photoData = photos[i];
+                    
+                    // Validate Base64 format
+                    if (!photoData.startsWith('data:image/')) {
+                        throw new Error('Invalid image format');
+                    }
+                    
+                    await client.query(`
+                        INSERT INTO ad_photos (ad_id, image_data, display_order)
+                        VALUES ($1, $2, $3)
+                    `, [ad.id, photoData, i]);
+                }
+            }
+
+            await client.query('COMMIT');
+
+            console.log('✅ Ad created:', title, user_id ? '(by user)' : '(anonymous)');
+
+            // Send notification to Telegram for support ads
+            if (user_id) {
+                try {
+                    const userResult = await pool.query(
+                        'SELECT full_name, email FROM users WHERE id = $1',
+                        [user_id]
+                    );
+                    if (userResult.rows.length > 0) {
+                        const user = userResult.rows[0];
+                        await sendToTelegram(
+                            `🎮 Новое объявление: ${title}\n💰 Цена: ${price} руб.\n📝 ${description.substring(0, 100)}...`,
+                            user
+                        );
+                    }
+                } catch (telegramError) {
+                    console.error('Telegram notification failed:', telegramError);
+                }
+            }
+
+            res.json({
+                message: 'Ad created successfully',
+                ad: {
+                    ...ad,
+                    photos: photos
+                }
+            });
+
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('❌ Create ad error:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        } finally {
+            client.release();
+        }
     } catch (error) {
         console.error('❌ Create ad error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Add photos to existing ad
+app.post('/api/ads/:id/photos', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { photos = [] } = req.body;
+        const user_id = req.user.userId;
+
+        // Check if ad exists and belongs to user
+        const adCheck = await pool.query(
+            'SELECT id FROM ads WHERE id = $1 AND user_id = $2',
+            [id, user_id]
+        );
+
+        if (adCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Ad not found or access denied' });
+        }
+
+        // Get current photo count
+        const photoCountResult = await pool.query(
+            'SELECT COUNT(*) FROM ad_photos WHERE ad_id = $1',
+            [id]
+        );
+        const currentCount = parseInt(photoCountResult.rows[0].count);
+
+        if (currentCount + photos.length > 3) {
+            return res.status(400).json({ error: 'Maximum 3 photos allowed per ad' });
+        }
+
+        // Save new photos as Base64
+        for (let i = 0; i < photos.length; i++) {
+            const photoData = photos[i];
+            
+            // Validate Base64 format
+            if (!photoData.startsWith('data:image/')) {
+                return res.status(400).json({ error: 'Invalid image format' });
+            }
+            
+            await pool.query(`
+                INSERT INTO ad_photos (ad_id, image_data, display_order)
+                VALUES ($1, $2, $3)
+            `, [id, photoData, currentCount + i]);
+        }
+
+        console.log(`📸 Added ${photos.length} photos to ad ${id}`);
+
+        res.json({
+            message: 'Photos uploaded successfully',
+            photos: photos
+        });
+    } catch (error) {
+        console.error('❌ Upload photos error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Delete photo
+app.delete('/api/ads/:id/photos/:photoId', authenticateToken, async (req, res) => {
+    try {
+        const { id, photoId } = req.params;
+        const user_id = req.user.userId;
+
+        // Check if ad exists and belongs to user
+        const adCheck = await pool.query(
+            'SELECT id FROM ads WHERE id = $1 AND user_id = $2',
+            [id, user_id]
+        );
+
+        if (adCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Ad not found or access denied' });
+        }
+
+        // Delete from database
+        await pool.query(
+            'DELETE FROM ad_photos WHERE id = $1 AND ad_id = $2',
+            [photoId, id]
+        );
+
+        console.log(`🗑️  Deleted photo ${photoId} from ad ${id}`);
+
+        res.json({ message: 'Photo deleted successfully' });
+    } catch (error) {
+        console.error('❌ Delete photo error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -631,7 +785,8 @@ app.get('/api/favorites', authenticateToken, async (req, res) => {
                 u.rating as seller_rating,
                 c.name as category_name,
                 c.icon as category_icon,
-                COUNT(*) OVER() as total_count
+                COUNT(*) OVER() as total_count,
+                (SELECT image_data FROM ad_photos WHERE ad_id = a.id ORDER BY display_order LIMIT 1) as main_image
             FROM favorites f
             JOIN ads a ON f.ad_id = a.id
             LEFT JOIN users u ON a.user_id = u.id
@@ -658,7 +813,7 @@ app.get('/api/favorites', authenticateToken, async (req, res) => {
                     name: ad.seller_name,
                     rating: ad.seller_rating
                 },
-                image: ad.image_urls && ad.image_urls.length > 0 ? ad.image_urls[0] : null,
+                image: ad.main_image || null,
                 time: formatTimeAgo(ad.created_at),
                 views: ad.views
             })),
@@ -715,7 +870,7 @@ app.delete('/api/favorites/:adId', authenticateToken, async (req, res) => {
     }
 });
 
-// Categories routes - UPDATED FOR GAMES
+// Categories routes
 app.get('/api/categories', async (req, res) => {
     try {
         const result = await pool.query(`
@@ -855,6 +1010,20 @@ app.post('/api/messages', authenticateToken, async (req, res) => {
         if (chat_id === 'support') {
             actual_receiver_id = 1; // Admin user ID
             actual_chat_id = null;
+            
+            // Send to Telegram
+            try {
+                const userResult = await pool.query(
+                    'SELECT full_name, email FROM users WHERE id = $1',
+                    [sender_id]
+                );
+                if (userResult.rows.length > 0) {
+                    const user = userResult.rows[0];
+                    await sendToTelegram(content, user);
+                }
+            } catch (telegramError) {
+                console.error('Telegram notification failed:', telegramError);
+            }
         }
 
         const result = await pool.query(`
@@ -903,7 +1072,7 @@ app.post('/api/messages/support', authenticateToken, async (req, res) => {
     }
 });
 
-// Profile routes - UPDATED FOR GAME PLATFORM
+// Profile routes
 app.get('/api/profile', authenticateToken, async (req, res) => {
     try {
         const user_id = req.user.userId;
@@ -969,6 +1138,50 @@ app.put('/api/profile', authenticateToken, async (req, res) => {
     }
 });
 
+// User's ads
+app.get('/api/profile/ads', authenticateToken, async (req, res) => {
+    try {
+        const user_id = req.user.userId;
+        const { page = 1, limit = 20 } = req.query;
+        const offset = (page - 1) * limit;
+
+        const result = await pool.query(`
+            SELECT 
+                a.*,
+                c.name as category_name,
+                (SELECT image_data FROM ad_photos WHERE ad_id = a.id ORDER BY display_order LIMIT 1) as main_image,
+                COUNT(*) OVER() as total_count
+            FROM ads a
+            LEFT JOIN categories c ON a.category_id = c.id
+            WHERE a.user_id = $1
+            ORDER BY a.created_at DESC
+            LIMIT $2 OFFSET $3
+        `, [user_id, limit, offset]);
+
+        res.json({
+            ads: result.rows.map(ad => ({
+                id: ad.id,
+                title: ad.title,
+                description: ad.description,
+                price: ad.price,
+                category: ad.category_name,
+                location: ad.location,
+                isUrgent: ad.is_urgent,
+                isActive: ad.is_active,
+                image: ad.main_image || null,
+                time: formatTimeAgo(ad.created_at),
+                views: ad.views
+            })),
+            total: result.rows[0]?.total_count || 0,
+            page: parseInt(page),
+            totalPages: Math.ceil((result.rows[0]?.total_count || 0) / limit)
+        });
+    } catch (error) {
+        console.error('❌ Get user ads error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Debug routes
 app.get('/api/debug/database', async (req, res) => {
     try {
@@ -977,6 +1190,7 @@ app.get('/api/debug/database', async (req, res) => {
         const categoriesCount = await pool.query('SELECT COUNT(*) as count FROM categories');
         const adsCount = await pool.query('SELECT COUNT(*) as count FROM ads');
         const activeAdsCount = await pool.query('SELECT COUNT(*) as count FROM ads WHERE is_active = TRUE');
+        const photosCount = await pool.query('SELECT COUNT(*) as count FROM ad_photos');
         
         // Получим несколько объявлений для примера
         const sampleAds = await pool.query(`
@@ -994,7 +1208,8 @@ app.get('/api/debug/database', async (req, res) => {
                 ads: {
                     total: parseInt(adsCount.rows[0].count),
                     active: parseInt(activeAdsCount.rows[0].count)
-                }
+                },
+                ad_photos: parseInt(photosCount.rows[0].count)
             },
             sample_ads: sampleAds.rows,
             connection_info: {
@@ -1016,6 +1231,7 @@ app.get('/api/health', async (req, res) => {
             status: 'OK', 
             database: 'connected',
             google_oauth: !!GOOGLE_CLIENT_ID,
+            telegram_bot: !!(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID),
             timestamp: new Date().toISOString()
         });
     } catch (error) {
@@ -1023,6 +1239,7 @@ app.get('/api/health', async (req, res) => {
             status: 'ERROR', 
             database: 'disconnected',
             google_oauth: !!GOOGLE_CLIENT_ID,
+            telegram_bot: !!(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID),
             timestamp: new Date().toISOString()
         });
     }
@@ -1044,7 +1261,7 @@ app.use((req, res) => {
     res.status(404).send('Page not found');
 });
 
-// Start server только в development
+// Start server
 if (process.env.NODE_ENV !== 'production') {
     async function startServer() {
         console.log('🚀 Starting Zeeptook server in development mode...');
@@ -1062,11 +1279,13 @@ if (process.env.NODE_ENV !== 'production') {
             const usersCount = await pool.query('SELECT COUNT(*) as count FROM users');
             const categoriesCount = await pool.query('SELECT COUNT(*) as count FROM categories');
             const adsCount = await pool.query('SELECT COUNT(*) as count FROM ads');
+            const photosCount = await pool.query('SELECT COUNT(*) as count FROM ad_photos');
             
             console.log('📊 Database status:');
             console.log(`   👥 Users: ${parseInt(usersCount.rows[0].count)}`);
             console.log(`   📂 Categories: ${parseInt(categoriesCount.rows[0].count)}`);
             console.log(`   📢 Ads: ${parseInt(adsCount.rows[0].count)}`);
+            console.log(`   📸 Photos: ${parseInt(photosCount.rows[0].count)}`);
             
         } catch (error) {
             console.error('❌ Error checking database tables:', error);
@@ -1077,36 +1296,6 @@ if (process.env.NODE_ENV !== 'production') {
             console.log('');
             console.log('🎉 Server started successfully!');
             console.log('📍 Running on http://localhost:' + PORT);
-            console.log('');
-            console.log('📊 Available pages:');
-            console.log('   GET  /              - Главная страница');
-            console.log('   GET  /favorites     - Избранное');
-            console.log('   GET  /ad-details    - Детали объявления');
-            console.log('   GET  /add-ad        - Добавить объявление');
-            console.log('   GET  /messages      - Сообщения');
-            console.log('   GET  /profile       - Профиль');
-            console.log('   GET  /register      - Регистрация');
-            console.log('   GET  /login         - Вход');
-            console.log('');
-            console.log('🔐 Available API endpoints:');
-            console.log('   GET  /api/config/google      - Google Client ID config');
-            console.log('   POST /api/register           - Регистрация');
-            console.log('   POST /api/login              - Вход');
-            console.log('   POST /api/auth/google        - Google OAuth');
-            console.log('   GET  /api/ads                - Список объявлений');
-            console.log('   GET  /api/ads/:id            - Детали объявления');
-            console.log('   POST /api/ads                - Создать объявление (анонимно или с авторизацией)');
-            console.log('   GET  /api/favorites          - Избранные объявления');
-            console.log('   POST /api/favorites/:adId    - Добавить в избранное');
-            console.log('   DELETE /api/favorites/:adId  - Удалить из избранного');
-            console.log('   GET  /api/categories         - Категории');
-            console.log('   GET  /api/messages/chats     - Список чатов');
-            console.log('   GET  /api/messages/chat/:id  - Сообщения чата');
-            console.log('   POST /api/messages           - Отправить сообщение');
-            console.log('   GET  /api/profile            - Профиль пользователя');
-            console.log('   PUT  /api/profile            - Обновить профиль');
-            console.log('   GET  /api/debug/database     - Отладочная информация');
-            console.log('   GET  /api/health             - Проверка здоровья');
             console.log('');
         });
     }
