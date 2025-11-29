@@ -15,26 +15,31 @@
         }
         
         :root {
-            --primary: #3498db;
-            --primary-dark: #2980b9;
-            --secondary: #2c3e50;
-            --accent: #e74c3c;
-            --google: #db4437;
-            --light: #ecf0f1;
-            --dark: #2c3e50;
-            --success: #2ecc71;
-            --warning: #f39c12;
-            --gray: #95a5a6;
-            --gray-light: #bdc3c7;
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --primary-light: #3b82f6;
+            --secondary: #0f172a;
+            --accent: #ef4444;
+            --google: #4285f4;
+            --dark: #1e293b;
+            --darker: #0f172a;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --gray-light: #cbd5e1;
+            --gray-dark: #475569;
             --white: #ffffff;
-            --shadow: 0 2px 15px rgba(0,0,0,0.1);
-            --radius: 16px;
+            --black: #000000;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 20px 40px -10px rgba(0, 0, 0, 0.4);
+            --radius: 20px;
             --radius-sm: 12px;
+            --gradient: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            --gradient-dark: linear-gradient(135deg, var(--secondary) 0%, var(--darker) 100%);
         }
         
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: var(--dark);
+            background: var(--gradient-dark);
+            color: var(--light);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -44,60 +49,79 @@
 
         .app-container {
             width: 100%;
-            max-width: 400px;
+            max-width: 440px;
         }
         
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
         
         .logo {
-            font-size: 32px;
-            font-weight: 700;
+            font-size: 42px;
+            font-weight: 800;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            margin-bottom: 10px;
+            color: var(--white);
+            margin-bottom: 15px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
         }
         
         .logo i {
-            margin-right: 10px;
-            font-size: 36px;
+            margin-right: 15px;
+            font-size: 44px;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .subtitle {
-            color: rgba(255,255,255,0.8);
+            color: var(--gray-light);
             font-size: 16px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
         }
         
         .register-card {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(30, 41, 59, 0.8);
             backdrop-filter: blur(20px);
             border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             overflow: hidden;
-            padding: 30px;
+            padding: 40px 35px;
+            position: relative;
+        }
+
+        .register-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient);
         }
         
         .card-title {
-            font-size: 24px;
+            font-size: 28px;
             font-weight: 700;
             text-align: center;
-            margin-bottom: 25px;
-            color: var(--dark);
+            margin-bottom: 30px;
+            color: var(--white);
+            letter-spacing: -0.5px;
         }
         
         /* Стили для Google кнопки */
         .google-btn {
             width: 100%;
-            padding: 15px;
-            border: 2px solid var(--gray-light);
+            padding: 16px 24px;
+            border: none;
             border-radius: var(--radius-sm);
-            background: white;
-            color: var(--dark);
+            background: linear-gradient(135deg, var(--google) 0%, #3367d6 100%);
+            color: var(--white);
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
@@ -105,38 +129,64 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            margin-bottom: 20px;
+            gap: 14px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .google-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .google-btn:hover::before {
+            left: 100%;
         }
         
         .google-btn:hover {
-            border-color: var(--google);
-            box-shadow: 0 2px 8px rgba(219, 68, 55, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(66, 133, 244, 0.4);
         }
         
         .google-btn:active {
-            transform: scale(0.98);
+            transform: translateY(0);
         }
         
         .google-icon {
-            width: 20px;
-            height: 20px;
-            background: var(--google);
+            width: 22px;
+            height: 22px;
+            background: var(--white);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 12px;
             font-weight: bold;
+            font-size: 14px;
+            color: var(--google);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .btn-text {
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
         }
         
         .divider {
             text-align: center;
-            margin: 25px 0;
+            margin: 30px 0;
             position: relative;
             color: var(--gray);
             font-size: 14px;
+            font-weight: 500;
         }
         
         .divider::before {
@@ -146,60 +196,69 @@
             left: 0;
             right: 0;
             height: 1px;
-            background: var(--gray-light);
+            background: linear-gradient(90deg, transparent, var(--gray-dark), transparent);
             z-index: 1;
         }
         
         .divider span {
-            background: white;
-            padding: 0 15px;
+            background: var(--dark);
+            padding: 0 20px;
             position: relative;
             z-index: 2;
         }
         
         /* Форма */
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
         
         .form-label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             font-size: 14px;
-            font-weight: 500;
-            color: var(--dark);
+            font-weight: 600;
+            color: var(--gray-light);
+            letter-spacing: 0.3px;
         }
         
         .form-input {
             width: 100%;
-            padding: 15px;
-            border: 2px solid var(--gray-light);
+            padding: 16px 18px;
+            border: 2px solid var(--gray-dark);
             border-radius: var(--radius-sm);
             font-size: 15px;
             transition: all 0.3s ease;
-            background: white;
+            background: rgba(15, 23, 42, 0.6);
+            color: var(--white);
+            font-weight: 500;
+        }
+        
+        .form-input::placeholder {
+            color: var(--gray);
         }
         
         .form-input:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            background: rgba(15, 23, 42, 0.8);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
         
         .phone-input {
             display: flex;
-            gap: 10px;
+            gap: 12px;
         }
         
         .phone-prefix {
-            flex: 0 0 80px;
-            padding: 15px;
-            background: var(--light);
-            border: 2px solid var(--gray-light);
+            flex: 0 0 85px;
+            padding: 16px;
+            background: var(--darker);
+            border: 2px solid var(--gray-dark);
             border-radius: var(--radius-sm);
             text-align: center;
-            font-weight: 600;
-            color: var(--dark);
+            font-weight: 700;
+            color: var(--primary-light);
+            font-size: 15px;
         }
         
         .phone-number {
@@ -208,17 +267,35 @@
         
         .btn {
             width: 100%;
-            padding: 15px;
+            padding: 18px 24px;
             border: none;
             border-radius: var(--radius-sm);
             font-size: 16px;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
         }
         
         .btn:active {
@@ -226,29 +303,43 @@
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
+            background: var(--gradient);
+            color: var(--white);
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
         }
         
         .btn:disabled {
-            background: var(--gray-light);
+            background: var(--gray-dark);
             cursor: not-allowed;
             transform: none;
+            box-shadow: none;
+        }
+        
+        .btn:disabled:hover::before {
+            left: -100%;
         }
         
         .login-link {
             text-align: center;
-            margin-top: 25px;
+            margin-top: 30px;
             color: var(--gray);
+            font-size: 15px;
         }
         
         .login-link a {
-            color: var(--primary);
+            color: var(--primary-light);
             text-decoration: none;
             font-weight: 600;
+            transition: color 0.3s ease;
         }
         
         .login-link a:hover {
+            color: var(--primary);
             text-decoration: underline;
         }
         
@@ -260,7 +351,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
             z-index: 2000;
             align-items: center;
             justify-content: center;
@@ -272,70 +364,86 @@
         }
         
         .modal-content {
-            background: white;
+            background: var(--dark);
             border-radius: var(--radius);
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
             max-height: 90vh;
             overflow-y: auto;
-            animation: slideUp 0.3s ease-out;
+            animation: slideUp 0.4s ease-out;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--gradient);
+            border-radius: var(--radius) var(--radius) 0 0;
         }
         
         .modal-header {
-            padding: 20px;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding: 25px 25px 0;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         
         .modal-title {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: 700;
-            color: var(--dark);
+            color: var(--white);
         }
         
         .modal-close {
-            background: none;
+            background: rgba(255, 255, 255, 0.1);
             border: none;
             font-size: 20px;
-            color: var(--gray);
+            color: var(--gray-light);
             cursor: pointer;
-            width: 30px;
-            height: 30px;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 50%;
+            transition: all 0.3s ease;
         }
         
-        .modal-close:active {
-            background: var(--light);
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--white);
         }
         
         .modal-body {
-            padding: 20px;
+            padding: 25px;
         }
         
         .user-info {
             text-align: center;
-            margin-bottom: 20px;
-            padding: 20px;
-            background: var(--light);
+            margin-bottom: 25px;
+            padding: 25px;
+            background: rgba(15, 23, 42, 0.6);
             border-radius: var(--radius-sm);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .user-avatar {
-            width: 60px;
-            height: 60px;
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
-            margin: 0 auto 10px;
-            background: var(--primary);
+            margin: 0 auto 15px;
+            background: var(--gradient);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 24px;
+            font-size: 28px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
         }
         
         .user-avatar img {
@@ -343,33 +451,35 @@
             height: 100%;
             border-radius: 50%;
             object-fit: cover;
+            border: 2px solid var(--white);
         }
         
         .user-name {
-            font-size: 18px;
-            font-weight: 600;
+            font-size: 20px;
+            font-weight: 700;
             margin-bottom: 5px;
+            color: var(--white);
         }
         
         .user-email {
-            font-size: 14px;
-            color: var(--gray);
+            font-size: 15px;
+            color: var(--gray-light);
         }
         
         .loading {
             text-align: center;
-            padding: 40px 20px;
+            padding: 50px 25px;
             color: var(--gray);
         }
         
         .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid var(--light);
+            width: 44px;
+            height: 44px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
             border-top: 3px solid var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
+            margin: 0 auto 20px;
         }
         
         @keyframes spin {
@@ -378,55 +488,99 @@
         }
         
         .error-message {
-            background: rgba(231, 76, 60, 0.1);
+            background: rgba(239, 68, 68, 0.1);
             color: var(--accent);
-            padding: 12px 15px;
+            padding: 14px 18px;
             border-radius: var(--radius-sm);
             margin-bottom: 20px;
             font-size: 14px;
             border-left: 4px solid var(--accent);
+            border: 1px solid rgba(239, 68, 68, 0.2);
         }
         
         .success-message {
-            background: rgba(46, 204, 113, 0.1);
-            color: var(--success);
-            padding: 12px 15px;
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+            padding: 14px 18px;
             border-radius: var(--radius-sm);
             margin-bottom: 20px;
             font-size: 14px;
-            border-left: 4px solid var(--success);
+            border-left: 4px solid #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.2);
         }
         
         /* Анимации */
         @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(40px) scale(0.95);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateY(0) scale(1);
             }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         
         /* Адаптивность */
-        @media (max-width: 360px) {
+        @media (max-width: 480px) {
             .register-card {
-                padding: 20px;
+                padding: 30px 25px;
+            }
+            
+            .app-container {
+                max-width: 100%;
             }
             
             .card-title {
-                font-size: 20px;
+                font-size: 24px;
+            }
+            
+            .logo {
+                font-size: 36px;
             }
             
             .phone-input {
                 flex-direction: column;
-                gap: 10px;
+                gap: 12px;
             }
             
             .phone-prefix {
                 flex: none;
+                width: 100%;
             }
+        }
+
+        @media (max-width: 360px) {
+            .register-card {
+                padding: 25px 20px;
+            }
+            
+            .card-title {
+                font-size: 22px;
+            }
+        }
+
+        /* Кастомный скроллбар */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
         }
     </style>
 </head>
@@ -461,6 +615,12 @@
                  data-logo_alignment="left"
                  data-width="100%">
             </div>
+
+            <!-- Кастомная Google кнопка как fallback -->
+            <button class="google-btn" onclick="triggerGoogleSignIn()">
+                <div class="google-icon">G</div>
+                <span class="btn-text">Продолжить с Google</span>
+            </button>
             
             <div class="divider">
                 <span>или через email</span>
@@ -491,7 +651,7 @@
                                pattern="[0-9]{2} [0-9]{3} [0-9]{2} [0-9]{2}"
                                title="Формат: 90 123 45 67">
                     </div>
-                    <small style="color: var(--gray); font-size: 12px; margin-top: 5px; display: block;">
+                    <small style="color: var(--gray); font-size: 12px; margin-top: 8px; display: block;">
                         Формат: 90 123 45 67
                     </small>
                 </div>
@@ -571,23 +731,50 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:3000/api';
+        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
         let googleUserData = null;
 
-        // Инициализация Google Sign-In
-        function initializeGoogleSignIn() {
-            // В реальном приложении замените на ваш Google Client ID
-            const script = document.createElement('script');
-            script.src = 'https://accounts.google.com/gsi/client';
-            script.async = true;
-            script.defer = true;
-            document.head.appendChild(script);
+        // Функция для триггера Google Sign-In
+        function triggerGoogleSignIn() {
+            // Имитируем клик по официальной кнопке Google
+            const googleButton = document.querySelector('.g_id_signin');
+            if (googleButton) {
+                googleButton.click();
+            } else {
+                showNotification('Google Sign-In не настроен', 'error');
+            }
+        }
+
+        // Загрузка конфигурации Google
+        async function loadGoogleConfig() {
+            try {
+                const response = await fetch(`${API_BASE}/config/google`);
+                const config = await response.json();
+                
+                if (config.googleClientId && config.googleClientId !== 'YOUR_GOOGLE_CLIENT_ID') {
+                    // Динамически обновляем Client ID
+                    const googleScript = document.createElement('script');
+                    googleScript.innerHTML = `
+                        window.google.accounts.id.initialize({
+                            client_id: '${config.googleClientId}',
+                            callback: handleGoogleSignIn,
+                            context: 'signup'
+                        });
+                    `;
+                    document.head.appendChild(googleScript);
+                }
+            } catch (error) {
+                console.log('Google config not available, using fallback');
+            }
         }
 
         // Обработка входа через Google
         async function handleGoogleSignIn(response) {
             try {
                 console.log('Google Sign-In response:', response);
+                
+                // Показываем загрузку
+                showNotification('Проверка данных Google...', 'success');
                 
                 // Отправляем credential на сервер для проверки
                 const serverResponse = await fetch(`${API_BASE}/auth/google`, {
@@ -667,7 +854,7 @@
             email.textContent = googleUserData.email;
             
             if (googleUserData.avatar_url) {
-                avatar.innerHTML = `<img src="${googleUserData.avatar_url}" alt="Avatar">`;
+                avatar.innerHTML = `<img src="${googleUserData.avatar_url}" alt="Avatar" onerror="this.style.display='none'; this.previousElementSibling.style.display='flex';">`;
             }
             
             document.getElementById('google-user-modal').classList.add('active');
@@ -832,30 +1019,33 @@
             const notification = document.createElement('div');
             notification.style.cssText = `
                 position: fixed;
-                top: 20px;
+                top: 30px;
                 left: 50%;
                 transform: translateX(-50%);
-                background: ${type === 'error' ? 'var(--accent)' : 'var(--success)'};
+                background: ${type === 'error' ? 'var(--accent)' : 'var(--primary)'};
                 color: white;
-                padding: 12px 20px;
+                padding: 14px 24px;
                 border-radius: 25px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                box-shadow: var(--shadow);
                 z-index: 10000;
-                font-weight: 500;
-                animation: slideDown 0.3s ease-out;
+                font-weight: 600;
+                font-size: 14px;
+                animation: slideDown 0.4s ease-out;
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255,255,255,0.1);
             `;
             notification.textContent = message;
             
             document.body.appendChild(notification);
             
             setTimeout(() => {
-                notification.style.animation = 'slideUp 0.3s ease-in';
+                notification.style.animation = 'slideUp 0.4s ease-in';
                 setTimeout(() => {
                     if (notification.parentNode) {
                         notification.parentNode.removeChild(notification);
                     }
-                }, 300);
-            }, 3000);
+                }, 400);
+            }, 4000);
         }
 
         // Добавляем стили для анимации уведомлений
@@ -874,7 +1064,7 @@
 
         // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
-            initializeGoogleSignIn();
+            loadGoogleConfig();
             
             // Обработчики форм
             document.getElementById('register-form').addEventListener('submit', handleEmailRegistration);
