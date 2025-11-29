@@ -222,6 +222,12 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
+app.get('/api/config/google', (req, res) => {
+    res.json({
+        googleClientId: process.env.GOOGLE_CLIENT_ID || 'not-configured'
+    });
+});
+
 app.post('/api/login', async (req, res) => {
     try {
         const { username, password } = req.body;
