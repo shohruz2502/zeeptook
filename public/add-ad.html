@@ -909,14 +909,14 @@
                 
                 // Подготавливаем данные для отправки
                 const adData = {
-                    title: formData.title,
-                    description: formData.description,
-                    price: parseFloat(formData.price) || 0,
-                    category_id: formData.category_id,
-                    location: formData.location,
-                    image_urls: formData.photos.map(photo => photo.data),
-                    is_urgent: false
-                };
+    title: formData.title,
+    description: formData.description,
+    price: parseFloat(formData.price) || 0,
+    category_id: formData.category_id,
+    location: formData.location,
+    is_urgent: false,
+    photos: formData.photos.map(photo => photo.data) // Отправляем Base64 данные
+};
                 
                 // Если пользователь не авторизован, добавляем информацию о продавце
                 if (!token) {
