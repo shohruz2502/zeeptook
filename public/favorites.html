@@ -10,42 +10,45 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
         
         :root {
-            --primary: #3498db;
-            --primary-dark: #2980b9;
-            --secondary: #2c3e50;
-            --accent: #e74c3c;
-            --light: #ecf0f1;
-            --dark: #2c3e50;
-            --success: #2ecc71;
-            --warning: #f39c12;
-            --gray: #95a5a6;
-            --gray-light: #bdc3c7;
+            --primary: #00f2fe;
+            --primary-dark: #4facfe;
+            --secondary: #0f172a;
+            --accent: #ff6b6b;
+            --google: #4285f4;
+            --dark: #1e293b;
+            --darker: #0f172a;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --gray-light: #cbd5e1;
             --white: #ffffff;
-            --shadow: 0 2px 15px rgba(0,0,0,0.1);
+            --gradient: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            --gradient-dark: linear-gradient(135deg, var(--secondary) 0%, #1e3a8a 100%);
+            --shadow: 0 8px 32px rgba(0, 242, 254, 0.15);
             --radius: 16px;
             --radius-sm: 12px;
         }
         
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: var(--dark);
+            background: var(--gradient-dark);
+            color: var(--white);
             min-height: 100vh;
             padding-bottom: 80px;
         }
 
         .app-container {
+            width: 100%;
             max-width: 100%;
             margin: 0 auto;
         }
         
         .header {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(30, 41, 59, 0.9);
             backdrop-filter: blur(20px);
-            color: var(--secondary);
+            color: var(--white);
             padding: 15px 20px;
             display: flex;
             justify-content: space-between;
@@ -54,7 +57,7 @@
             position: sticky;
             top: 0;
             z-index: 1000;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
+            border-bottom: 1px solid rgba(0, 242, 254, 0.1);
         }
         
         .header-left {
@@ -77,7 +80,7 @@
         }
         
         .back-btn:active {
-            background: var(--light);
+            background: rgba(0, 242, 254, 0.1);
             transform: scale(0.9);
         }
         
@@ -86,14 +89,15 @@
             font-weight: 700;
             display: flex;
             align-items: center;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--white);
         }
         
         .logo i {
             margin-right: 8px;
             font-size: 22px;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         
         .main-content {
@@ -103,18 +107,18 @@
         .page-title {
             font-size: 24px;
             font-weight: 700;
-            color: white;
+            color: var(--white);
             margin-bottom: 20px;
             text-align: center;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            text-shadow: 0 2px 4px rgba(0, 242, 254, 0.3);
         }
         
         .content-section {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(30, 41, 59, 0.9);
             backdrop-filter: blur(20px);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(0, 242, 254, 0.1);
             overflow: hidden;
             min-height: 300px;
         }
@@ -124,21 +128,22 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
+            border-bottom: 1px solid rgba(0, 242, 254, 0.1);
         }
         
         .section-title {
             font-size: 18px;
             font-weight: 700;
-            color: var(--secondary);
+            color: var(--white);
         }
         
         .favorites-count {
             font-size: 14px;
             color: var(--gray);
-            background: var(--light);
+            background: rgba(15, 23, 42, 0.6);
             padding: 4px 12px;
             border-radius: 12px;
+            border: 1px solid rgba(0, 242, 254, 0.1);
         }
         
         .ads-container {
@@ -148,29 +153,31 @@
         .empty-state {
             text-align: center;
             padding: 50px 20px;
-            color: var(--gray);
+            color: var(--gray-light);
         }
         
         .empty-state i {
             font-size: 48px;
-            color: var(--gray-light);
+            color: var(--gray);
             margin-bottom: 15px;
+            opacity: 0.7;
         }
         
         .empty-state h3 {
             font-size: 18px;
             margin-bottom: 10px;
-            color: var(--dark);
+            color: var(--white);
         }
         
         .empty-state p {
             font-size: 14px;
             line-height: 1.5;
             margin-bottom: 20px;
+            color: var(--gray);
         }
         
         .browse-btn {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            background: var(--gradient);
             color: white;
             border: none;
             padding: 12px 25px;
@@ -181,6 +188,7 @@
             transition: all 0.3s ease;
             text-decoration: none;
             display: inline-block;
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
         }
         
         .browse-btn:active {
@@ -188,12 +196,12 @@
         }
         
         .ad-card {
-            background: var(--white);
+            background: rgba(15, 23, 42, 0.6);
             border-radius: var(--radius-sm);
-            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+            box-shadow: 0 3px 15px rgba(0, 242, 254, 0.08);
             margin-bottom: 15px;
             transition: all 0.3s ease;
-            border: 1px solid rgba(0,0,0,0.05);
+            border: 1px solid rgba(0, 242, 254, 0.05);
             overflow: hidden;
             cursor: pointer;
         }
@@ -204,7 +212,7 @@
         
         .ad-image {
             height: 140px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: var(--gradient);
             position: relative;
             display: flex;
             align-items: center;
@@ -253,10 +261,10 @@
         
         .ad-category {
             font-size: 11px;
-            background: var(--light);
+            background: rgba(0, 242, 254, 0.1);
             padding: 4px 10px;
             border-radius: 12px;
-            color: var(--dark);
+            color: var(--primary);
             font-weight: 500;
         }
         
@@ -264,13 +272,14 @@
             color: var(--accent);
             font-size: 18px;
             transition: all 0.3s ease;
+            cursor: pointer;
         }
         
         .ad-title {
             font-size: 16px;
             font-weight: 600;
             margin-bottom: 8px;
-            color: var(--dark);
+            color: var(--white);
             line-height: 1.3;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -297,7 +306,7 @@
         
         .ad-price {
             font-weight: 700;
-            color: var(--success);
+            color: var(--primary);
             font-size: 17px;
         }
         
@@ -322,7 +331,7 @@
         .loading-spinner {
             width: 40px;
             height: 40px;
-            border: 3px solid var(--light);
+            border: 3px solid rgba(0, 242, 254, 0.2);
             border-top: 3px solid var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -339,14 +348,14 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(255, 255, 255, 0.98);
+            background: rgba(30, 41, 59, 0.98);
             backdrop-filter: blur(20px);
             display: flex;
             justify-content: space-around;
             padding: 12px 0;
-            box-shadow: 0 -2px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 -2px 20px rgba(0, 242, 254, 0.1);
             z-index: 1000;
-            border-top: 1px solid rgba(255,255,255,0.2);
+            border-top: 1px solid rgba(0, 242, 254, 0.1);
         }
         
         .nav-btn {
@@ -444,7 +453,7 @@
             
             <div class="content-section">
                 <div class="section-header">
-                    <div class="section-title">Сохраненные объявления</div>
+                    <div class="section-title">Сохраненные аккаунты</div>
                     <div class="favorites-count" id="favorites-count">0 объявлений</div>
                 </div>
                 
@@ -485,84 +494,106 @@
         // Переменные для управления избранными объявлениями
         let favoriteAds = [];
         
-        // Функция для получения избранных объявлений с сервера
-        async function fetchFavoriteAds() {
+        // API базовый URL
+        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
+        let token = localStorage.getItem('token');
+
+        // Функция для загрузки избранных объявлений
+        async function loadFavoriteAds() {
             const adsContainer = document.getElementById('ads-container');
             const favoritesCount = document.getElementById('favorites-count');
             
             try {
-                // Имитация загрузки с сервера
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                
-                // В реальном приложении здесь будет запрос к API:
-                // const response = await fetch('/api/favorites');
-                // favoriteAds = await response.json();
-                
-                // Моковые данные для демонстрации
-                favoriteAds = [
-                    {
-                        id: 2,
-                        title: "Сниму квартиру в центре",
-                        description: "Ищу 1-комнатную квартиру в центре города для долгосрочной аренды.",
-                        price: "25 000 руб./мес",
-                        category: "Недвижимость",
-                        location: "Москва",
-                        time: "5 часов назад",
-                        isUrgent: true,
-                        image: "apartment.jpg"
-                    },
-                    {
-                        id: 6,
-                        title: "Продам горный велосипед",
-                        description: "Горный велосипед, почти новый. Всего несколько поездок.",
-                        price: "18 000 руб.",
-                        category: "Спорт",
-                        location: "СПб",
-                        time: "2 дня назад",
-                        isUrgent: false,
-                        image: "bike.jpg"
-                    },
-                    {
-                        id: 9,
-                        title: "Продам MacBook Air",
-                        description: "Ноутбук в отличном состоянии, 2020 года. Батарея держит 8 часов.",
-                        price: "65 000 руб.",
-                        category: "Электроника",
-                        location: "Казань",
-                        time: "4 дня назад",
-                        isUrgent: false,
-                        image: "macbook.jpg"
-                    },
-                    {
-                        id: 15,
-                        title: "Услуги няни",
-                        description: "Присмотр за детьми от 3 лет. Опыт работы 5 лет.",
-                        price: "400 руб./час",
-                        category: "Услуги",
-                        location: "Москва",
-                        time: "Неделю назад",
-                        isUrgent: true,
-                        image: "nanny.jpg"
+                // Сначала пытаемся загрузить избранные с сервера (если авторизован)
+                let serverFavorites = [];
+                if (token) {
+                    try {
+                        const response = await fetch(`${API_BASE}/favorites`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            serverFavorites = data.ads || [];
+                        }
+                    } catch (error) {
+                        console.error('Error loading server favorites:', error);
                     }
-                ];
+                }
+                
+                // Загружаем из localStorage
+                const localFavorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+                
+                // Объединяем избранные (приоритет у серверных)
+                favoriteAds = [...serverFavorites, ...localFavorites.filter(local => 
+                    !serverFavorites.some(server => server.id === local.id)
+                )];
+                
+                // Проверяем актуальность объявлений
+                await checkAdsAvailability();
                 
                 // Обновляем счетчик
-                favoritesCount.textContent = `${favoriteAds.length} ${getPlural(favoriteAds.length, ['объявление', 'объявления', 'объявлений'])}`;
+                updateFavoritesCount();
                 
                 // Отображаем объявления
                 displayFavoriteAds();
                 
             } catch (error) {
                 console.error('Ошибка при загрузке избранных объявлений:', error);
-                adsContainer.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fa fa-exclamation-triangle"></i>
-                        <h3>Ошибка загрузки</h3>
-                        <p>Не удалось загрузить избранные объявления. Пожалуйста, проверьте подключение к интернету.</p>
-                        <button class="browse-btn" onclick="fetchFavoriteAds()">Попробовать снова</button>
-                    </div>
-                `;
+                showErrorState('Не удалось загрузить избранные объявления');
             }
+        }
+        
+        // Функция для проверки доступности объявлений
+        async function checkAdsAvailability() {
+            try {
+                // Получаем список всех ID избранных объявлений
+                const favoriteIds = favoriteAds.map(ad => ad.id);
+                
+                if (favoriteIds.length === 0) return;
+                
+                // Проверяем каждое объявление на сервере
+                const availabilityChecks = favoriteAds.map(async (ad) => {
+                    try {
+                        const response = await fetch(`${API_BASE}/ads/${ad.id}`);
+                        return response.ok;
+                    } catch (error) {
+                        return false;
+                    }
+                });
+                
+                const results = await Promise.all(availabilityChecks);
+                
+                // Фильтруем недоступные объявления
+                const availableAds = [];
+                for (let i = 0; i < favoriteAds.length; i++) {
+                    if (results[i]) {
+                        availableAds.push(favoriteAds[i]);
+                    }
+                }
+                
+                // Обновляем список избранных
+                favoriteAds = availableAds;
+                
+                // Обновляем localStorage
+                updateLocalStorage();
+                
+            } catch (error) {
+                console.error('Error checking ads availability:', error);
+            }
+        }
+        
+        // Функция для обновления localStorage
+        function updateLocalStorage() {
+            localStorage.setItem('favorites', JSON.stringify(favoriteAds));
+        }
+        
+        // Функция для обновления счетчика избранных
+        function updateFavoritesCount() {
+            const favoritesCount = document.getElementById('favorites-count');
+            favoritesCount.textContent = `${favoriteAds.length} ${getPlural(favoriteAds.length, ['объявление', 'объявления', 'объявлений'])}`;
         }
         
         // Функция для отображения избранных объявлений
@@ -574,8 +605,8 @@
                     <div class="empty-state">
                         <i class="fa fa-heart-o"></i>
                         <h3>Нет избранных объявлений</h3>
-                        <p>Сохраняйте понравившиеся объявления, чтобы не потерять их</p>
-                        <a href="index.html" class="browse-btn">Найти объявления</a>
+                        <p>Сохраняйте понравившиеся игровые аккаунты, чтобы не потерять их</p>
+                        <a href="index.html" class="browse-btn">Найти аккаунты</a>
                     </div>
                 `;
                 return;
@@ -594,28 +625,39 @@
             const adElement = document.createElement('div');
             adElement.className = 'ad-card';
             adElement.setAttribute('data-ad-id', ad.id);
+            
+            // Форматируем цену
+            const priceFormatted = ad.price ? 
+                new Intl.NumberFormat('ru-RU').format(ad.price) + ' ₽' : 
+                'Цена не указана';
+            
+            // Используем реальное изображение если есть, иначе заглушку
+            const imageHtml = ad.image ? 
+                `<img src="${ad.image}" alt="${ad.title}" style="width: 100%; height: 100%; object-fit: cover;">` :
+                `<i class="fa fa-gamepad" style="font-size: 24px; opacity: 0.7;"></i>`;
+            
             adElement.innerHTML = `
                 <div class="ad-image">
                     ${ad.isUrgent ? '<div class="ad-badge">СРОЧНО</div>' : ''}
                     <div class="favorite-badge">
                         <i class="fa fa-heart"></i>
                     </div>
-                    <i class="fa fa-camera" style="font-size: 24px; opacity: 0.7;"></i>
+                    ${imageHtml}
                 </div>
                 <div class="ad-content">
                     <div class="ad-header">
-                        <div class="ad-category">${ad.category}</div>
+                        <div class="ad-category">${ad.category || 'Игры'}</div>
                         <div class="ad-remove-favorite" onclick="removeFromFavorites(${ad.id}, event)">
                             <i class="fa fa-trash-o"></i>
                         </div>
                     </div>
-                    <div class="ad-title">${ad.title}</div>
-                    <div class="ad-description">${ad.description}</div>
+                    <div class="ad-title">${ad.title || 'Игровой аккаунт'}</div>
+                    <div class="ad-description">${ad.description || 'Описание отсутствует'}</div>
                     <div class="ad-footer">
-                        <div class="ad-price">${ad.price}</div>
+                        <div class="ad-price">${priceFormatted}</div>
                         <div class="ad-meta">
                             <i class="fa fa-map-marker"></i>
-                            <span>${ad.location}</span>
+                            <span>${ad.location || 'Не указано'}</span>
                         </div>
                     </div>
                 </div>
@@ -639,24 +681,34 @@
             }
             
             try {
-                // В реальном приложении здесь будет запрос к API:
-                // await fetch(`/api/favorites/${adId}`, { method: 'DELETE' });
-                
-                // Имитация запроса к серверу
-                await new Promise(resolve => setTimeout(resolve, 500));
+                // Удаляем с сервера (если авторизован)
+                if (token) {
+                    try {
+                        await fetch(`${API_BASE}/favorites/${adId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Error removing from server favorites:', error);
+                    }
+                }
                 
                 // Удаляем из локального массива
                 favoriteAds = favoriteAds.filter(ad => ad.id !== adId);
+                
+                // Обновляем localStorage
+                updateLocalStorage();
                 
                 // Обновляем отображение
                 displayFavoriteAds();
                 
                 // Обновляем счетчик
-                const favoritesCount = document.getElementById('favorites-count');
-                favoritesCount.textContent = `${favoriteAds.length} ${getPlural(favoriteAds.length, ['объявление', 'объявления', 'объявлений'])}`;
+                updateFavoritesCount();
                 
                 // Показываем уведомление
-                showNotification('Объявление удалено из избранного');
+                showNotification('Аккаунт удален из избранного');
                 
             } catch (error) {
                 console.error('Ошибка при удалении из избранного:', error);
@@ -666,11 +718,20 @@
         
         // Функция для открытия деталей объявления
         function openAdDetails(adId) {
-            // В реальном приложении здесь будет переход на страницу деталей
-            console.log('Открытие избранного объявления ID:', adId);
-            
-            // Передача ID через URL параметр
             window.location.href = `ad-details.html?id=${adId}&source=favorites`;
+        }
+        
+        // Функция для показа состояния ошибки
+        function showErrorState(message) {
+            const adsContainer = document.getElementById('ads-container');
+            adsContainer.innerHTML = `
+                <div class="empty-state">
+                    <i class="fa fa-exclamation-triangle"></i>
+                    <h3>Ошибка загрузки</h3>
+                    <p>${message}</p>
+                    <button class="browse-btn" onclick="loadFavoriteAds()">Попробовать снова</button>
+                </div>
+            `;
         }
         
         // Вспомогательная функция для правильного склонения слов
@@ -692,7 +753,7 @@
                 top: 20px;
                 left: 50%;
                 transform: translateX(-50%);
-                background: ${type === 'error' ? 'var(--accent)' : 'var(--success)'};
+                background: ${type === 'error' ? 'var(--accent)' : 'var(--primary)'};
                 color: white;
                 padding: 12px 20px;
                 border-radius: 25px;
@@ -732,7 +793,8 @@
         
         // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
-            fetchFavoriteAds();
+            console.log('🚀 Loading favorites page...');
+            loadFavoriteAds();
         });
     </script>
 </body>
