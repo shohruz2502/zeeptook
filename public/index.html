@@ -627,7 +627,7 @@
         
         <div class="categories-scroll" id="categories-container">
             <div class="category active" data-category="all">Все</div>
-            <!-- Игровые категории будут загружены с сервера -->
+            <!-- Категории будут загружены с сервера -->
         </div>
         
         <div class="quick-actions">
@@ -702,8 +702,8 @@
         let isLoading = false;
         let token = localStorage.getItem('token');
 
-        // API базовый URL - исправлено для работы с текущим сервером
-        const API_BASE = window.location.origin + '/api';
+        // API базовый URL
+        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
 
         // Функция для проверки подключения к БД
         async function checkDBConnection() {
@@ -751,13 +751,6 @@
                     categoryElement.setAttribute('data-category', category.name);
                     container.appendChild(categoryElement);
                 });
-                
-                // Добавляем кнопку "Ещё"
-                const moreCategory = document.createElement('div');
-                moreCategory.className = 'category category-more';
-                moreCategory.textContent = 'Ещё';
-                moreCategory.setAttribute('data-category', 'more');
-                container.appendChild(moreCategory);
                 
                 setupCategories();
                 
@@ -944,7 +937,7 @@
             const favoriteBtn = adElement.querySelector('.ad-favorite');
             favoriteBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
-                await toggleFavorite(ad.id, favoriteBtn);
+                await toggleFavorite(ad.id, favoriteBtn, ad);
             });
             
             adElement.addEventListener('click', () => {
@@ -955,37 +948,55 @@
         }
         
         // Функция для добавления/удаления из избранного
-        async function toggleFavorite(adId, favoriteBtn) {
-            if (!token) {
-                showNotification('Для добавления в избранное необходимо авторизоваться', 'error');
-                return;
+        async function toggleFavorite(adId, favoriteBtn, ad) {
+            // Сохраняем в localStorage независимо от авторизации
+            let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+            
+            if (favoriteBtn.classList.contains('active')) {
+                // Удаляем из избранного
+                favorites = favorites.filter(fav => fav.id !== adId);
+                favoriteBtn.classList.remove('active');
+                showNotification('Удалено из избранного');
+            } else {
+                // Добавляем в избранное
+                const favoriteAd = {
+                    id: ad.id,
+                    title: ad.title,
+                    description: ad.description,
+                    price: ad.price,
+                    category: ad.category,
+                    location: ad.location,
+                    isUrgent: ad.isUrgent,
+                    seller: ad.seller,
+                    image: ad.image,
+                    time: ad.time,
+                    views: ad.views
+                };
+                favorites.push(favoriteAd);
+                favoriteBtn.classList.add('active');
+                showNotification('Добавлено в избранное');
             }
             
-            try {
-                const isCurrentlyFavorite = favoriteBtn.classList.contains('active');
-                
-                const url = `${API_BASE}/favorites/${adId}`;
-                const options = {
-                    method: isCurrentlyFavorite ? 'DELETE' : 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                };
-                
-                const response = await fetch(url, options);
-                
-                if (response.ok) {
-                    favoriteBtn.classList.toggle('active');
-                    showNotification(
-                        isCurrentlyFavorite ? 'Удалено из избранного' : 'Добавлено в избранное'
-                    );
-                } else {
-                    throw new Error('Failed to update favorites');
+            // Сохраняем обновленный список в localStorage
+            localStorage.setItem('favorites', JSON.stringify(favorites));
+            
+            // Если пользователь авторизован, синхронизируем с сервером
+            if (token) {
+                try {
+                    const isCurrentlyFavorite = favoriteBtn.classList.contains('active');
+                    const url = `${API_BASE}/favorites/${adId}`;
+                    const options = {
+                        method: isCurrentlyFavorite ? 'POST' : 'DELETE',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    };
+                    
+                    await fetch(url, options);
+                } catch (error) {
+                    console.error('Error syncing favorites with server:', error);
                 }
-            } catch (error) {
-                console.error('Error updating favorites:', error);
-                showNotification('Ошибка при обновлении избранного', 'error');
             }
         }
         
@@ -1029,11 +1040,6 @@
             categories.forEach(category => {
                 category.addEventListener('click', function() {
                     const categoryValue = this.getAttribute('data-category');
-                    
-                    if (categoryValue === 'more') {
-                        showNotification('Открывается меню всех категорий');
-                        return;
-                    }
                     
                     categories.forEach(c => c.classList.remove('active'));
                     this.classList.add('active');
@@ -1088,6 +1094,20 @@
                     }
                 }, 300);
             }, 3000);
+        }
+        
+        // Восстановление состояния избранных из localStorage
+        function restoreFavoritesState() {
+            const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+            const favoriteIds = favorites.map(fav => fav.id);
+            
+            // Обновляем состояние кнопок избранного
+            document.querySelectorAll('.ad-card').forEach(card => {
+                const adId = parseInt(card.querySelector('.ad-favorite').closest('.ad-card').dataset.adId);
+                if (favoriteIds.includes(adId)) {
+                    card.querySelector('.ad-favorite').classList.add('active');
+                }
+            });
         }
         
         // Добавляем стили для анимации уведомлений
