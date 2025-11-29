@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Регистрация - Zeeptook</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <style>
         * {
             margin: 0;
@@ -582,6 +581,17 @@
         ::-webkit-scrollbar-thumb:hover {
             background: var(--primary-dark);
         }
+
+        .config-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 20px;
+            font-size: 13px;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -596,28 +606,13 @@
         
         <div class="register-card">
             <h1 class="card-title">Создать аккаунт</h1>
+
+            <div id="config-warning" class="config-warning" style="display: none;">
+                ⚠️ Google Sign-In не настроен. Используйте регистрацию через email.
+            </div>
             
-            <!-- Google Sign-In Button -->
-            <div id="g_id_onload"
-                 data-client_id="YOUR_GOOGLE_CLIENT_ID"
-                 data-context="signup"
-                 data-ux_mode="popup"
-                 data-callback="handleGoogleSignIn"
-                 data-auto_prompt="false">
-            </div>
-
-            <div class="g_id_signin"
-                 data-type="standard"
-                 data-shape="rectangular"
-                 data-theme="outline"
-                 data-text="signup_with"
-                 data-size="large"
-                 data-logo_alignment="left"
-                 data-width="100%">
-            </div>
-
-            <!-- Кастомная Google кнопка как fallback -->
-            <button class="google-btn" onclick="triggerGoogleSignIn()">
+            <!-- Кастомная Google кнопка -->
+            <button class="google-btn" onclick="handleGoogleSignIn()">
                 <div class="google-icon">G</div>
                 <span class="btn-text">Продолжить с Google</span>
             </button>
@@ -734,49 +729,43 @@
         const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
         let googleUserData = null;
 
-        // Функция для триггера Google Sign-In
-        function triggerGoogleSignIn() {
-            // Имитируем клик по официальной кнопке Google
-            const googleButton = document.querySelector('.g_id_signin');
-            if (googleButton) {
-                googleButton.click();
-            } else {
-                showNotification('Google Sign-In не настроен', 'error');
-            }
-        }
-
-        // Загрузка конфигурации Google
-        async function loadGoogleConfig() {
+        // Упрощенная функция для Google Sign-In
+        async function handleGoogleSignIn() {
+            showNotification('Google Sign-In временно недоступен. Используйте регистрацию через email.', 'error');
+            return;
+            
+            // Этот код будет работать когда Google Client ID настроен
+            /*
             try {
-                const response = await fetch(`${API_BASE}/config/google`);
-                const config = await response.json();
+                // Загружаем Google Client ID с сервера
+                const configResponse = await fetch(`${API_BASE}/config/google`);
+                const config = await configResponse.json();
                 
-                if (config.googleClientId && config.googleClientId !== 'YOUR_GOOGLE_CLIENT_ID') {
-                    // Динамически обновляем Client ID
-                    const googleScript = document.createElement('script');
-                    googleScript.innerHTML = `
-                        window.google.accounts.id.initialize({
-                            client_id: '${config.googleClientId}',
-                            callback: handleGoogleSignIn,
-                            context: 'signup'
-                        });
-                    `;
-                    document.head.appendChild(googleScript);
+                if (!config.googleClientId || config.googleClientId === 'YOUR_GOOGLE_CLIENT_ID') {
+                    showNotification('Google Sign-In не настроен. Используйте регистрацию через email.', 'error');
+                    return;
                 }
+
+                // Инициализируем Google Sign-In
+                google.accounts.id.initialize({
+                    client_id: config.googleClientId,
+                    callback: handleGoogleCredential
+                });
+
+                // Запрашиваем credential
+                google.accounts.id.prompt();
             } catch (error) {
-                console.log('Google config not available, using fallback');
+                console.error('Google Sign-In error:', error);
+                showNotification('Ошибка инициализации Google Sign-In', 'error');
             }
+            */
         }
 
-        // Обработка входа через Google
-        async function handleGoogleSignIn(response) {
+        // Обработка credential от Google
+        async function handleGoogleCredential(response) {
             try {
-                console.log('Google Sign-In response:', response);
-                
-                // Показываем загрузку
                 showNotification('Проверка данных Google...', 'success');
                 
-                // Отправляем credential на сервер для проверки
                 const serverResponse = await fetch(`${API_BASE}/auth/google`, {
                     method: 'POST',
                     headers: {
@@ -791,7 +780,6 @@
                 
                 if (serverResponse.ok) {
                     if (data.exists) {
-                        // Пользователь уже существует - логиним
                         localStorage.setItem('token', data.token);
                         localStorage.setItem('user', JSON.stringify(data.user));
                         showNotification('Успешный вход через Google!', 'success');
@@ -799,53 +787,37 @@
                             window.location.href = 'profile.html';
                         }, 1000);
                     } else {
-                        // Новый пользователь - показываем форму для доп. информации
                         googleUserData = data.user;
                         showGoogleUserModal();
                     }
                 } else {
                     throw new Error(data.error || 'Google authentication failed');
                 }
-                
             } catch (error) {
-                console.error('Google Sign-In error:', error);
+                console.error('Google auth error:', error);
                 showNotification('Ошибка авторизации через Google', 'error');
-                
-                // Fallback: используем данные из response.credential напрямую
-                const payload = decodeJWT(response.credential);
-                if (payload) {
-                    googleUserData = {
-                        google_id: payload.sub,
-                        email: payload.email,
-                        full_name: payload.name,
-                        avatar_url: payload.picture,
-                        email_verified: payload.email_verified
-                    };
-                    showGoogleUserModal();
-                }
             }
         }
 
-        // Декодирование JWT токена
-        function decodeJWT(token) {
+        // Проверка конфигурации при загрузке
+        async function checkGoogleConfig() {
             try {
-                const base64Url = token.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-                return JSON.parse(jsonPayload);
+                const response = await fetch(`${API_BASE}/config/google`);
+                const config = await response.json();
+                
+                if (!config.googleClientId || config.googleClientId === 'YOUR_GOOGLE_CLIENT_ID') {
+                    document.getElementById('config-warning').style.display = 'block';
+                }
             } catch (error) {
-                console.error('JWT decode error:', error);
-                return null;
+                console.log('Google config check failed:', error);
+                document.getElementById('config-warning').style.display = 'block';
             }
         }
 
-        // Показать модальное окно для Google пользователя
+        // Остальные функции остаются без изменений
         function showGoogleUserModal() {
             if (!googleUserData) return;
             
-            // Заполняем информацию о пользователе
             const avatar = document.getElementById('google-user-avatar');
             const name = document.getElementById('google-user-name');
             const email = document.getElementById('google-user-email');
@@ -854,19 +826,17 @@
             email.textContent = googleUserData.email;
             
             if (googleUserData.avatar_url) {
-                avatar.innerHTML = `<img src="${googleUserData.avatar_url}" alt="Avatar" onerror="this.style.display='none'; this.previousElementSibling.style.display='flex';">`;
+                avatar.innerHTML = `<img src="${googleUserData.avatar_url}" alt="Avatar">`;
             }
             
             document.getElementById('google-user-modal').classList.add('active');
         }
 
-        // Закрыть модальное окно Google
         function closeGoogleModal() {
             document.getElementById('google-user-modal').classList.remove('active');
             googleUserData = null;
         }
 
-        // Регистрация Google пользователя
         async function registerGoogleUser(event) {
             event.preventDefault();
             
@@ -893,7 +863,6 @@
                         phone: fullPhone,
                         birth_year: parseInt(birthYear),
                         avatar_url: googleUserData.avatar_url,
-                        email_verified: googleUserData.email_verified,
                         auth_method: 'google'
                     })
                 });
@@ -904,7 +873,6 @@
                     throw new Error(data.error || 'Registration failed');
                 }
                 
-                // Сохраняем токен и перенаправляем
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('user', JSON.stringify(data.user));
                 
@@ -921,7 +889,6 @@
             }
         }
 
-        // Обычная регистрация через email
         async function handleEmailRegistration(event) {
             event.preventDefault();
             
@@ -932,7 +899,6 @@
             const birthYear = document.getElementById('birth_year').value;
             const password = document.getElementById('password').value;
             
-            // Валидация
             if (!username || !email || !fullName || !phone || !birthYear || !password) {
                 showNotification('Заполните все обязательные поля', 'error');
                 return;
@@ -974,7 +940,6 @@
                     throw new Error(data.error || 'Registration failed');
                 }
                 
-                // Сохраняем токен и перенаправляем
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('user', JSON.stringify(data.user));
                 
@@ -990,12 +955,8 @@
             }
         }
 
-        // Форматирование телефона
         function formatPhone(input) {
-            // Удаляем все нецифровые символы
             let numbers = input.value.replace(/\D/g, '');
-            
-            // Форматируем: XX XXX XX XX
             let formatted = '';
             if (numbers.length > 0) {
                 formatted = numbers.substring(0, 2);
@@ -1009,13 +970,10 @@
             if (numbers.length > 7) {
                 formatted += ' ' + numbers.substring(7, 9);
             }
-            
             input.value = formatted;
         }
 
-        // Показать уведомление
         function showNotification(message, type = 'success') {
-            // Создаем элемент уведомления
             const notification = document.createElement('div');
             notification.style.cssText = `
                 position: fixed;
@@ -1048,29 +1006,13 @@
             }, 4000);
         }
 
-        // Добавляем стили для анимации уведомлений
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideDown {
-                from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
-                to { transform: translateX(-50%) translateY(0); opacity: 1; }
-            }
-            @keyframes slideUp {
-                from { transform: translateX(-50%) translateY(0); opacity: 1; }
-                to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-
-        // Инициализация при загрузке страницы
+        // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
-            loadGoogleConfig();
+            checkGoogleConfig();
             
-            // Обработчики форм
             document.getElementById('register-form').addEventListener('submit', handleEmailRegistration);
             document.getElementById('google-user-form').addEventListener('submit', registerGoogleUser);
             
-            // Форматирование телефона в реальном времени
             document.getElementById('phone').addEventListener('input', function() {
                 formatPhone(this);
             });
@@ -1079,12 +1021,10 @@
                 formatPhone(this);
             });
             
-            // Автозаполнение года рождения
             const currentYear = new Date().getFullYear();
             document.getElementById('birth_year').value = currentYear - 25;
             document.getElementById('google-birth-year').value = currentYear - 25;
             
-            // Закрытие модальных окон при клике вне контента
             document.addEventListener('click', function(e) {
                 if (e.target.classList.contains('modal')) {
                     e.target.classList.remove('active');
