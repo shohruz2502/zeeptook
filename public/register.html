@@ -285,6 +285,48 @@
             text-align: center;
         }
 
+        /* Модальное окно для дополнительных данных */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        
+        .modal-content {
+            background: rgba(30, 41, 59, 0.95);
+            border-radius: var(--radius);
+            padding: 24px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(0, 242, 254, 0.2);
+        }
+        
+        .modal-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 8px;
+        }
+        
+        .modal-subtitle {
+            color: var(--gray-light);
+            font-size: 14px;
+        }
+
         /* Адаптивность для iPhone X */
         @media (max-height: 812px) {
             body {
@@ -411,9 +453,44 @@
         </div>
     </div>
 
+    <!-- Модальное окно для дополнительных данных после Google Auth -->
+    <div id="google-complete-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Завершение регистрации</h2>
+                <p class="modal-subtitle">Пожалуйста, заполните недостающие данные</p>
+            </div>
+            
+            <div id="modal-error-message" class="error-message" style="display: none;"></div>
+            
+            <form id="google-complete-form">
+                <div class="form-group">
+                    <label class="form-label">Имя пользователя *</label>
+                    <input type="text" class="form-input" id="google-username" placeholder="Придумайте username" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Год рождения *</label>
+                    <input type="number" class="form-input" id="google-birth_year" placeholder="1990" min="1900" max="2024" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Пароль *</label>
+                    <input type="password" class="form-input" id="google-password" placeholder="Не менее 6 символов" minlength="6" required>
+                </div>
+                
+                <button type="submit" class="btn btn-primary" id="google-complete-btn">
+                    <i class="fa fa-check"></i>
+                    Завершить регистрацию
+                </button>
+            </form>
+        </div>
+    </div>
+
     <script>
         const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
         let currentMode = 'login';
+        let googleUserData = null;
 
         // Проверяем, если пользователь уже авторизован
         function checkExistingAuth() {
@@ -677,8 +754,9 @@
                             window.location.href = 'profile.html';
                         }, 1000);
                     } else {
-                        // Новый пользователь - автоматически регистрируем
-                        await completeGoogleRegistration(data.user);
+                        // Новый пользователь - показываем модальное окно для доп. данных
+                        googleUserData = data.user;
+                        showGoogleCompleteModal();
                     }
                 } else {
                     throw new Error(data.error);
@@ -690,20 +768,70 @@
             }
         }
 
-        async function completeGoogleRegistration(userData) {
+        // Показать модальное окно для завершения регистрации через Google
+        function showGoogleCompleteModal() {
+            const modal = document.getElementById('google-complete-modal');
+            modal.style.display = 'flex';
+            
+            // Заполняем поле имени пользователя на основе email
+            const email = googleUserData.email;
+            const usernameBase = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '');
+            document.getElementById('google-username').value = usernameBase;
+            
+            // Устанавливаем год рождения по умолчанию
+            const currentYear = new Date().getFullYear();
+            document.getElementById('google-birth_year').value = currentYear - 25;
+        }
+
+        // Завершение регистрации через Google
+        async function handleGoogleComplete(event) {
+            event.preventDefault();
+            
+            const submitBtn = document.getElementById('google-complete-btn');
+            const errorDiv = document.getElementById('modal-error-message');
+            
+            // Скрываем предыдущие сообщения
+            errorDiv.style.display = 'none';
+            
+            const username = document.getElementById('google-username').value.trim();
+            const birthYear = document.getElementById('google-birth_year').value;
+            const password = document.getElementById('google-password').value;
+            
+            // Валидация
+            if (!username || !birthYear || !password) {
+                showModalError('Заполните все обязательные поля');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showModalError('Пароль должен быть не менее 6 символов');
+                return;
+            }
+            
+            const currentYear = new Date().getFullYear();
+            if (birthYear < 1900 || birthYear > currentYear) {
+                showModalError('Укажите корректный год рождения');
+                return;
+            }
+            
             try {
-                // Автоматически создаем пользователя с данными из Google
+                // Показываем загрузку
+                submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> Регистрация...';
+                submitBtn.disabled = true;
+                
                 const response = await fetch(`${API_BASE}/register`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        google_id: userData.google_id,
-                        email: userData.email,
-                        full_name: userData.full_name,
-                        birth_year: new Date().getFullYear() - 25, // Автоматически ставим возраст 25 лет
-                        avatar_url: userData.avatar_url,
+                        google_id: googleUserData.google_id,
+                        email: googleUserData.email,
+                        full_name: googleUserData.full_name,
+                        username: username,
+                        password: password,
+                        birth_year: parseInt(birthYear),
+                        avatar_url: googleUserData.avatar_url,
                         auth_method: 'google'
                     })
                 });
@@ -714,9 +842,14 @@
                     throw new Error(data.error);
                 }
                 
+                // Сохраняем токен и пользователя
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('user', JSON.stringify(data.user));
                 
+                // Скрываем модальное окно
+                document.getElementById('google-complete-modal').style.display = 'none';
+                
+                // Показываем успех и редиректим
                 showSuccess('Регистрация завершена! Перенаправляем...');
                 
                 setTimeout(() => {
@@ -724,7 +857,12 @@
                 }, 1500);
                 
             } catch (error) {
-                showError(error.message);
+                console.error('Google complete registration error:', error);
+                showModalError(error.message);
+                
+                // Восстанавливаем кнопку
+                submitBtn.innerHTML = '<i class="fa fa-check"></i> Завершить регистрацию';
+                submitBtn.disabled = false;
             }
         }
 
@@ -746,6 +884,12 @@
             successDiv.style.display = 'block';
         }
 
+        function showModalError(message) {
+            const errorDiv = document.getElementById('modal-error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
         // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
             // Проверяем авторизацию
@@ -754,6 +898,7 @@
             // Обработчики форм
             document.getElementById('login-form').addEventListener('submit', handleLogin);
             document.getElementById('register-form').addEventListener('submit', handleRegister);
+            document.getElementById('google-complete-form').addEventListener('submit', handleGoogleComplete);
             
             // Автозаполнение года
             const currentYear = new Date().getFullYear();
@@ -766,6 +911,10 @@
             
             document.getElementById('reg-password').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') handleRegister(e);
+            });
+            
+            document.getElementById('google-password').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') handleGoogleComplete(e);
             });
         });
     </script>
