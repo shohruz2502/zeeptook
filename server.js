@@ -63,6 +63,34 @@ async function testDatabaseConnection() {
     }
 }
 
+async function sendToTelegram(message, userInfo = null) {
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return false;
+    
+    try {
+        let text = message;
+        if (userInfo) {
+            text = `👤 ${userInfo.name}\n📧 ${userInfo.email}\n💬 ${message}`;
+        }
+        
+        const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                chat_id: TELEGRAM_CHAT_ID,
+                text: text,
+                parse_mode: 'HTML'
+            })
+        });
+        
+        return response.ok;
+    } catch (error) {
+        console.error('Telegram send error:', error);
+        return false;
+    }
+}
+
 // Utility function to format time ago
 function formatTimeAgo(date) {
     const now = new Date();
