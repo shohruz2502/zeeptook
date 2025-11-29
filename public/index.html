@@ -3,49 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zeeptook - Главная</title>
+    <title>Zeeptook - Игровой маркетплейс</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
         }
         
         :root {
-            --primary: #3498db;
-            --primary-dark: #2980b9;
-            --secondary: #2c3e50;
-            --accent: #e74c3c;
-            --light: #ecf0f1;
-            --dark: #2c3e50;
-            --success: #2ecc71;
-            --warning: #f39c12;
-            --gray: #95a5a6;
-            --gray-light: #bdc3c7;
+            --primary: #00f2fe;
+            --primary-dark: #4facfe;
+            --secondary: #0f172a;
+            --accent: #ff6b6b;
+            --google: #4285f4;
+            --dark: #1e293b;
+            --darker: #0f172a;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --gray-light: #cbd5e1;
             --white: #ffffff;
-            --shadow: 0 2px 15px rgba(0,0,0,0.1);
+            --gradient: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            --gradient-dark: linear-gradient(135deg, var(--secondary) 0%, #1e3a8a 100%);
+            --shadow: 0 8px 32px rgba(0, 242, 254, 0.15);
             --radius: 16px;
             --radius-sm: 12px;
         }
         
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: var(--dark);
+            background: var(--gradient-dark);
+            color: var(--white);
             min-height: 100vh;
             padding-bottom: 80px;
         }
 
         .app-container {
+            width: 100%;
             max-width: 100%;
             margin: 0 auto;
         }
         
         .header {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(30, 41, 59, 0.9);
             backdrop-filter: blur(20px);
-            color: var(--secondary);
+            color: var(--white);
             padding: 15px 20px;
             display: flex;
             justify-content: space-between;
@@ -54,7 +57,7 @@
             position: sticky;
             top: 0;
             z-index: 1000;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
+            border-bottom: 1px solid rgba(0, 242, 254, 0.1);
         }
         
         .logo {
@@ -62,15 +65,13 @@
             font-weight: 700;
             display: flex;
             align-items: center;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: var(--white);
         }
         
         .logo i {
             margin-right: 8px;
             font-size: 22px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            background: var(--gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -79,10 +80,11 @@
             display: flex;
             align-items: center;
             font-size: 12px;
-            background: var(--light);
+            background: rgba(15, 23, 42, 0.6);
             padding: 6px 12px;
             border-radius: 20px;
             font-weight: 500;
+            border: 1px solid rgba(0, 242, 254, 0.1);
         }
         
         .status-indicator {
@@ -100,7 +102,7 @@
         }
         
         .connected {
-            background-color: var(--success);
+            background-color: var(--primary);
         }
         
         .disconnected {
@@ -118,12 +120,12 @@
         .search-box {
             display: flex;
             width: 100%;
-            border-radius: 25px;
+            border-radius: var(--radius);
             overflow: hidden;
             box-shadow: var(--shadow);
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(30, 41, 59, 0.9);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.3);
+            border: 1px solid rgba(0, 242, 254, 0.1);
         }
         
         .search-box input {
@@ -133,7 +135,7 @@
             background: transparent;
             font-size: 16px;
             outline: none;
-            color: var(--dark);
+            color: var(--white);
         }
         
         .search-box input::placeholder {
@@ -141,7 +143,7 @@
         }
         
         .search-box button {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            background: var(--gradient);
             color: white;
             border: none;
             padding: 0 20px;
@@ -170,27 +172,28 @@
         .category {
             flex: 0 0 auto;
             padding: 10px 18px;
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(30, 41, 59, 0.9);
             border-radius: 20px;
             font-size: 14px;
             font-weight: 500;
             white-space: nowrap;
             transition: all 0.3s ease;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border: 1px solid rgba(0, 242, 254, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 242, 254, 0.1);
             cursor: pointer;
+            color: var(--gray-light);
         }
         
         .category.active {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            background: var(--gradient);
             color: white;
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.4);
         }
         
         .category-more {
-            background: var(--warning);
+            background: var(--accent);
             color: white;
         }
         
@@ -202,14 +205,14 @@
         }
         
         .action-card {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(30, 41, 59, 0.9);
             backdrop-filter: blur(20px);
             border-radius: var(--radius);
             padding: 20px;
             display: flex;
             align-items: center;
             box-shadow: var(--shadow);
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(0, 242, 254, 0.1);
             transition: all 0.3s ease;
         }
         
@@ -220,7 +223,7 @@
         .action-icon {
             width: 45px;
             height: 45px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            background: var(--gradient);
             border-radius: 12px;
             display: flex;
             align-items: center;
@@ -234,6 +237,7 @@
             font-size: 15px;
             margin-bottom: 4px;
             font-weight: 600;
+            color: var(--white);
         }
         
         .action-info p {
@@ -246,12 +250,12 @@
         }
         
         .content-section {
-            background: rgba(255, 255, 255, 0.9);
+            background: rgba(30, 41, 59, 0.9);
             backdrop-filter: blur(20px);
             border-radius: var(--radius);
             margin-bottom: 20px;
             box-shadow: var(--shadow);
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(0, 242, 254, 0.1);
             overflow: hidden;
         }
         
@@ -260,13 +264,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
+            border-bottom: 1px solid rgba(0, 242, 254, 0.1);
         }
         
         .section-title {
             font-size: 18px;
             font-weight: 700;
-            color: var(--secondary);
+            color: var(--white);
         }
         
         .view-all {
@@ -281,12 +285,12 @@
         }
         
         .ad-card {
-            background: var(--white);
+            background: rgba(15, 23, 42, 0.6);
             border-radius: var(--radius-sm);
-            box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+            box-shadow: 0 3px 15px rgba(0, 242, 254, 0.08);
             margin-bottom: 15px;
             transition: all 0.3s ease;
-            border: 1px solid rgba(0,0,0,0.05);
+            border: 1px solid rgba(0, 242, 254, 0.05);
             overflow: hidden;
             cursor: pointer;
         }
@@ -297,7 +301,7 @@
         
         .ad-image {
             height: 160px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: var(--gradient);
             position: relative;
             display: flex;
             align-items: center;
@@ -331,10 +335,10 @@
         
         .ad-category {
             font-size: 11px;
-            background: var(--light);
+            background: rgba(0, 242, 254, 0.1);
             padding: 4px 10px;
             border-radius: 12px;
-            color: var(--dark);
+            color: var(--primary);
             font-weight: 500;
         }
         
@@ -354,7 +358,7 @@
             font-size: 16px;
             font-weight: 600;
             margin-bottom: 8px;
-            color: var(--dark);
+            color: var(--white);
             line-height: 1.3;
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -381,7 +385,7 @@
         
         .ad-price {
             font-weight: 700;
-            color: var(--success);
+            color: var(--primary);
             font-size: 17px;
         }
         
@@ -402,14 +406,14 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(255, 255, 255, 0.98);
+            background: rgba(30, 41, 59, 0.98);
             backdrop-filter: blur(20px);
             display: flex;
             justify-content: space-around;
             padding: 12px 0;
-            box-shadow: 0 -2px 20px rgba(0,0,0,0.1);
+            box-shadow: 0 -2px 20px rgba(0, 242, 254, 0.1);
             z-index: 1000;
-            border-top: 1px solid rgba(255,255,255,0.2);
+            border-top: 1px solid rgba(0, 242, 254, 0.1);
         }
         
         .nav-btn {
@@ -452,7 +456,7 @@
         .loading-spinner {
             width: 40px;
             height: 40px;
-            border: 3px solid var(--light);
+            border: 3px solid rgba(0, 242, 254, 0.2);
             border-top: 3px solid var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -470,7 +474,7 @@
         }
         
         .load-more button {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            background: var(--gradient);
             color: white;
             border: none;
             padding: 14px 35px;
@@ -479,7 +483,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
         }
         
         .load-more button:active {
@@ -487,7 +491,7 @@
         }
         
         .load-more button:disabled {
-            background: var(--gray-light);
+            background: var(--gray);
             cursor: not-allowed;
             transform: none;
         }
@@ -613,7 +617,7 @@
         <div class="search-section">
             <div class="search-container">
                 <div class="search-box">
-                    <input type="text" id="search-input" placeholder="🔍 Поиск объявлений...">
+                    <input type="text" id="search-input" placeholder="🔍 Поиск игровых аккаунтов...">
                     <button id="search-btn">
                         <i class="fa fa-search"></i>
                     </button>
@@ -623,17 +627,17 @@
         
         <div class="categories-scroll" id="categories-container">
             <div class="category active" data-category="all">Все</div>
-            <!-- Категории будут загружены с сервера -->
+            <!-- Игровые категории будут загружены с сервера -->
         </div>
         
         <div class="quick-actions">
             <div class="action-card">
                 <div class="action-icon">
-                    <i class="fa fa-star"></i>
+                    <i class="fa fa-gamepad"></i>
                 </div>
                 <div class="action-info">
-                    <h3>Премиум</h3>
-                    <p>Повышенный спрос</p>
+                    <h3>Игровые акки</h3>
+                    <p>Топовые предложения</p>
                 </div>
             </div>
             <div class="action-card">
@@ -641,8 +645,8 @@
                     <i class="fa fa-bolt"></i>
                 </div>
                 <div class="action-info">
-                    <h3>Срочно</h3>
-                    <p>Ограничено</p>
+                    <h3>Срочная продажа</h3>
+                    <p>Ограниченное время</p>
                 </div>
             </div>
         </div>
@@ -650,7 +654,7 @@
         <div class="main-content">
             <div class="content-section">
                 <div class="section-header">
-                    <div class="section-title">Рекомендуемые</div>
+                    <div class="section-title">Рекомендуемые аккаунты</div>
                     <a href="#" class="view-all">Все</a>
                 </div>
                 <div class="ads-grid" id="ads-container">
@@ -759,20 +763,33 @@
                 
             } catch (error) {
                 console.error('Error loading categories:', error);
-                // Если категории не загрузились, показываем базовые
-                showDefaultCategories();
+                // Если категории не загрузились, показываем игровые категории
+                showGameCategories();
             }
         }
 
-        // Функция для показа базовых категорий
-        function showDefaultCategories() {
+        // Функция для показа игровых категорий
+        function showGameCategories() {
             const container = document.getElementById('categories-container');
-            const defaultCategories = [
-                'Электроника', 'Недвижимость', 'Авто', 'Работа', 
-                'Услуги', 'Мебель', 'Одежда', 'Спорт'
+            
+            // Игровые категории
+            const gameCategories = [
+                'PUBG Mobile',
+                'Free Fire',
+                'World of Tanks Blitz',
+                'Call of Duty Mobile',
+                'Genshin Impact',
+                'Mobile Legends',
+                'Clash of Clans',
+                'Clash Royale',
+                'Brawl Stars',
+                'Roblox'
             ];
             
-            defaultCategories.forEach(category => {
+            // Очистка контейнера
+            container.innerHTML = '<div class="category active" data-category="all">Все</div>';
+
+            gameCategories.forEach(category => {
                 const categoryElement = document.createElement('div');
                 categoryElement.className = 'category';
                 categoryElement.textContent = category;
@@ -897,7 +914,7 @@
             // Используем реальное изображение если есть, иначе заглушку
             const imageHtml = ad.image ? 
                 `<img src="${ad.image}" alt="${ad.title}" style="width: 100%; height: 100%; object-fit: cover;">` :
-                `<i class="fa fa-camera" style="font-size: 24px; opacity: 0.7;"></i>`;
+                `<i class="fa fa-gamepad" style="font-size: 24px; opacity: 0.7;"></i>`;
             
             adElement.innerHTML = `
                 <div class="ad-image">
@@ -906,12 +923,12 @@
                 </div>
                 <div class="ad-content">
                     <div class="ad-header">
-                        <div class="ad-category">${ad.category || 'Без категории'}</div>
+                        <div class="ad-category">${ad.category || 'Игры'}</div>
                         <div class="ad-favorite ${ad.isFavorite ? 'active' : ''}">
                             <i class="fa fa-heart"></i>
                         </div>
                     </div>
-                    <div class="ad-title">${ad.title || 'Без названия'}</div>
+                    <div class="ad-title">${ad.title || 'Игровой аккаунт'}</div>
                     <div class="ad-description">${ad.description || 'Описание отсутствует'}</div>
                     <div class="ad-footer">
                         <div class="ad-price">${priceFormatted}</div>
@@ -1049,7 +1066,7 @@
                 top: 20px;
                 left: 50%;
                 transform: translateX(-50%);
-                background: ${type === 'error' ? 'var(--accent)' : 'var(--success)'};
+                background: ${type === 'error' ? 'var(--accent)' : 'var(--primary)'};
                 color: white;
                 padding: 12px 20px;
                 border-radius: 25px;
