@@ -165,8 +165,241 @@ app.get('/login', (req, res) => {
 // Google Config endpoint
 app.get('/api/config/google', (req, res) => {
     res.json({
-        googleClientId: process.env.GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID'
+        success: true,
+        googleClientId: GOOGLE_CLIENT_ID || 'not-configured'
     });
+});
+
+// Декодирование JWT токена Google
+function decodeGoogleJWT(token) {
+    try {
+        // JWT состоит из трех частей: header.payload.signature
+        const base64Url = token.split('.')[1];
+        if (!base64Url) return null;
+        
+        // Заменяем символы для корректного декодирования base64
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        
+        // Декодируем base64
+        const jsonPayload = Buffer.from(base64, 'base64').toString('utf8');
+        return JSON.parse(jsonPayload);
+    } catch (error) {
+        console.error('❌ JWT decode error:', error);
+        return null;
+    }
+}
+
+// Получение данных пользователя из Google API
+async function getGoogleUserInfo(accessToken) {
+    try {
+        const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch user info from Google');
+        }
+        
+        return await response.json();
+    } catch (error) {
+        console.error('❌ Google API error:', error);
+        return null;
+    }
+}
+
+// Google OAuth endpoint - исправленная версия
+app.post('/api/auth/google', async (req, res) => {
+    try {
+        if (!GOOGLE_CLIENT_ID) {
+            return res.status(503).json({ error: 'Google OAuth is not configured' });
+        }
+
+        const { credential, access_token } = req.body;
+        
+        if (!credential && !access_token) {
+            return res.status(400).json({ error: 'Google token is required' });
+        }
+
+        let googleUser;
+        
+        // Если есть credential (JWT токен)
+        if (credential) {
+            const payload = decodeGoogleJWT(credential);
+            if (!payload) {
+                return res.status(400).json({ error: 'Invalid Google token' });
+            }
+            
+            googleUser = {
+                googleId: payload.sub,
+                email: payload.email,
+                name: payload.name,
+                picture: payload.picture,
+                email_verified: payload.email_verified
+            };
+        } 
+        // Если есть access_token
+        else if (access_token) {
+            const userInfo = await getGoogleUserInfo(access_token);
+            if (!userInfo) {
+                return res.status(400).json({ error: 'Failed to get user info from Google' });
+            }
+            
+            googleUser = {
+                googleId: userInfo.sub,
+                email: userInfo.email,
+                name: userInfo.name,
+                picture: userInfo.picture,
+                email_verified: userInfo.email_verified
+            };
+        }
+
+        console.log('🔐 Google auth attempt:', { 
+            email: googleUser.email, 
+            name: googleUser.name,
+            googleId: googleUser.googleId 
+        });
+
+        // Check if user already exists
+        const userResult = await pool.query(
+            'SELECT * FROM users WHERE google_id = $1 OR email = $2',
+            [googleUser.googleId, googleUser.email]
+        );
+
+        if (userResult.rows.length > 0) {
+            // User exists - login
+            const user = userResult.rows[0];
+            
+            // Update Google ID if missing
+            if (!user.google_id) {
+                await pool.query(
+                    'UPDATE users SET google_id = $1 WHERE id = $2',
+                    [googleUser.googleId, user.id]
+                );
+            }
+            
+            // Generate token
+            const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET);
+            
+            console.log('✅ Google user logged in:', user.email);
+
+            return res.json({
+                success: true,
+                exists: true,
+                token,
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    email: user.email,
+                    full_name: user.full_name,
+                    avatar_url: user.avatar_url,
+                    rating: user.rating
+                }
+            });
+        } else {
+            // New user - return user data for additional info
+            console.log('🆕 New Google user:', googleUser.email);
+            return res.json({
+                success: true,
+                exists: false,
+                user: {
+                    google_id: googleUser.googleId,
+                    email: googleUser.email,
+                    full_name: googleUser.name,
+                    avatar_url: googleUser.picture,
+                    email_verified: googleUser.email_verified
+                }
+            });
+        }
+
+    } catch (error) {
+        console.error('❌ Google auth error:', error);
+        res.status(500).json({ error: 'Google authentication failed' });
+    }
+});
+
+// Завершение регистрации через Google - НОВЫЙ ЭНДПОИНТ
+app.post('/api/auth/google/complete', async (req, res) => {
+    try {
+        const { 
+            google_id, 
+            email, 
+            full_name, 
+            username, 
+            password, 
+            birth_year, 
+            avatar_url,
+            auth_method = 'google' 
+        } = req.body;
+
+        console.log('🔐 Google complete registration:', { email, username });
+
+        // Валидация
+        if (!google_id || !email || !full_name || !username || !password || !birth_year) {
+            return res.status(400).json({ error: 'Все обязательные поля должны быть заполнены' });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({ error: 'Пароль должен быть не менее 6 символов' });
+        }
+
+        const currentYear = new Date().getFullYear();
+        if (birth_year < 1900 || birth_year > currentYear) {
+            return res.status(400).json({ error: 'Укажите корректный год рождения' });
+        }
+
+        // Проверка существования пользователя
+        const userExists = await pool.query(
+            'SELECT id FROM users WHERE google_id = $1 OR email = $2 OR username = $3',
+            [google_id, email, username]
+        );
+
+        if (userExists.rows.length > 0) {
+            return res.status(400).json({ error: 'Пользователь уже существует' });
+        }
+
+        // Хеширование пароля
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Создание пользователя
+        const result = await pool.query(
+            `INSERT INTO users (
+                username, email, password, full_name, 
+                avatar_url, google_id, auth_method, birth_year
+            ) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+             RETURNING id, username, email, full_name, avatar_url, rating, created_at`,
+            [username, email, hashedPassword, full_name, 
+             avatar_url, google_id, auth_method, birth_year]
+        );
+
+        const user = result.rows[0];
+        
+        // Генерация токена
+        const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET);
+
+        console.log('✅ Google user registered successfully:', user.email);
+
+        res.json({
+            success: true,
+            message: 'Регистрация завершена успешно',
+            token,
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email,
+                full_name: user.full_name,
+                avatar_url: user.avatar_url,
+                rating: user.rating,
+                created_at: user.created_at
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Google complete registration error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
 // Auth routes
@@ -174,7 +407,8 @@ app.post('/api/register', async (req, res) => {
     try {
         const { 
             username, email, password, full_name, 
-            avatar_url, google_id, auth_method = 'email' 
+            avatar_url, google_id, auth_method = 'email',
+            birth_year 
         } = req.body;
 
         console.log('🔐 Registration attempt:', { username, email, auth_method });
@@ -188,12 +422,20 @@ app.post('/api/register', async (req, res) => {
             return res.status(400).json({ error: 'Email and full name are required' });
         }
 
+        // Проверка года рождения
+        if (birth_year) {
+            const currentYear = new Date().getFullYear();
+            if (birth_year < 1900 || birth_year > currentYear) {
+                return res.status(400).json({ error: 'Укажите корректный год рождения' });
+            }
+        }
+
         // Check if user exists
         let userExists;
         if (google_id) {
             userExists = await pool.query(
-                'SELECT id FROM users WHERE google_id = $1 OR email = $2',
-                [google_id, email]
+                'SELECT id FROM users WHERE google_id = $1 OR email = $2 OR username = $3',
+                [google_id, email, username]
             );
         } else {
             userExists = await pool.query(
@@ -220,10 +462,14 @@ app.post('/api/register', async (req, res) => {
 
         // Create user
         const result = await pool.query(
-            `INSERT INTO users (username, email, password, full_name, avatar_url, google_id) 
-             VALUES ($1, $2, $3, $4, $5, $6) 
+            `INSERT INTO users (
+                username, email, password, full_name, 
+                avatar_url, google_id, auth_method, birth_year
+            ) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
              RETURNING id, username, email, full_name, avatar_url, rating, created_at`,
-            [actualUsername, email, hashedPassword, full_name, avatar_url, google_id]
+            [actualUsername, email, hashedPassword, full_name, 
+             avatar_url, google_id, auth_method, birth_year]
         );
 
         const user = result.rows[0];
@@ -297,98 +543,13 @@ app.post('/api/login', async (req, res) => {
                 email: user.email,
                 full_name: user.full_name,
                 avatar_url: user.avatar_url,
-                rating: user.rating
+                rating: user.rating,
+                birth_year: user.birth_year
             }
         });
     } catch (error) {
         console.error('❌ Login error:', error);
         res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Google OAuth endpoint
-app.post('/api/auth/google', async (req, res) => {
-    try {
-        if (!GOOGLE_CLIENT_ID) {
-            return res.status(503).json({ error: 'Google OAuth is not configured' });
-        }
-
-        const { credential } = req.body;
-        
-        if (!credential) {
-            return res.status(400).json({ error: 'Google credential is required' });
-        }
-
-        // Simple JWT verification
-        function decodeJWT(token) {
-            try {
-                const base64Url = token.split('.')[1];
-                const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-                const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-                    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-                }).join(''));
-                return JSON.parse(jsonPayload);
-            } catch (error) {
-                console.error('❌ JWT decode error:', error);
-                return null;
-            }
-        }
-
-        const payload = decodeJWT(credential);
-        if (!payload) {
-            return res.status(400).json({ error: 'Invalid Google token' });
-        }
-
-        const googleId = payload.sub;
-        const email = payload.email;
-        const name = payload.name;
-        const picture = payload.picture;
-
-        console.log('🔐 Google auth attempt:', { email, name, googleId });
-
-        // Check if user already exists
-        const userResult = await pool.query(
-            'SELECT * FROM users WHERE google_id = $1 OR email = $2',
-            [googleId, email]
-        );
-
-        if (userResult.rows.length > 0) {
-            // User exists - login
-            const user = userResult.rows[0];
-            const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET);
-            
-            console.log('✅ Google user logged in:', user.email);
-
-            return res.json({
-                exists: true,
-                token,
-                user: {
-                    id: user.id,
-                    username: user.username,
-                    email: user.email,
-                    full_name: user.full_name,
-                    avatar_url: user.avatar_url,
-                    rating: user.rating
-                }
-            });
-        } else {
-            // New user - return user data for additional info
-            console.log('🆕 New Google user:', email);
-            return res.json({
-                exists: false,
-                user: {
-                    google_id: googleId,
-                    email: email,
-                    full_name: name,
-                    avatar_url: picture,
-                    email_verified: payload.email_verified
-                }
-            });
-        }
-
-    } catch (error) {
-        console.error('❌ Google auth error:', error);
-        res.status(500).json({ error: 'Google authentication failed' });
     }
 });
 
@@ -1078,7 +1239,7 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
         const user_id = req.user.userId;
 
         const userResult = await pool.query(`
-            SELECT id, username, email, full_name, avatar_url, rating, created_at
+            SELECT id, username, email, full_name, avatar_url, rating, created_at, birth_year
             FROM users WHERE id = $1
         `, [user_id]);
 
@@ -1117,14 +1278,22 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
 app.put('/api/profile', authenticateToken, async (req, res) => {
     try {
         const user_id = req.user.userId;
-        const { full_name, avatar_url } = req.body;
+        const { full_name, avatar_url, birth_year } = req.body;
+
+        // Валидация года рождения
+        if (birth_year) {
+            const currentYear = new Date().getFullYear();
+            if (birth_year < 1900 || birth_year > currentYear) {
+                return res.status(400).json({ error: 'Укажите корректный год рождения' });
+            }
+        }
 
         const result = await pool.query(`
             UPDATE users 
-            SET full_name = $1, avatar_url = $2, updated_at = CURRENT_TIMESTAMP
-            WHERE id = $3
-            RETURNING id, username, email, full_name, avatar_url, rating
-        `, [full_name, avatar_url, user_id]);
+            SET full_name = $1, avatar_url = $2, birth_year = $3, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $4
+            RETURNING id, username, email, full_name, avatar_url, rating, birth_year
+        `, [full_name, avatar_url, birth_year, user_id]);
 
         console.log(`✏️  Profile updated for user ${user_id}`);
 
