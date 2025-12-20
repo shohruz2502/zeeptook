@@ -83,6 +83,267 @@
             color: var(--white);
         }
         
+        /* Стили для историй */
+        .stories-section {
+            padding: 15px 0 5px 0;
+            border-bottom: 1px solid rgba(0, 242, 254, 0.1);
+            margin-bottom: 15px;
+        }
+        
+        .stories-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            padding: 0 20px 10px 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stories-container {
+            display: flex;
+            overflow-x: auto;
+            padding: 0 15px;
+            gap: 12px;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE and Edge */
+        }
+        
+        .stories-container::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Opera */
+        }
+        
+        .story-item {
+            flex: 0 0 auto;
+            width: 70px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            transition: transform 0.2s ease;
+        }
+        
+        .story-item:active {
+            transform: scale(0.95);
+        }
+        
+        .story-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            padding: 2px;
+            margin-bottom: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .story-avatar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 50%;
+            padding: 2px;
+            background: var(--gradient);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+        }
+        
+        .story-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--dark);
+        }
+        
+        .story-avatar.unread::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 12px;
+            height: 12px;
+            background: var(--accent);
+            border: 2px solid var(--dark);
+            border-radius: 50%;
+        }
+        
+        .story-name {
+            font-size: 11px;
+            color: var(--gray-light);
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 70px;
+        }
+        
+        .story-add {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(30, 41, 59, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 5px;
+            border: 2px dashed var(--primary);
+            color: var(--primary);
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .story-add:active {
+            background: rgba(0, 242, 254, 0.1);
+        }
+        
+        /* Окно просмотра историй */
+        .story-viewer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 3000;
+            display: none;
+            flex-direction: column;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .story-viewer.active {
+            display: flex;
+            opacity: 1;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .story-header {
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+        }
+        
+        .story-header-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .story-header-avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid transparent;
+            background: var(--dark);
+        }
+        
+        .story-header-info {
+            flex: 1;
+        }
+        
+        .story-header-name {
+            font-weight: 600;
+            color: var(--white);
+            margin-bottom: 2px;
+        }
+        
+        .story-header-time {
+            font-size: 12px;
+            color: var(--gray-light);
+        }
+        
+        .story-close-btn {
+            color: var(--white);
+            font-size: 18px;
+            cursor: pointer;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .story-close-btn:active {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .story-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .story-image {
+            max-width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            animation: scaleIn 0.3s ease-out;
+        }
+        
+        .story-progress {
+            display: flex;
+            gap: 4px;
+            padding: 0 20px;
+            margin-bottom: 20px;
+        }
+        
+        .story-progress-bar {
+            flex: 1;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 1px;
+            overflow: hidden;
+        }
+        
+        .story-progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        
+        .story-navigation {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 50%;
+            cursor: pointer;
+        }
+        
+        .story-prev {
+            left: 0;
+        }
+        
+        .story-next {
+            right: 0;
+        }
+        
         .chats-container {
             padding: 20px;
         }
@@ -475,6 +736,17 @@
             }
         }
         
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
         @keyframes messageSlideIn {
             from {
                 opacity: 0;
@@ -539,6 +811,12 @@
                 transform: translateX(-50%);
                 max-width: 750px;
             }
+            
+            .story-viewer {
+                left: 50%;
+                transform: translateX(-50%);
+                max-width: 750px;
+            }
         }
         
         @media (min-width: 1024px) {
@@ -547,6 +825,10 @@
             }
             
             .chat-window {
+                max-width: 900px;
+            }
+            
+            .story-viewer {
                 max-width: 900px;
             }
         }
@@ -582,12 +864,44 @@
             <div class="page-title">Чаты</div>
         </div>
         
+        <!-- Секция историй -->
+        <div class="stories-section">
+            <div class="stories-title">Сегодня</div>
+            <div class="stories-container" id="stories-container">
+                <!-- Истории будут загружены здесь -->
+            </div>
+        </div>
+        
         <div class="chats-container" id="chats-container">
             <div class="loading">
                 <div class="loading-spinner"></div>
                 <div>Загрузка чатов...</div>
             </div>
         </div>
+    </div>
+    
+    <!-- Окно просмотра историй -->
+    <div class="story-viewer" id="story-viewer">
+        <div class="story-header">
+            <div class="story-header-avatar" id="story-viewer-avatar">
+                <i class="fa fa-user" style="font-size: 18px; color: white;"></i>
+            </div>
+            <div class="story-header-info">
+                <div class="story-header-name" id="story-viewer-name">Имя пользователя</div>
+                <div class="story-header-time" id="story-viewer-time">10 минут назад</div>
+            </div>
+            <div class="story-close-btn" id="story-close-btn">
+                <i class="fa fa-times"></i>
+            </div>
+        </div>
+        <div class="story-progress" id="story-progress">
+            <!-- Прогресс-бары будут добавляться динамически -->
+        </div>
+        <div class="story-content" id="story-content">
+            <!-- Контент истории будет здесь -->
+        </div>
+        <div class="story-navigation story-prev" id="story-prev"></div>
+        <div class="story-navigation story-next" id="story-next"></div>
     </div>
     
     <!-- Окно чата -->
@@ -641,15 +955,14 @@
         // API базовый URL
         const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
         
-        // Настройки Telegram бота (заменить на реальные)
-        const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8268605499:AAEvzRvIUxdHFIbFsuiFI7_FzAo1mfdZDGQ';
-        const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '5417959190';
-
-        // Переменные для управления чатами
+        // Переменные для управления данными
         let chats = [];
+        let stories = [];
         let currentChat = null;
+        let currentStoryIndex = 0;
+        let currentStoryUserIndex = 0;
+        let storyProgressInterval = null;
         let userId = null;
-        let messageCheckInterval = null;
 
         // Получение ID пользователя
         function getUserId() {
@@ -663,6 +976,401 @@
                 }
             }
             return null;
+        }
+
+        // Функция для загрузки историй с сервера
+        async function loadStories() {
+            const storiesContainer = document.getElementById('stories-container');
+            
+            try {
+                const token = localStorage.getItem('token');
+                
+                // Если пользователь не авторизован, показываем демо-истории
+                if (!token) {
+                    showDemoStories();
+                    return;
+                }
+
+                const response = await fetch(`${API_BASE}/stories`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load stories');
+                }
+
+                const storiesData = await response.json();
+                
+                if (storiesData.length === 0) {
+                    showDemoStories();
+                    return;
+                }
+                
+                stories = storiesData;
+                displayStories();
+                
+            } catch (error) {
+                console.error('Error loading stories:', error);
+                showDemoStories();
+            }
+        }
+
+        // Функция для показа демо-историй
+        function showDemoStories() {
+            const storiesContainer = document.getElementById('stories-container');
+            
+            // Демо-данные для историй
+            const demoStories = [
+                {
+                    id: 1,
+                    user_id: 101,
+                    user_name: "Магазин Электроники",
+                    user_avatar: "https://images.unsplash.com/photo-1556656793-08538906a9f8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+                    stories: [
+                        {
+                            id: 1,
+                            type: "image",
+                            url: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+                            caption: "Новые смартфоны в наличии!",
+                            created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+                        }
+                    ],
+                    is_viewed: false,
+                    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+                },
+                {
+                    id: 2,
+                    user_id: 102,
+                    user_name: "АвтоМир",
+                    user_avatar: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+                    stories: [
+                        {
+                            id: 2,
+                            type: "image",
+                            url: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+                            caption: "Авто с пробегом от 500 тыс.",
+                            created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
+                        }
+                    ],
+                    is_viewed: true,
+                    created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
+                },
+                {
+                    id: 3,
+                    user_id: 103,
+                    user_name: "Недвижимость",
+                    user_avatar: "https://images.unsplash.com/photo-1513584684374-8bab748fbf90?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+                    stories: [
+                        {
+                            id: 3,
+                            type: "image",
+                            url: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+                            caption: "Квартиры в новостройках от 3 млн",
+                            created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+                        }
+                    ],
+                    is_viewed: false,
+                    created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+                }
+            ];
+            
+            stories = demoStories;
+            displayStories();
+        }
+
+        // Функция для отображения историй
+        function displayStories() {
+            const storiesContainer = document.getElementById('stories-container');
+            storiesContainer.innerHTML = '';
+            
+            // Добавляем кнопку создания своей истории
+            const addStoryElement = document.createElement('div');
+            addStoryElement.className = 'story-item';
+            addStoryElement.innerHTML = `
+                <div class="story-add" id="add-story-btn">
+                    <i class="fa fa-plus"></i>
+                </div>
+                <div class="story-name">Ваша история</div>
+            `;
+            
+            addStoryElement.addEventListener('click', () => {
+                showNotification('Функция создания историй скоро появится', 'info');
+            });
+            
+            storiesContainer.appendChild(addStoryElement);
+            
+            // Добавляем истории пользователей
+            stories.forEach(story => {
+                const storyElement = createStoryElement(story);
+                storiesContainer.appendChild(storyElement);
+            });
+        }
+
+        // Функция для создания элемента истории
+        function createStoryElement(story) {
+            const storyElement = document.createElement('div');
+            storyElement.className = 'story-item';
+            
+            const time = formatStoryTime(story.created_at);
+            
+            storyElement.innerHTML = `
+                <div class="story-avatar ${story.is_viewed ? '' : 'unread'}" data-story-id="${story.id}">
+                    ${story.user_avatar ? 
+                        `<img src="${story.user_avatar}" alt="${story.user_name}" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\"fa fa-user\" style=\"font-size: 18px; color: white;\"></i>';">` :
+                        `<i class="fa fa-user" style="font-size: 18px; color: white;"></i>`
+                    }
+                </div>
+                <div class="story-name" title="${story.user_name}">${story.user_name}</div>
+            `;
+            
+            storyElement.addEventListener('click', () => {
+                openStoryViewer(story.id);
+            });
+            
+            return storyElement;
+        }
+
+        // Функция для открытия просмотра истории
+        function openStoryViewer(storyId) {
+            const story = stories.find(s => s.id === storyId);
+            if (!story || !story.stories || story.stories.length === 0) {
+                showNotification('История не найдена', 'error');
+                return;
+            }
+            
+            currentStoryIndex = 0;
+            currentStoryUserIndex = stories.findIndex(s => s.id === storyId);
+            
+            const viewer = document.getElementById('story-viewer');
+            const content = document.getElementById('story-content');
+            const avatar = document.getElementById('story-viewer-avatar');
+            const name = document.getElementById('story-viewer-name');
+            const time = document.getElementById('story-viewer-time');
+            const progress = document.getElementById('story-progress');
+            
+            // Заполняем информацию
+            name.textContent = story.user_name;
+            time.textContent = formatStoryTime(story.created_at);
+            
+            if (story.user_avatar) {
+                avatar.innerHTML = `<img src="${story.user_avatar}" alt="${story.user_name}">`;
+            } else {
+                avatar.innerHTML = '<i class="fa fa-user" style="font-size: 18px; color: white;"></i>';
+            }
+            
+            // Создаем прогресс-бары
+            progress.innerHTML = '';
+            story.stories.forEach((s, index) => {
+                const progressBar = document.createElement('div');
+                progressBar.className = 'story-progress-bar';
+                progressBar.innerHTML = `<div class="story-progress-fill" id="progress-${index}"></div>`;
+                progress.appendChild(progressBar);
+            });
+            
+            // Показываем первую историю
+            showStoryContent(story.stories[0]);
+            
+            // Запускаем прогресс
+            startStoryProgress(story.stories);
+            
+            // Показываем окно просмотра
+            viewer.classList.add('active');
+            
+            // Добавляем обработчики навигации
+            setupStoryNavigation();
+        }
+
+        // Функция для показа контента истории
+        function showStoryContent(storyItem) {
+            const content = document.getElementById('story-content');
+            
+            if (storyItem.type === 'image') {
+                content.innerHTML = `
+                    <img src="${storyItem.url}" class="story-image" alt="История" onerror="this.onerror=null; this.style.display='none'; document.getElementById('story-content').innerHTML='<div style=\"color:white; text-align:center; padding:20px;\">Ошибка загрузки изображения</div>'">
+                    ${storyItem.caption ? `<div style="position:absolute; bottom:20px; left:20px; right:20px; color:white; text-align:center; font-size:14px; text-shadow:0 2px 4px rgba(0,0,0,0.5);">${storyItem.caption}</div>` : ''}
+                `;
+            } else {
+                content.innerHTML = '<div style="color:white; text-align:center; padding:20px;">Неизвестный формат истории</div>';
+            }
+        }
+
+        // Функция для запуска прогресса историй
+        function startStoryProgress(storyItems) {
+            if (storyProgressInterval) {
+                clearInterval(storyProgressInterval);
+            }
+            
+            let currentProgress = 0;
+            const totalDuration = 5000; // 5 секунд на каждую историю
+            const updateInterval = 50; // Обновляем каждые 50мс
+            const progressIncrement = (updateInterval / totalDuration) * 100;
+            
+            storyProgressInterval = setInterval(() => {
+                currentProgress += progressIncrement;
+                const progressBar = document.getElementById(`progress-${currentStoryIndex}`);
+                if (progressBar) {
+                    progressBar.style.width = `${currentProgress}%`;
+                }
+                
+                if (currentProgress >= 100) {
+                    nextStory();
+                }
+            }, updateInterval);
+        }
+
+        // Функция для переключения на следующую историю
+        function nextStory() {
+            const currentUser = stories[currentStoryUserIndex];
+            
+            if (currentStoryIndex < currentUser.stories.length - 1) {
+                // Следующая история у того же пользователя
+                currentStoryIndex++;
+                showStoryContent(currentUser.stories[currentStoryIndex]);
+                resetProgress();
+            } else if (currentStoryUserIndex < stories.length - 1) {
+                // Переход к следующему пользователю
+                currentStoryUserIndex++;
+                currentStoryIndex = 0;
+                const nextUser = stories[currentStoryUserIndex];
+                
+                // Обновляем информацию
+                const avatar = document.getElementById('story-viewer-avatar');
+                const name = document.getElementById('story-viewer-name');
+                const time = document.getElementById('story-viewer-time');
+                const progress = document.getElementById('story-progress');
+                
+                name.textContent = nextUser.user_name;
+                time.textContent = formatStoryTime(nextUser.created_at);
+                
+                if (nextUser.user_avatar) {
+                    avatar.innerHTML = `<img src="${nextUser.user_avatar}" alt="${nextUser.user_name}">`;
+                } else {
+                    avatar.innerHTML = '<i class="fa fa-user" style="font-size: 18px; color: white;"></i>';
+                }
+                
+                // Обновляем прогресс-бары
+                progress.innerHTML = '';
+                nextUser.stories.forEach((s, index) => {
+                    const progressBar = document.createElement('div');
+                    progressBar.className = 'story-progress-bar';
+                    progressBar.innerHTML = `<div class="story-progress-fill" id="progress-${index}"></div>`;
+                    progress.appendChild(progressBar);
+                });
+                
+                showStoryContent(nextUser.stories[0]);
+                resetProgress();
+            } else {
+                // Все истории просмотрены, закрываем окно
+                closeStoryViewer();
+            }
+        }
+
+        // Функция для переключения на предыдущую историю
+        function prevStory() {
+            if (currentStoryIndex > 0) {
+                // Предыдущая история у того же пользователя
+                currentStoryIndex--;
+                showStoryContent(stories[currentStoryUserIndex].stories[currentStoryIndex]);
+                resetProgress();
+            } else if (currentStoryUserIndex > 0) {
+                // Переход к предыдущему пользователю
+                currentStoryUserIndex--;
+                currentStoryIndex = stories[currentStoryUserIndex].stories.length - 1;
+                const prevUser = stories[currentStoryUserIndex];
+                
+                // Обновляем информацию
+                const avatar = document.getElementById('story-viewer-avatar');
+                const name = document.getElementById('story-viewer-name');
+                const time = document.getElementById('story-viewer-time');
+                const progress = document.getElementById('story-progress');
+                
+                name.textContent = prevUser.user_name;
+                time.textContent = formatStoryTime(prevUser.created_at);
+                
+                if (prevUser.user_avatar) {
+                    avatar.innerHTML = `<img src="${prevUser.user_avatar}" alt="${prevUser.user_name}">`;
+                } else {
+                    avatar.innerHTML = '<i class="fa fa-user" style="font-size: 18px; color: white;"></i>';
+                }
+                
+                // Обновляем прогресс-бары
+                progress.innerHTML = '';
+                prevUser.stories.forEach((s, index) => {
+                    const progressBar = document.createElement('div');
+                    progressBar.className = 'story-progress-bar';
+                    progressBar.innerHTML = `<div class="story-progress-fill" id="progress-${index}"></div>`;
+                    progress.appendChild(progressBar);
+                });
+                
+                showStoryContent(prevUser.stories[currentStoryIndex]);
+                resetProgress();
+            }
+        }
+
+        // Функция для сброса прогресса
+        function resetProgress() {
+            if (storyProgressInterval) {
+                clearInterval(storyProgressInterval);
+            }
+            startStoryProgress(stories[currentStoryUserIndex].stories);
+        }
+
+        // Функция для закрытия окна просмотра историй
+        function closeStoryViewer() {
+            if (storyProgressInterval) {
+                clearInterval(storyProgressInterval);
+                storyProgressInterval = null;
+            }
+            
+            document.getElementById('story-viewer').classList.remove('active');
+            
+            // Отмечаем историю как просмотренную
+            if (stories[currentStoryUserIndex]) {
+                stories[currentStoryUserIndex].is_viewed = true;
+                updateStoryElement(currentStoryUserIndex);
+            }
+        }
+
+        // Функция для обновления элемента истории
+        function updateStoryElement(index) {
+            const storyElements = document.querySelectorAll('.story-item');
+            // +1 потому что первый элемент - кнопка добавления
+            const storyElement = storyElements[index + 1];
+            if (storyElement) {
+                const avatar = storyElement.querySelector('.story-avatar');
+                if (avatar) {
+                    avatar.classList.remove('unread');
+                }
+            }
+        }
+
+        // Функция для настройки навигации по историям
+        function setupStoryNavigation() {
+            const prevBtn = document.getElementById('story-prev');
+            const nextBtn = document.getElementById('story-next');
+            
+            // Очищаем старые обработчики
+            prevBtn.onclick = null;
+            nextBtn.onclick = null;
+            prevBtn.ontouchstart = null;
+            nextBtn.ontouchstart = null;
+            
+            // Добавляем новые обработчики
+            prevBtn.onclick = prevStory;
+            nextBtn.onclick = nextStory;
+            
+            // Поддержка touch событий
+            prevBtn.ontouchstart = (e) => {
+                e.preventDefault();
+                prevStory();
+            };
+            
+            nextBtn.ontouchstart = (e) => {
+                e.preventDefault();
+                nextStory();
+            };
         }
 
         // Функция для загрузки чатов с сервера
@@ -858,39 +1566,6 @@
             return messageElement;
         }
 
-        // Функция для отправки сообщения в Telegram
-        async function sendTelegramMessage(text, recipientName = null) {
-            if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
-                console.error('Telegram bot not configured');
-                return false;
-            }
-            
-            try {
-                // Формируем сообщение с информацией о пользователе
-                let messageText = text;
-                if (recipientName) {
-                    messageText = `💬 Новое сообщение от ${recipientName}\n\n${text}`;
-                }
-                
-                const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        chat_id: TELEGRAM_CHAT_ID,
-                        text: messageText,
-                        parse_mode: 'HTML'
-                    })
-                });
-                
-                return response.ok;
-            } catch (error) {
-                console.error('Error sending Telegram message:', error);
-                return false;
-            }
-        }
-
         // Функция для отправки сообщения
         async function sendMessage() {
             const messageInput = document.getElementById('message-input');
@@ -910,19 +1585,6 @@
                     return;
                 }
                 
-                // Получаем информацию о пользователе для Telegram
-                const userResponse = await fetch(`${API_BASE}/profile`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                let userName = 'Пользователь';
-                if (userResponse.ok) {
-                    const userData = await userResponse.json();
-                    userName = userData.user.full_name || userData.user.username || 'Пользователь';
-                }
-                
                 // Сохраняем сообщение в БД
                 const response = await fetch(`${API_BASE}/messages`, {
                     method: 'POST',
@@ -939,11 +1601,6 @@
 
                 if (!response.ok) {
                     throw new Error('Failed to save message');
-                }
-
-                // Отправляем в Telegram (только для поддержки)
-                if (currentChat.type === 'support') {
-                    await sendTelegramMessage(text, userName);
                 }
                 
                 // Обновляем сообщения в чате
@@ -980,6 +1637,25 @@
                 return date.toLocaleDateString('ru-RU', { weekday: 'short' });
             } else {
                 return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+            }
+        }
+
+        function formatStoryTime(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            const diffMinutes = Math.floor(diff / (1000 * 60));
+            const diffHours = Math.floor(diff / (1000 * 60 * 60));
+            const diffDays = Math.floor(diff / (1000 * 60 * 60 * 24));
+            
+            if (diffMinutes < 60) {
+                return `${diffMinutes} минут назад`;
+            } else if (diffHours < 24) {
+                return `${diffHours} часов назад`;
+            } else if (diffDays === 1) {
+                return 'вчера';
+            } else {
+                return `${diffDays} дней назад`;
             }
         }
 
@@ -1023,6 +1699,9 @@
             // Получаем ID пользователя
             userId = getUserId();
             
+            // Загружаем истории
+            loadStories();
+            
             // Загружаем чаты
             loadChats();
             
@@ -1030,6 +1709,8 @@
             document.getElementById('close-chat').addEventListener('click', function() {
                 document.getElementById('chat-window').classList.remove('active');
             });
+            
+            document.getElementById('story-close-btn').addEventListener('click', closeStoryViewer);
             
             document.getElementById('send-message').addEventListener('click', sendMessage);
             
