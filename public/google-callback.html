@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторизация Google</title>
+</head>
+<body>
+    <div style="text-align: center; margin-top: 100px;">
+        <h1>Авторизация...</h1>
+        <p>Пожалуйста, подождите</p>
+    </div>
+
+    <script>
+        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
+
+        async function handleGoogleCallback() {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+            const state = params.get('state');
+            const error = params.get('error');
+
+            // Убираем параметры из URL
+            if (code || error) {
+                history.replaceState(null, null, window.location.pathname);
+            }
+
+            if (error) {
+                localStorage.setItem('google_auth_error', error);
+                window.location.href = 'register.html';
+                return;
+            }
+
+            if (code && state) {
+                try {
+                    // Проверяем state
+                    const savedState = sessionStorage.getItem('google_oauth_state');
+                    if (state !== savedState) {
+                        throw new Error('Ошибка безопасности');
+                    }
+
+                    sessionStorage.removeItem('google_oauth_state');
+
+                    // Сохраняем code в sessionStorage
+                    sessionStorage.setItem('google_auth_code', code);
+                    sessionStorage.setItem('google_auth_state', state);
+
+                    // Перенаправляем на регистрацию
+                    window.location.href = 'register.html';
+
+                } catch (error) {
+                    console.error('Callback error:', error);
+                    localStorage.setItem('google_auth_error', error.message);
+                    window.location.href = 'register.html';
+                }
+            } else {
+                window.location.href = 'register.html';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', handleGoogleCallback);
+    </script>
+</body>
+</html>
