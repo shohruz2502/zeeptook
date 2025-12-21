@@ -12,6 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-for-development';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET; // ДОБАВЛЕНО
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
@@ -19,7 +20,6 @@ const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 let poolConfig;
 
 if (process.env.DATABASE_URL) {
-  // Используем DATABASE_URL от Neon
   poolConfig = {
     connectionString: process.env.DATABASE_URL,
     ssl: {
@@ -30,7 +30,6 @@ if (process.env.DATABASE_URL) {
     max: 10
   };
 } else {
-  // Используем отдельные переменные (для разработки)
   poolConfig = {
     user: process.env.DB_USER,
     host: process.env.DB_HOST,
@@ -47,7 +46,10 @@ if (process.env.DATABASE_URL) {
 const pool = new Pool(poolConfig);
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000', 'https://zeeptook.vercel.app'],
+  credentials: true
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -166,26 +168,44 @@ app.get('/login', (req, res) => {
 app.get('/api/config/google', (req, res) => {
     res.json({
         success: true,
-        googleClientId: GOOGLE_CLIENT_ID || 'not-configured'
+        googleClientId: GOOGLE_CLIENT_ID || 'not-configured',
+        redirectUri: `${req.protocol}://${req.get('host')}`
     });
 });
 
-// Декодирование JWT токена Google
-function decodeGoogleJWT(token) {
+// Обмен authorization code на access token
+async function exchangeCodeForToken(code) {
     try {
-        // JWT состоит из трех частей: header.payload.signature
-        const base64Url = token.split('.')[1];
-        if (!base64Url) return null;
+        console.log('🔄 Exchanging code for token...');
         
-        // Заменяем символы для корректного декодирования base64
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        
-        // Декодируем base64
-        const jsonPayload = Buffer.from(base64, 'base64').toString('utf8');
-        return JSON.parse(jsonPayload);
+        const response = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                code: code,
+                client_id: GOOGLE_CLIENT_ID,
+                client_secret: GOOGLE_CLIENT_SECRET,
+                redirect_uri: process.env.NODE_ENV === 'production' 
+                    ? 'https://zeeptook.vercel.app' 
+                    : 'http://localhost:3000',
+                grant_type: 'authorization_code'
+            })
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('❌ Token exchange error:', errorData);
+            throw new Error('Failed to exchange code for token');
+        }
+
+        const tokenData = await response.json();
+        console.log('✅ Token exchange successful');
+        return tokenData;
     } catch (error) {
-        console.error('❌ JWT decode error:', error);
-        return null;
+        console.error('❌ Code exchange error:', error);
+        throw error;
     }
 }
 
@@ -209,62 +229,41 @@ async function getGoogleUserInfo(accessToken) {
     }
 }
 
-// Google OAuth endpoint - исправленная версия
+// Google OAuth endpoint - авторизация по code
 app.post('/api/auth/google', async (req, res) => {
     try {
-        if (!GOOGLE_CLIENT_ID) {
+        if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
             return res.status(503).json({ error: 'Google OAuth is not configured' });
         }
 
-        const { credential, access_token } = req.body;
+        const { code } = req.body;
         
-        if (!credential && !access_token) {
-            return res.status(400).json({ error: 'Google token is required' });
+        if (!code) {
+            return res.status(400).json({ error: 'Authorization code is required' });
         }
 
-        let googleUser;
-        
-        // Если есть credential (JWT токен)
-        if (credential) {
-            const payload = decodeGoogleJWT(credential);
-            if (!payload) {
-                return res.status(400).json({ error: 'Invalid Google token' });
-            }
-            
-            googleUser = {
-                googleId: payload.sub,
-                email: payload.email,
-                name: payload.name,
-                picture: payload.picture,
-                email_verified: payload.email_verified
-            };
-        } 
-        // Если есть access_token
-        else if (access_token) {
-            const userInfo = await getGoogleUserInfo(access_token);
-            if (!userInfo) {
-                return res.status(400).json({ error: 'Failed to get user info from Google' });
-            }
-            
-            googleUser = {
-                googleId: userInfo.sub,
-                email: userInfo.email,
-                name: userInfo.name,
-                picture: userInfo.picture,
-                email_verified: userInfo.email_verified
-            };
+        console.log('🔐 Google auth attempt with code');
+
+        // Exchange code for tokens
+        const tokenData = await exchangeCodeForToken(code);
+        const { access_token } = tokenData;
+
+        // Get user info from Google
+        const userInfo = await getGoogleUserInfo(access_token);
+        if (!userInfo) {
+            return res.status(400).json({ error: 'Failed to get user info from Google' });
         }
 
-        console.log('🔐 Google auth attempt:', { 
-            email: googleUser.email, 
-            name: googleUser.name,
-            googleId: googleUser.googleId 
+        console.log('🔐 Google user info:', { 
+            email: userInfo.email, 
+            name: userInfo.name,
+            sub: userInfo.sub 
         });
 
         // Check if user already exists
         const userResult = await pool.query(
             'SELECT * FROM users WHERE google_id = $1 OR email = $2',
-            [googleUser.googleId, googleUser.email]
+            [userInfo.sub, userInfo.email]
         );
 
         if (userResult.rows.length > 0) {
@@ -275,11 +274,11 @@ app.post('/api/auth/google', async (req, res) => {
             if (!user.google_id) {
                 await pool.query(
                     'UPDATE users SET google_id = $1 WHERE id = $2',
-                    [googleUser.googleId, user.id]
+                    [userInfo.sub, user.id]
                 );
             }
             
-            // Generate token
+            // Generate JWT token
             const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET);
             
             console.log('✅ Google user logged in:', user.email);
@@ -299,27 +298,97 @@ app.post('/api/auth/google', async (req, res) => {
             });
         } else {
             // New user - return user data for additional info
-            console.log('🆕 New Google user:', googleUser.email);
+            console.log('🆕 New Google user:', userInfo.email);
             return res.json({
                 success: true,
                 exists: false,
                 user: {
-                    google_id: googleUser.googleId,
-                    email: googleUser.email,
-                    full_name: googleUser.name,
-                    avatar_url: googleUser.picture,
-                    email_verified: googleUser.email_verified
+                    google_id: userInfo.sub,
+                    email: userInfo.email,
+                    full_name: userInfo.name,
+                    avatar_url: userInfo.picture,
+                    email_verified: userInfo.email_verified
                 }
             });
         }
 
     } catch (error) {
         console.error('❌ Google auth error:', error);
+        res.status(500).json({ error: 'Google authentication failed: ' + error.message });
+    }
+});
+
+// Backup endpoint for direct access token (если фронтенд все еще отправляет access_token)
+app.post('/api/auth/google/token', async (req, res) => {
+    try {
+        const { access_token } = req.body;
+        
+        if (!access_token) {
+            return res.status(400).json({ error: 'Access token is required' });
+        }
+
+        // Get user info from Google
+        const userInfo = await getGoogleUserInfo(access_token);
+        if (!userInfo) {
+            return res.status(400).json({ error: 'Failed to get user info from Google' });
+        }
+
+        console.log('🔐 Google direct token auth:', userInfo.email);
+
+        // Check if user already exists
+        const userResult = await pool.query(
+            'SELECT * FROM users WHERE google_id = $1 OR email = $2',
+            [userInfo.sub, userInfo.email]
+        );
+
+        if (userResult.rows.length > 0) {
+            const user = userResult.rows[0];
+            
+            if (!user.google_id) {
+                await pool.query(
+                    'UPDATE users SET google_id = $1 WHERE id = $2',
+                    [userInfo.sub, user.id]
+                );
+            }
+            
+            const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET);
+            
+            console.log('✅ Google user logged in (direct):', user.email);
+
+            return res.json({
+                success: true,
+                exists: true,
+                token,
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    email: user.email,
+                    full_name: user.full_name,
+                    avatar_url: user.avatar_url,
+                    rating: user.rating
+                }
+            });
+        } else {
+            return res.json({
+                success: true,
+                exists: false,
+                user: {
+                    google_id: userInfo.sub,
+                    email: userInfo.email,
+                    full_name: userInfo.name,
+                    avatar_url: userInfo.picture,
+                    email_verified: userInfo.email_verified
+                }
+            });
+        }
+
+    } catch (error) {
+        console.error('❌ Google token auth error:', error);
         res.status(500).json({ error: 'Google authentication failed' });
     }
 });
 
-// Завершение регистрации через Google - НОВЫЙ ЭНДПОИНТ
+// Завершение регистрации через Google
 app.post('/api/auth/google/complete', async (req, res) => {
     try {
         const { 
@@ -1354,14 +1423,12 @@ app.get('/api/profile/ads', authenticateToken, async (req, res) => {
 // Debug routes
 app.get('/api/debug/database', async (req, res) => {
     try {
-        // Проверим все таблицы
         const usersCount = await pool.query('SELECT COUNT(*) as count FROM users');
         const categoriesCount = await pool.query('SELECT COUNT(*) as count FROM categories');
         const adsCount = await pool.query('SELECT COUNT(*) as count FROM ads');
         const activeAdsCount = await pool.query('SELECT COUNT(*) as count FROM ads WHERE is_active = TRUE');
         const photosCount = await pool.query('SELECT COUNT(*) as count FROM ad_photos');
         
-        // Получим несколько объявлений для примера
         const sampleAds = await pool.query(`
             SELECT a.id, a.title, a.is_active, c.name as category_name 
             FROM ads a 
@@ -1399,7 +1466,7 @@ app.get('/api/health', async (req, res) => {
         res.json({ 
             status: 'OK', 
             database: 'connected',
-            google_oauth: !!GOOGLE_CLIENT_ID,
+            google_oauth: !!(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET),
             telegram_bot: !!(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID),
             timestamp: new Date().toISOString()
         });
@@ -1407,7 +1474,7 @@ app.get('/api/health', async (req, res) => {
         res.status(500).json({ 
             status: 'ERROR', 
             database: 'disconnected',
-            google_oauth: !!GOOGLE_CLIENT_ID,
+            google_oauth: !!(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET),
             telegram_bot: !!(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID),
             timestamp: new Date().toISOString()
         });
@@ -1436,14 +1503,12 @@ if (process.env.NODE_ENV !== 'production') {
         console.log('🚀 Starting Zeeptook server in development mode...');
         console.log('📁 Environment:', process.env.NODE_ENV || 'development');
         
-        // Test database connection first
         const dbConnected = await testDatabaseConnection();
         if (!dbConnected) {
             console.error('❌ Cannot start server without database connection');
             process.exit(1);
         }
 
-        // Check if tables exist and have data
         try {
             const usersCount = await pool.query('SELECT COUNT(*) as count FROM users');
             const categoriesCount = await pool.query('SELECT COUNT(*) as count FROM categories');
