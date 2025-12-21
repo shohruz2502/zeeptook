@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель оператора — Zeeptook</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        :root {
+            --operator: #10b981;
+            --operator-dark: #059669;
+            --operator-light: #d1fae5;
+            --secondary: #0f172a;
+            --accent: #ff6b6b;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --white: #ffffff;
+            --gradient: linear-gradient(135deg, var(--operator) 0%, var(--operator-dark) 100%);
+            --shadow: 0 8px 32px rgba(16, 185, 129, 0.15);
+            --radius: 16px;
+            --radius-sm: 12px;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            color: var(--white);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(20px);
+            color: var(--white);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+        }
+        
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            color: var(--white);
+        }
+        
+        .logo i {
+            margin-right: 8px;
+            font-size: 22px;
+            color: var(--operator);
+        }
+        
+        .profile-status {
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+            background: rgba(15, 23, 42, 0.6);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+            border: 1px solid rgba(16, 185, 129, 0.1);
+            cursor: pointer;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: pulse 2s infinite;
+        }
+        
+        .connected {
+            background-color: var(--operator);
+        }
+        
+        .disconnected {
+            background-color: var(--accent);
+        }
+        
+        .operator-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 15px;
+        }
+        
+        .stat-card {
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius);
+            padding: 15px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(16, 185, 129, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .stat-card:active {
+            transform: scale(0.98);
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--operator);
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--gray);
+        }
+        
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 0 15px 20px;
+        }
+        
+        .action-card {
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(16, 185, 129, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .action-card:active {
+            transform: scale(0.98);
+        }
+        
+        .action-icon {
+            width: 45px;
+            height: 45px;
+            background: var(--gradient);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: white;
+            font-size: 20px;
+        }
+        
+        .action-icon.warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        
+        .action-icon.info {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+        
+        .action-icon.gray {
+            background: linear-gradient(135deg, #64748b, #475569);
+        }
+        
+        .action-info h3 {
+            font-size: 15px;
+            margin-bottom: 4px;
+            font-weight: 600;
+            color: var(--white);
+        }
+        
+        .action-info p {
+            font-size: 12px;
+            color: var(--gray);
+        }
+        
+        .main-content {
+            padding: 0 15px 20px;
+        }
+        
+        .content-section {
+            background: rgba(30, 41, 59, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(16, 185, 129, 0.1);
+            overflow: hidden;
+        }
+        
+        .section-header {
+            padding: 18px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--white);
+        }
+        
+        .view-all {
+            font-size: 14px;
+            color: var(--operator);
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .deals-list {
+            padding: 15px;
+        }
+        
+        .deal-card {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: var(--radius-sm);
+            padding: 15px;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(16, 185, 129, 0.05);
+            cursor: pointer;
+            position: relative;
+            border-left: 4px solid var(--operator);
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        .deal-card:active {
+            transform: scale(0.98);
+        }
+        
+        .deal-card.pending {
+            border-left-color: #f59e0b;
+        }
+        
+        .deal-card.payment {
+            border-left-color: #3b82f6;
+        }
+        
+        .deal-card.transfer {
+            border-left-color: #8b5cf6;
+        }
+        
+        .deal-card.completed {
+            border-left-color: var(--operator);
+        }
+        
+        .deal-card.disputed {
+            border-left-color: #ef4444;
+        }
+        
+        .deal-card.urgent {
+            border-left-color: var(--accent);
+        }
+        
+        .deal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        
+        .deal-id {
+            font-size: 12px;
+            color: var(--gray);
+            font-weight: 500;
+            background: rgba(16, 185, 129, 0.1);
+            padding: 4px 8px;
+            border-radius: 10px;
+        }
+        
+        .deal-status {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        
+        .status-pending {
+            background: rgba(255, 107, 107, 0.1);
+            color: var(--accent);
+        }
+        
+        .status-active {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--operator);
+        }
+        
+        .status-payment {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+        
+        .status-transfer {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+        
+        .status-completed {
+            background: rgba(100, 116, 139, 0.1);
+            color: var(--gray);
+        }
+        
+        .deal-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--white);
+            line-height: 1.4;
+        }
+        
+        .deal-info {
+            display: flex;
+            justify-content: space-between;
+            color: var(--gray);
+            font-size: 12px;
+        }
+        
+        .deal-price {
+            color: var(--operator);
+            font-weight: 600;
+        }
+        
+        .deal-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--operator);
+        }
+        
+        .badge.urgent {
+            background: rgba(255, 107, 107, 0.2);
+            color: var(--accent);
+        }
+        
+        .badge.unread {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+        
+        .no-deals {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--gray);
+        }
+        
+        .no-deals i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: var(--gray);
+            opacity: 0.5;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--gray);
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(16, 185, 129, 0.2);
+            border-top: 3px solid var(--operator);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        .error-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--accent);
+        }
+        
+        .error-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: var(--accent);
+        }
+        
+        .retry-btn {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: var(--operator);
+            padding: 10px 20px;
+            border-radius: 20px;
+            margin-top: 15px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(30, 41, 59, 0.98);
+            backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: space-around;
+            padding: 12px 0;
+            box-shadow: 0 -2px 20px rgba(16, 185, 129, 0.1);
+            z-index: 1000;
+            border-top: 1px solid rgba(16, 185, 129, 0.1);
+        }
+        
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: var(--gray);
+            font-size: 11px;
+            padding: 5px;
+            transition: all 0.3s ease;
+            flex: 1;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .nav-btn i {
+            font-size: 20px;
+            margin-bottom: 3px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-btn.active {
+            color: var(--operator);
+        }
+        
+        .nav-btn.active i {
+            transform: translateY(-2px);
+        }
+        
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -2px;
+            right: 10px;
+            background: var(--accent);
+            color: white;
+            font-size: 10px;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @media (max-width: 360px) {
+            .header {
+                padding: 12px 15px;
+            }
+            
+            .logo {
+                font-size: 18px;
+            }
+            
+            .quick-actions {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-card {
+                padding: 15px;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .app-container {
+                max-width: 750px;
+                margin: 0 auto;
+            }
+            
+            .operator-stats {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .quick-actions {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <div class="logo">
+                <i class="fa fa-shield"></i>
+                <span>Оператор</span>
+            </div>
+            <div class="profile-status" id="profile-status" onclick="showProfileMenu()">
+                <div class="status-indicator connected" id="status-indicator"></div>
+                <span id="status-text">Загрузка...</span>
+            </div>
+        </div>
+        
+        <div class="operator-stats" id="stats-container">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <div>Загрузка статистики...</div>
+            </div>
+        </div>
+        
+        <div class="quick-actions">
+            <div class="action-card" onclick="openDealsList('active')">
+                <div class="action-icon">
+                    <i class="fa fa-handshake-o"></i>
+                </div>
+                <div class="action-info">
+                    <h3>Активные сделки</h3>
+                    <p id="active-count">0 сделок</p>
+                </div>
+            </div>
+            <div class="action-card" onclick="openDealsList('pending')">
+                <div class="action-icon warning">
+                    <i class="fa fa-bell"></i>
+                </div>
+                <div class="action-info">
+                    <h3>Новые заявки</h3>
+                    <p id="pending-count">0 заявок</p>
+                </div>
+            </div>
+            <div class="action-card" onclick="location.href='operator-chat.html'">
+                <div class="action-icon info">
+                    <i class="fa fa-comments"></i>
+                </div>
+                <div class="action-info">
+                    <h3>Чаты</h3>
+                    <p id="unread-count">0 непрочитанных</p>
+                </div>
+            </div>
+            <div class="action-card" onclick="openCompletedDeals()">
+                <div class="action-icon gray">
+                    <i class="fa fa-history"></i>
+                </div>
+                <div class="action-info">
+                    <h3>История</h3>
+                    <p>Завершённые сделки</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="content-section">
+                <div class="section-header">
+                    <div class="section-title">Последние сделки</div>
+                    <a href="#" class="view-all" onclick="openDealsList('all')">Все</a>
+                </div>
+                <div class="deals-list" id="deals-container">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <div>Загрузка сделок...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bottom-nav">
+        <div class="nav-btn active" onclick="window.location.href='operator-dashboard.html'">
+            <i class="fa fa-dashboard"></i>
+            <span>Дашборд</span>
+        </div>
+        <div class="nav-btn" onclick="window.location.href='operator-deals.html'">
+            <i class="fa fa-handshake-o"></i>
+            <span>Сделки</span>
+            <span class="notification-badge" id="deals-badge">0</span>
+        </div>
+        <div class="nav-btn" onclick="window.location.href='operator-chat.html'">
+            <i class="fa fa-comment"></i>
+            <span>Чаты</span>
+            <span class="notification-badge" id="chat-badge">0</span>
+        </div>
+        <div class="nav-btn" onclick="window.location.href='deal-page.html'">
+            <i class="fa fa-info-circle"></i>
+            <span>Детали</span>
+        </div>
+        <div class="nav-btn" onclick="window.location.href='index.html'">
+            <i class="fa fa-home"></i>
+            <span>Главная</span>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let operatorData = null;
+        let isOnline = true;
+        let autoRefreshInterval = null;
+
+        // Получить токен оператора
+        function getOperatorToken() {
+            return localStorage.getItem('operatorToken');
+        }
+
+        // Проверить авторизацию
+        function checkAuth() {
+            const token = getOperatorToken();
+            if (!token) {
+                window.location.href = 'operator-login.html';
+                return false;
+            }
+            return true;
+        }
+
+        // Загрузить дашборд
+        async function loadDashboard() {
+            if (!checkAuth()) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/api/operator/dashboard`, {
+                    headers: {
+                        'Authorization': `Bearer ${getOperatorToken()}`
+                    }
+                });
+
+                if (response.status === 401) {
+                    // Неавторизован
+                    localStorage.removeItem('operatorToken');
+                    localStorage.removeItem('operatorData');
+                    window.location.href = 'operator-login.html';
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateDashboard(data);
+                    updateOperatorInfo(data.operator || operatorData);
+                } else {
+                    showError('Ошибка загрузки дашборда');
+                }
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showError('Ошибка соединения с сервером');
+                setOfflineStatus();
+            }
+        }
+
+        // Обновить дашборд данными
+        function updateDashboard(data) {
+            const stats = data.stats;
+            
+            // Обновляем статистику
+            updateStatsCard('total-deals', stats.pending + stats.active + stats.payment + stats.transfer + stats.completed + stats.disputed);
+            updateStatsCard('active-deals', stats.active);
+            updateStatsCard('pending-deals', stats.pending);
+            updateStatsCard('completed-today', stats.completed_today);
+            
+            // Обновляем быстрые действия
+            document.getElementById('active-count').textContent = `${stats.active} сделок`;
+            document.getElementById('pending-count').textContent = `${stats.pending} заявок`;
+            document.getElementById('unread-count').textContent = `${stats.unread} непрочитанных`;
+            
+            // Обновляем бейджи
+            document.getElementById('deals-badge').textContent = stats.active;
+            document.getElementById('chat-badge').textContent = stats.unread;
+            
+            // Обновляем список сделок
+            updateRecentDeals(data.recent_deals);
+            
+            // Устанавливаем онлайн статус
+            setOnlineStatus();
+        }
+
+        // Обновить карточку статистики
+        function updateStatsCard(elementId, value) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = value;
+                element.style.animation = 'none';
+                setTimeout(() => {
+                    element.style.animation = 'pulse 0.5s ease';
+                }, 10);
+            }
+        }
+
+        // Обновить список последних сделок
+        function updateRecentDeals(deals) {
+            const container = document.getElementById('deals-container');
+            
+            if (!deals || deals.length === 0) {
+                container.innerHTML = `
+                    <div class="no-deals">
+                        <i class="fa fa-inbox"></i>
+                        <div>Нет активных сделок</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            deals.forEach(deal => {
+                const dealElement = createDealElement(deal);
+                container.appendChild(dealElement);
+            });
+        }
+
+        // Создать элемент сделки
+        function createDealElement(deal) {
+            const element = document.createElement('div');
+            element.className = `deal-card ${deal.status} ${deal.is_urgent ? 'urgent' : ''}`;
+            
+            // Определяем класс статуса
+            let statusClass = 'status-pending';
+            let statusText = 'Ожидание';
+            let statusIcon = 'fa-clock-o';
+            
+            switch (deal.status) {
+                case 'active':
+                    statusClass = 'status-active';
+                    statusText = 'В процессе';
+                    statusIcon = 'fa-play-circle';
+                    break;
+                case 'payment':
+                    statusClass = 'status-payment';
+                    statusText = 'Оплата';
+                    statusIcon = 'fa-credit-card';
+                    break;
+                case 'transfer':
+                    statusClass = 'status-transfer';
+                    statusText = 'Передача';
+                    statusIcon = 'fa-exchange';
+                    break;
+                case 'completed':
+                    statusClass = 'status-completed';
+                    statusText = 'Завершено';
+                    statusIcon = 'fa-check-circle';
+                    break;
+                case 'disputed':
+                    statusClass = 'status-disputed';
+                    statusText = 'Спор';
+                    statusIcon = 'fa-exclamation-triangle';
+                    break;
+                default:
+                    statusClass = 'status-pending';
+                    statusText = 'Ожидание';
+                    statusIcon = 'fa-clock-o';
+            }
+            
+            element.innerHTML = `
+                <div class="deal-header">
+                    <div class="deal-id">${deal.deal_code || deal.id}</div>
+                    <div class="deal-status ${statusClass}">
+                        <i class="fa ${statusIcon}"></i> ${statusText}
+                    </div>
+                </div>
+                <div class="deal-title">${deal.title}</div>
+                <div class="deal-info">
+                    <div class="deal-price">${deal.price ? deal.price.toLocaleString('ru-RU') + ' ₽' : 'Цена не указана'}</div>
+                    <div class="deal-meta">
+                        <span>${deal.time_ago || 'Недавно'}</span>
+                        ${deal.is_urgent ? '<span class="badge urgent">СРОЧНО</span>' : ''}
+                        ${deal.unread_count > 0 ? `<span class="badge unread">${deal.unread_count} непроч.</span>` : ''}
+                    </div>
+                </div>
+            `;
+            
+            element.addEventListener('click', () => {
+                openDealDetails(deal.id || deal.deal_code);
+            });
+            
+            return element;
+        }
+
+        // Обновить информацию об операторе
+        function updateOperatorInfo(operator) {
+            if (operator) {
+                operatorData = operator;
+                document.getElementById('status-text').textContent = operator.username || 'Оператор';
+            }
+        }
+
+        // Установить онлайн статус
+        function setOnlineStatus() {
+            isOnline = true;
+            const indicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+            
+            if (indicator) {
+                indicator.className = 'status-indicator connected';
+                indicator.style.animation = 'pulse 2s infinite';
+            }
+            
+            if (statusText && operatorData) {
+                statusText.textContent = `${operatorData.username} (онлайн)`;
+            }
+        }
+
+        // Установить оффлайн статус
+        function setOfflineStatus() {
+            isOnline = false;
+            const indicator = document.getElementById('status-indicator');
+            const statusText = document.getElementById('status-text');
+            
+            if (indicator) {
+                indicator.className = 'status-indicator disconnected';
+                indicator.style.animation = 'pulse 2s infinite';
+            }
+            
+            if (statusText) {
+                statusText.textContent = 'Оффлайн';
+            }
+        }
+
+        // Показать меню профиля
+        function showProfileMenu() {
+            // Можно реализовать всплывающее меню
+            const token = getOperatorToken();
+            if (token && confirm('Вы хотите выйти из системы?')) {
+                localStorage.removeItem('operatorToken');
+                localStorage.removeItem('operatorData');
+                window.location.href = 'operator-login.html';
+            }
+        }
+
+        // Открыть список сделок
+        function openDealsList(status) {
+            localStorage.setItem('dealsFilter', status);
+            window.location.href = 'operator-deals.html';
+        }
+
+        // Открыть завершенные сделки
+        function openCompletedDeals() {
+            localStorage.setItem('dealsFilter', 'completed');
+            window.location.href = 'operator-deals.html';
+        }
+
+        // Открыть детали сделки
+        function openDealDetails(dealId) {
+            localStorage.setItem('currentDealId', dealId);
+            window.location.href = 'deal-page.html';
+        }
+
+        // Показать ошибку
+        function showError(message) {
+            const container = document.getElementById('deals-container');
+            if (container) {
+                container.innerHTML = `
+                    <div class="error-state">
+                        <i class="fa fa-exclamation-triangle"></i>
+                        <div>${message}</div>
+                        <button class="retry-btn" onclick="loadDashboard()">Повторить попытку</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Уведомление
+        function showNotification(message, type = 'info') {
+            // Можно добавить реализацию уведомлений
+            console.log(`${type.toUpperCase()}: ${message}`);
+        }
+
+        // Автообновление
+        function startAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            
+            autoRefreshInterval = setInterval(() => {
+                if (isOnline && document.visibilityState === 'visible') {
+                    loadDashboard();
+                }
+            }, 30000); // Каждые 30 секунд
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🛡️ Operator dashboard loaded');
+            
+            if (!checkAuth()) return;
+            
+            // Загружаем данные оператора из localStorage
+            const savedData = localStorage.getItem('operatorData');
+            if (savedData) {
+                try {
+                    operatorData = JSON.parse(savedData);
+                    updateOperatorInfo(operatorData);
+                } catch (e) {
+                    console.error('Error parsing operator data:', e);
+                }
+            }
+            
+            // Загружаем дашборд
+            loadDashboard();
+            
+            // Запускаем автообновление
+            startAutoRefresh();
+            
+            // Обработка видимости страницы
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    loadDashboard();
+                }
+            });
+        });
+
+        // Очистка при разгрузке страницы
+        window.addEventListener('beforeunload', () => {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+        });
+    </script>
+</body>
+</html>

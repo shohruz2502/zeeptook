@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход оператора — Zeeptook</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        :root {
+            --operator: #10b981;
+            --operator-dark: #059669;
+            --operator-light: #d1fae5;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --white: #ffffff;
+            --gray: #64748b;
+            --error: #ef4444;
+            --success: #10b981;
+            --gradient: linear-gradient(135deg, var(--operator) 0%, var(--operator-dark) 100%);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 40px 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: var(--white);
+            font-size: 28px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+        
+        .logo h1 i {
+            color: var(--operator);
+        }
+        
+        .logo p {
+            color: var(--gray);
+            font-size: 14px;
+        }
+        
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .form-group label {
+            font-size: 14px;
+            color: var(--white);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .form-group label i {
+            color: var(--operator);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            color: var(--white);
+            font-size: 16px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: var(--operator);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+        
+        .form-control::placeholder {
+            color: var(--gray);
+        }
+        
+        .password-toggle {
+            position: relative;
+        }
+        
+        .toggle-btn {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--gray);
+            cursor: pointer;
+            font-size: 18px;
+        }
+        
+        .login-btn {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+        }
+        
+        .login-btn:active {
+            transform: translateY(0);
+        }
+        
+        .login-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: var(--error);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .error-message.show {
+            display: flex;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: var(--gray);
+        }
+        
+        .loading.show {
+            display: flex;
+        }
+        
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid var(--operator);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        .footer-links {
+            margin-top: 25px;
+            text-align: center;
+            font-size: 14px;
+            color: var(--gray);
+        }
+        
+        .footer-links a {
+            color: var(--operator);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 30px 20px;
+            }
+            
+            .logo h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>
+                <i class="fa fa-shield"></i>
+                <span>Zeeptook Оператор</span>
+            </h1>
+            <p>Панель управления сделками</p>
+        </div>
+        
+        <div class="error-message" id="error-message">
+            <i class="fa fa-exclamation-circle"></i>
+            <span id="error-text">Неверные учетные данные</span>
+        </div>
+        
+        <form class="login-form" id="login-form">
+            <div class="form-group">
+                <label for="username">
+                    <i class="fa fa-user"></i>
+                    <span>Логин или Email</span>
+                </label>
+                <input type="text" 
+                       id="username" 
+                       class="form-control" 
+                       placeholder="Введите логин или email"
+                       required
+                       autocomplete="username">
+            </div>
+            
+            <div class="form-group password-toggle">
+                <label for="password">
+                    <i class="fa fa-lock"></i>
+                    <span>Пароль</span>
+                </label>
+                <input type="password" 
+                       id="password" 
+                       class="form-control" 
+                       placeholder="Введите пароль"
+                       required
+                       autocomplete="current-password">
+                <button type="button" class="toggle-btn" id="toggle-password">
+                    <i class="fa fa-eye"></i>
+                </button>
+            </div>
+            
+            <button type="submit" class="login-btn" id="login-btn">
+                <span id="btn-text">Войти как оператор</span>
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <span>Вход...</span>
+                </div>
+            </button>
+        </form>
+        
+        <div class="footer-links">
+            <p>Вернуться на <a href="index.html">главную страницу</a></p>
+            <p>Забыли пароль? Обратитесь к администратору</p>
+        </div>
+    </div>
+
+    <script>
+        // Конфигурация API
+        const API_BASE = window.location.origin;
+        
+        // Элементы DOM
+        const loginForm = document.getElementById('login-form');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const togglePasswordBtn = document.getElementById('toggle-password');
+        const loginBtn = document.getElementById('login-btn');
+        const btnText = document.getElementById('btn-text');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+
+        // Переключение видимости пароля
+        togglePasswordBtn.addEventListener('click', function() {
+            const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordInput.setAttribute('type', type);
+            this.innerHTML = type === 'password' ? '<i class="fa fa-eye"></i>' : '<i class="fa fa-eye-slash"></i>';
+        });
+
+        // Обработка отправки формы
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+            
+            if (!username || !password) {
+                showError('Пожалуйста, заполните все поля');
+                return;
+            }
+            
+            // Показываем загрузку
+            setLoading(true);
+            hideError();
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/operator/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username,
+                        password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success && data.token) {
+                    // Сохраняем токен и данные оператора
+                    localStorage.setItem('operatorToken', data.token);
+                    localStorage.setItem('operatorData', JSON.stringify(data.operator));
+                    
+                    // Показываем успешное сообщение
+                    showSuccess('Вход выполнен успешно!');
+                    
+                    // Перенаправляем на дашборд
+                    setTimeout(() => {
+                        window.location.href = 'operator-dashboard.html';
+                    }, 1000);
+                    
+                } else {
+                    showError(data.error || 'Неверные учетные данные оператора');
+                }
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                showError('Ошибка соединения с сервером');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // Вспомогательные функции
+        function setLoading(isLoading) {
+            if (isLoading) {
+                loginBtn.disabled = true;
+                btnText.style.display = 'none';
+                loading.classList.add('show');
+            } else {
+                loginBtn.disabled = false;
+                btnText.style.display = 'block';
+                loading.classList.remove('show');
+            }
+        }
+
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.classList.add('show');
+            
+            // Автоматическое скрытие через 5 секунд
+            setTimeout(() => {
+                hideError();
+            }, 5000);
+        }
+
+        function hideError() {
+            errorMessage.classList.remove('show');
+        }
+
+        function showSuccess(message) {
+            // Можно добавить уведомление об успехе
+            console.log('Success:', message);
+        }
+
+        // Проверяем, есть ли уже токен
+        function checkExistingToken() {
+            const token = localStorage.getItem('operatorToken');
+            if (token) {
+                // Проверяем валидность токена
+                verifyToken(token);
+            }
+        }
+
+        async function verifyToken(token) {
+            try {
+                const response = await fetch(`${API_BASE}/api/operator/verify`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                if (data.success) {
+                    // Токен валиден, перенаправляем на дашборд
+                    window.location.href = 'operator-dashboard.html';
+                } else {
+                    // Токен невалиден, удаляем
+                    localStorage.removeItem('operatorToken');
+                    localStorage.removeItem('operatorData');
+                }
+            } catch (error) {
+                console.error('Token verification failed:', error);
+                localStorage.removeItem('operatorToken');
+                localStorage.removeItem('operatorData');
+            }
+        }
+
+        // При загрузке страницы проверяем токен
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔐 Operator login page loaded');
+            checkExistingToken();
+            
+            // Фокус на поле ввода
+            usernameInput.focus();
+        });
+    </script>
+</body>
+</html>
