@@ -508,637 +508,575 @@
     </div>
 
     <script>
-        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
-        let currentMode = 'login';
-        let googleUserData = null;
-        let googleClientId = null;
-        let googleAuthInitialized = false;
-        let googleOAuthState = null;
+    const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
+    let currentMode = 'login';
+    let googleUserData = null;
+    let googleClientId = null;
+    let googleAuthInitialized = false;
+    let googleOAuthState = null;
 
-        // Проверка OAuth callback в URL
-        function checkForOAuthCallback() {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    const state = params.get('state');
-    const error = params.get('error');
-    
-    // Убираем параметры из URL
-    if (code || error) {
-        history.replaceState(null, null, window.location.pathname);
-    }
-    
-    if (error) {
-        showError('Ошибка Google авторизации: ' + error);
-        return;
-    }
-    
-    if (code && state) {
-        const savedState = sessionStorage.getItem('google_oauth_state');
-        if (state !== savedState) {
-            showError('Ошибка безопасности. Попробуйте снова.');
+    // Проверка OAuth callback в URL
+    function checkForOAuthCallback() {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        const state = params.get('state');
+        const error = params.get('error');
+        
+        // Убираем параметры из URL
+        if (code || error) {
+            history.replaceState(null, null, window.location.pathname);
+        }
+        
+        if (error) {
+            showError('Ошибка Google авторизации: ' + error);
             return;
         }
         
-        sessionStorage.removeItem('google_oauth_state');
-        
-        // Отправляем code на сервер для обмена на токен
-        handleGoogleAuthorizationCode(code);
-    }
-}
-
-// В самом начале DOMContentLoaded в register.html:
-document.addEventListener('DOMContentLoaded', function() {
-    // Проверяем, есть ли сохраненный код от Google
-    const savedCode = sessionStorage.getItem('google_auth_code');
-    if (savedCode) {
-        sessionStorage.removeItem('google_auth_code');
-        handleGoogleAuthorizationCode(savedCode);
-    }
-    
-    // Проверяем ошибки
-    const error = localStorage.getItem('google_auth_error');
-    if (error) {
-        localStorage.removeItem('google_auth_error');
-        showError('Ошибка Google авторизации: ' + error);
-    }
-    
-    // ... остальной код инициализации
-});
-
-// Новая функция для обработки кода авторизации
-async function handleGoogleAuthorizationCode(code) {
-    try {
-        showSuccess('Авторизация Google...');
-        
-        const response = await fetch(`${API_BASE}/auth/google`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                code: code
-            })
-        });
-
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.error || 'Ошибка авторизации через Google');
+        if (code && state) {
+            const savedState = sessionStorage.getItem('google_oauth_state');
+            if (state !== savedState) {
+                showError('Ошибка безопасности. Попробуйте снова.');
+                return;
+            }
+            
+            sessionStorage.removeItem('google_oauth_state');
+            
+            // Отправляем code на сервер для обмена на токен
+            handleGoogleAuthorizationCode(code);
         }
+    }
+
+    // Функция для обработки кода авторизации
+    async function handleGoogleAuthorizationCode(code) {
+        try {
+            showSuccess('Авторизация Google...');
+            
+            const response = await fetch(`${API_BASE}/auth/google`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    code: code
+                })
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Ошибка авторизации через Google');
+            }
+            
+            if (data.success && data.exists) {
+                saveUserAndRedirect(data);
+            } else if (data.success && !data.exists) {
+                googleUserData = data.user;
+                showGoogleCompleteModal();
+            } else {
+                throw new Error('Неожиданный ответ от сервера');
+            }
+            
+        } catch (error) {
+            console.error('Ошибка обработки Google кода:', error);
+            showError(error.message || 'Ошибка обработки данных Google');
+        }
+    }
+
+    // Проверяем, если пользователь уже авторизован
+    function checkExistingAuth() {
+        const token = localStorage.getItem('token');
+        if (token) {
+            window.location.href = 'profile.html';
+        }
+    }
+
+    // Переключение между вкладками
+    function switchTab(tab) {
+        const loginTab = document.querySelector('.tab:nth-child(1)');
+        const registerTab = document.querySelector('.tab:nth-child(2)');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        const formTitle = document.getElementById('form-title');
         
-        if (data.success && data.exists) {
-            saveUserAndRedirect(data);
-        } else if (data.success && !data.exists) {
-            googleUserData = data.user;
-            showGoogleCompleteModal();
+        if (tab === 'login') {
+            loginTab.classList.add('active');
+            registerTab.classList.remove('active');
+            loginForm.style.display = 'block';
+            registerForm.style.display = 'none';
+            formTitle.textContent = 'Вход в аккаунт';
+            currentMode = 'login';
+            updateSwitchText();
         } else {
-            throw new Error('Неожиданный ответ от сервера');
+            loginTab.classList.remove('active');
+            registerTab.classList.add('active');
+            loginForm.style.display = 'none';
+            registerForm.style.display = 'block';
+            formTitle.textContent = 'Создать аккаунт';
+            currentMode = 'register';
+            updateSwitchText();
         }
         
-    } catch (error) {
-        console.error('Ошибка обработки Google кода:', error);
-        showError(error.message || 'Ошибка обработки данных Google');
+        // Очищаем сообщения
+        hideMessages();
     }
-}
 
-        // Проверяем, если пользователь уже авторизован
-        function checkExistingAuth() {
-            const token = localStorage.getItem('token');
-            if (token) {
+    // Переключение между входом и регистрацией
+    function switchAuth() {
+        if (currentMode === 'login') {
+            switchTab('register');
+        } else {
+            switchTab('login');
+        }
+    }
+
+    // Обновление текста переключения
+    function updateSwitchText() {
+        const switchText = document.getElementById('switch-text');
+        const switchLink = document.getElementById('switch-link');
+        
+        if (currentMode === 'login') {
+            switchText.textContent = 'Нет аккаунта?';
+            switchLink.textContent = 'Зарегистрироваться';
+        } else {
+            switchText.textContent = 'Уже есть аккаунт?';
+            switchLink.textContent = 'Войти';
+        }
+    }
+
+    // Вход в аккаунт
+    async function handleLogin(event) {
+        event.preventDefault();
+        
+        const submitBtn = document.getElementById('login-btn');
+        const btnText = submitBtn.querySelector('span');
+        const btnIcon = submitBtn.querySelector('i');
+        
+        // Скрываем предыдущие сообщения
+        hideMessages();
+        
+        const username = document.getElementById('login-username').value.trim();
+        const password = document.getElementById('login-password').value;
+        
+        // Валидация
+        if (!username || !password) {
+            showError('Заполните все поля');
+            return;
+        }
+        
+        try {
+            // Показываем загрузку
+            btnText.textContent = 'Вход...';
+            btnIcon.className = 'fa fa-spinner fa-spin';
+            submitBtn.disabled = true;
+            
+            const response = await fetch(`${API_BASE}/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Ошибка входа');
+            }
+            
+            // Сохраняем токен и пользователя
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            
+            // Показываем успех и редиректим
+            showSuccess('Вход выполнен! Перенаправляем...');
+            
+            setTimeout(() => {
                 window.location.href = 'profile.html';
-            }
-        }
-
-        // Переключение между вкладками
-        function switchTab(tab) {
-            const loginTab = document.querySelector('.tab:nth-child(1)');
-            const registerTab = document.querySelector('.tab:nth-child(2)');
-            const loginForm = document.getElementById('login-form');
-            const registerForm = document.getElementById('register-form');
-            const formTitle = document.getElementById('form-title');
+            }, 1000);
             
-            if (tab === 'login') {
-                loginTab.classList.add('active');
-                registerTab.classList.remove('active');
-                loginForm.style.display = 'block';
-                registerForm.style.display = 'none';
-                formTitle.textContent = 'Вход в аккаунт';
-                currentMode = 'login';
-                updateSwitchText();
+        } catch (error) {
+            console.error('Login error:', error);
+            showError(error.message);
+            
+            // Восстанавливаем кнопку
+            btnText.textContent = 'Войти';
+            btnIcon.className = 'fa fa-sign-in';
+            submitBtn.disabled = false;
+        }
+    }
+
+    // Регистрация через email
+    async function handleRegister(event) {
+        event.preventDefault();
+        
+        const submitBtn = document.getElementById('register-btn');
+        const btnText = submitBtn.querySelector('span');
+        const btnIcon = submitBtn.querySelector('i');
+        
+        // Скрываем предыдущие сообщения
+        hideMessages();
+        
+        const username = document.getElementById('reg-username').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
+        const fullName = document.getElementById('reg-full_name').value.trim();
+        const birthYear = parseInt(document.getElementById('reg-birth_year').value);
+        const password = document.getElementById('reg-password').value;
+        
+        // Валидация
+        if (!username || !email || !fullName || !birthYear || !password) {
+            showError('Заполните все обязательные поля');
+            return;
+        }
+        
+        // Проверка username
+        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+            showError('Имя пользователя может содержать только буквы, цифры и подчеркивания');
+            return;
+        }
+        
+        if (password.length < 6) {
+            showError('Пароль должен быть не менее 6 символов');
+            return;
+        }
+        
+        const currentYear = new Date().getFullYear();
+        if (birthYear < 1900 || birthYear > currentYear) {
+            showError('Укажите корректный год рождения');
+            return;
+        }
+        
+        try {
+            // Показываем загрузку
+            btnText.textContent = 'Регистрация...';
+            btnIcon.className = 'fa fa-spinner fa-spin';
+            submitBtn.disabled = true;
+            
+            const response = await fetch(`${API_BASE}/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    username: username,
+                    email: email,
+                    password: password,
+                    full_name: fullName,
+                    birth_year: birthYear,
+                    auth_method: 'email'
+                })
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Ошибка регистрации');
+            }
+            
+            // Сохраняем токен и пользователя
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            
+            // Показываем успех и редиректим
+            showSuccess('Регистрация успешна! Перенаправляем...');
+            
+            setTimeout(() => {
+                window.location.href = 'profile.html';
+            }, 1500);
+            
+        } catch (error) {
+            console.error('Registration error:', error);
+            showError(error.message);
+            
+            // Восстанавливаем кнопку
+            btnText.textContent = 'Зарегистрироваться';
+            btnIcon.className = 'fa fa-user-plus';
+            submitBtn.disabled = false;
+        }
+    }
+
+    // Загрузка конфигурации Google
+    async function loadGoogleConfig() {
+        try {
+            console.log('Загрузка конфигурации Google...');
+            const response = await fetch(`${API_BASE}/config/google`);
+            
+            if (!response.ok) {
+                throw new Error('Ошибка получения конфигурации');
+            }
+            
+            const config = await response.json();
+            
+            if (config.success && config.googleClientId && config.googleClientId !== 'not-configured') {
+                googleClientId = config.googleClientId;
+                console.log('✅ Google Client ID получен:', googleClientId);
+                
+                // Включаем кнопку Google
+                const googleBtn = document.getElementById('google-auth-btn');
+                googleBtn.disabled = false;
+                googleAuthInitialized = true;
+                
             } else {
-                loginTab.classList.remove('active');
-                registerTab.classList.add('active');
-                loginForm.style.display = 'none';
-                registerForm.style.display = 'block';
-                formTitle.textContent = 'Создать аккаунт';
-                currentMode = 'register';
-                updateSwitchText();
-            }
-            
-            // Очищаем сообщения
-            hideMessages();
-        }
-
-        // Переключение между входом и регистрацией
-        function switchAuth() {
-            if (currentMode === 'login') {
-                switchTab('register');
-            } else {
-                switchTab('login');
-            }
-        }
-
-        // Обновление текста переключения
-        function updateSwitchText() {
-            const switchText = document.getElementById('switch-text');
-            const switchLink = document.getElementById('switch-link');
-            
-            if (currentMode === 'login') {
-                switchText.textContent = 'Нет аккаунта?';
-                switchLink.textContent = 'Зарегистрироваться';
-            } else {
-                switchText.textContent = 'Уже есть аккаунт?';
-                switchLink.textContent = 'Войти';
-            }
-        }
-
-        // Вход в аккаунт
-        async function handleLogin(event) {
-            event.preventDefault();
-            
-            const submitBtn = document.getElementById('login-btn');
-            const btnText = submitBtn.querySelector('span');
-            const btnIcon = submitBtn.querySelector('i');
-            
-            // Скрываем предыдущие сообщения
-            hideMessages();
-            
-            const username = document.getElementById('login-username').value.trim();
-            const password = document.getElementById('login-password').value;
-            
-            // Валидация
-            if (!username || !password) {
-                showError('Заполните все поля');
-                return;
-            }
-            
-            try {
-                // Показываем загрузку
-                btnText.textContent = 'Вход...';
-                btnIcon.className = 'fa fa-spinner fa-spin';
-                submitBtn.disabled = true;
-                
-                const response = await fetch(`${API_BASE}/login`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        username: username,
-                        password: password
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Ошибка входа');
-                }
-                
-                // Сохраняем токен и пользователя
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                
-                // Показываем успех и редиректим
-                showSuccess('Вход выполнен! Перенаправляем...');
-                
-                setTimeout(() => {
-                    window.location.href = 'profile.html';
-                }, 1000);
-                
-            } catch (error) {
-                console.error('Login error:', error);
-                showError(error.message);
-                
-                // Восстанавливаем кнопку
-                btnText.textContent = 'Войти';
-                btnIcon.className = 'fa fa-sign-in';
-                submitBtn.disabled = false;
-            }
-        }
-
-        // Регистрация через email
-        async function handleRegister(event) {
-            event.preventDefault();
-            
-            const submitBtn = document.getElementById('register-btn');
-            const btnText = submitBtn.querySelector('span');
-            const btnIcon = submitBtn.querySelector('i');
-            
-            // Скрываем предыдущие сообщения
-            hideMessages();
-            
-            const username = document.getElementById('reg-username').value.trim();
-            const email = document.getElementById('reg-email').value.trim();
-            const fullName = document.getElementById('reg-full_name').value.trim();
-            const birthYear = parseInt(document.getElementById('reg-birth_year').value);
-            const password = document.getElementById('reg-password').value;
-            
-            // Валидация
-            if (!username || !email || !fullName || !birthYear || !password) {
-                showError('Заполните все обязательные поля');
-                return;
-            }
-            
-            // Проверка username
-            if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-                showError('Имя пользователя может содержать только буквы, цифры и подчеркивания');
-                return;
-            }
-            
-            if (password.length < 6) {
-                showError('Пароль должен быть не менее 6 символов');
-                return;
-            }
-            
-            const currentYear = new Date().getFullYear();
-            if (birthYear < 1900 || birthYear > currentYear) {
-                showError('Укажите корректный год рождения');
-                return;
-            }
-            
-            try {
-                // Показываем загрузку
-                btnText.textContent = 'Регистрация...';
-                btnIcon.className = 'fa fa-spinner fa-spin';
-                submitBtn.disabled = true;
-                
-                const response = await fetch(`${API_BASE}/register`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        username: username,
-                        email: email,
-                        password: password,
-                        full_name: fullName,
-                        birth_year: birthYear,
-                        auth_method: 'email'
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Ошибка регистрации');
-                }
-                
-                // Сохраняем токен и пользователя
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                
-                // Показываем успех и редиректим
-                showSuccess('Регистрация успешна! Перенаправляем...');
-                
-                setTimeout(() => {
-                    window.location.href = 'profile.html';
-                }, 1500);
-                
-            } catch (error) {
-                console.error('Registration error:', error);
-                showError(error.message);
-                
-                // Восстанавливаем кнопку
-                btnText.textContent = 'Зарегистрироваться';
-                btnIcon.className = 'fa fa-user-plus';
-                submitBtn.disabled = false;
-            }
-        }
-
-        // Загрузка конфигурации Google
-        async function loadGoogleConfig() {
-            try {
-                console.log('Загрузка конфигурации Google...');
-                const response = await fetch(`${API_BASE}/config/google`);
-                
-                if (!response.ok) {
-                    throw new Error('Ошибка получения конфигурации');
-                }
-                
-                const config = await response.json();
-                
-                if (config.success && config.googleClientId && config.googleClientId !== 'not-configured') {
-                    googleClientId = config.googleClientId;
-                    console.log('✅ Google Client ID получен:', googleClientId);
-                    
-                    // Включаем кнопку Google
-                    const googleBtn = document.getElementById('google-auth-btn');
-                    googleBtn.disabled = false;
-                    googleAuthInitialized = true;
-                    
-                } else {
-                    console.warn('Google OAuth не настроен на сервере');
-                    disableGoogleButton();
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки конфигурации Google:', error);
+                console.warn('Google OAuth не настроен на сервере');
                 disableGoogleButton();
             }
+        } catch (error) {
+            console.error('Ошибка загрузки конфигурации Google:', error);
+            disableGoogleButton();
+        }
+    }
+
+    // Отключение кнопки Google
+    function disableGoogleButton() {
+        const googleBtn = document.getElementById('google-auth-btn');
+        googleBtn.innerHTML = '<i class="fa fa-exclamation-triangle"></i> Используйте email регистрацию';
+        googleBtn.disabled = true;
+        googleBtn.style.opacity = '0.6';
+    }
+
+    // Google OAuth через redirect
+    function handleGoogleRedirectAuth() {
+        if (!googleAuthInitialized || !googleClientId) {
+            showError('Google авторизация временно недоступна. Используйте email.');
+            return;
         }
 
-        // Отключение кнопки Google
-        function disableGoogleButton() {
-            const googleBtn = document.getElementById('google-auth-btn');
-            googleBtn.innerHTML = '<i class="fa fa-exclamation-triangle"></i> Используйте email регистрацию';
-            googleBtn.disabled = true;
-            googleBtn.style.opacity = '0.6';
+        try {
+            // Создаем уникальный state для защиты от CSRF
+            googleOAuthState = 'google_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            sessionStorage.setItem('google_oauth_state', googleOAuthState);
+            
+            // ВАЖНО: Используем SAME PAGE для callback
+            const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
+            const scope = encodeURIComponent('email profile openid');
+            const responseType = 'code'; // Используем Authorization Code Flow
+            
+            const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+                `client_id=${googleClientId}` +
+                `&redirect_uri=${redirectUri}` +
+                `&response_type=${responseType}` +
+                `&scope=${scope}` +
+                `&state=${googleOAuthState}` +
+                `&prompt=select_account`;
+            
+            console.log('Перенаправляем на Google OAuth...', authUrl);
+            
+            // Перенаправляем пользователя
+            window.location.href = authUrl;
+            
+        } catch (error) {
+            console.error('Ошибка Google авторизации:', error);
+            showError('Ошибка при запуске Google авторизации');
         }
+    }
 
-        // Google OAuth через redirect
-        function handleGoogleRedirectAuth() {
-            if (!googleAuthInitialized || !googleClientId) {
-                showError('Google авторизация временно недоступна. Используйте email.');
-                return;
-            }
+    // Сохранить пользователя и перенаправить
+    async function saveUserAndRedirect(data) {
+        try {
+            // Сохраняем токен и пользователя
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
 
-            try {
-                // Создаем уникальный state для защиты от CSRF
-                googleOAuthState = 'google_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                sessionStorage.setItem('google_oauth_state', googleOAuthState);
-                
-                // В функции handleGoogleRedirectAuth:
-const redirectUri = encodeURIComponent(
-    window.location.hostname === 'localhost' 
-        ? 'http://localhost:3000/google-callback.html'
-        : 'https://zeeptook.vercel.app/google-callback.html'
-);
-                
-                const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-                    `client_id=${googleClientId}` +
-                    `&redirect_uri=${redirectUri}` +
-                    `&response_type=${responseType}` +
-                    `&scope=${scope}` +
-                    `&state=${googleOAuthState}` +
-                    `&prompt=select_account`;
-                
-                console.log('Перенаправляем на Google OAuth...', authUrl);
-                
-                // Перенаправляем пользователя
-                window.location.href = authUrl;
-                
-            } catch (error) {
-                console.error('Ошибка Google авторизации:', error);
-                showError('Ошибка при запуске Google авторизации');
-            }
-        }
-
-        // Обработка access_token от Google
-        async function handleGoogleAccessToken(accessToken) {
-            try {
-                showSuccess('Получены данные от Google. Проверяем аккаунт...');
-                
-                // Отправляем токен на сервер для проверки
-                const response = await fetch(`${API_BASE}/auth/google`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        access_token: accessToken
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Ошибка авторизации через Google');
-                }
-                
-                if (data.success && data.exists) {
-                    // Существующий пользователь - сразу логиним
-                    console.log('Google: Существующий пользователь', data.user);
-                    saveUserAndRedirect(data);
-                } else if (data.success && !data.exists) {
-                    // Новый пользователь - показываем форму для доп данных
-                    console.log('Google: Новый пользователь', data.user);
-                    googleUserData = data.user;
-                    showGoogleCompleteModal();
-                } else {
-                    throw new Error('Неожиданный ответ от сервера');
-                }
-                
-            } catch (error) {
-                console.error('Ошибка обработки Google токена:', error);
-                showError(error.message || 'Ошибка обработки данных Google');
-            }
-        }
-
-        // Сохранить пользователя и перенаправить
-        async function saveUserAndRedirect(data) {
-            try {
-                // Сохраняем токен и пользователя
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-
-                // Показываем успех и редиректим
-                showSuccess('Вход выполнен! Перенаправляем...');
-                
-                setTimeout(() => {
-                    window.location.href = 'profile.html';
-                }, 1000);
-                
-            } catch (error) {
-                console.error('Ошибка сохранения пользователя:', error);
-                showError('Ошибка сохранения данных пользователя');
-            }
-        }
-
-        // Показать модальное окно для завершения регистрации через Google
-        function showGoogleCompleteModal() {
-            const modal = document.getElementById('google-complete-modal');
-            modal.style.display = 'flex';
+            // Показываем успех и редиректим
+            showSuccess('Вход выполнен! Перенаправляем...');
             
-            // Заполняем поле имени пользователя на основе email
-            const email = googleUserData.email;
-            const usernameBase = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '_');
-            document.getElementById('google-username').value = usernameBase;
-            
-            // Устанавливаем год рождения по умолчанию
-            const currentYear = new Date().getFullYear();
-            document.getElementById('google-birth_year').value = currentYear - 25;
-            
-            // Очищаем ошибки
-            document.getElementById('modal-error-message').style.display = 'none';
-            
-            // Фокус на первом поле
-            document.getElementById('google-username').focus();
-        }
-
-        // Завершение регистрации через Google
-        async function handleGoogleComplete(event) {
-            event.preventDefault();
-            
-            const submitBtn = document.getElementById('google-complete-btn');
-            const btnText = submitBtn.querySelector('span');
-            const btnIcon = submitBtn.querySelector('i');
-            
-            // Скрываем предыдущие сообщения
-            document.getElementById('modal-error-message').style.display = 'none';
-            
-            const username = document.getElementById('google-username').value.trim();
-            const birthYear = parseInt(document.getElementById('google-birth_year').value);
-            const password = document.getElementById('google-password').value;
-            
-            // Валидация
-            if (!username || !birthYear || !password) {
-                showModalError('Заполните все обязательные поля');
-                return;
-            }
-            
-            // Проверка username
-            if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-                showModalError('Имя пользователя может содержать только буквы, цифры и подчеркивания');
-                return;
-            }
-            
-            if (password.length < 6) {
-                showModalError('Пароль должен быть не менее 6 символов');
-                return;
-            }
-            
-            const currentYear = new Date().getFullYear();
-            if (birthYear < 1900 || birthYear > currentYear) {
-                showModalError('Укажите корректный год рождения');
-                return;
-            }
-            
-            try {
-                // Показываем загрузку
-                btnText.textContent = 'Регистрация...';
-                btnIcon.className = 'fa fa-spinner fa-spin';
-                submitBtn.disabled = true;
-                
-                const response = await fetch(`${API_BASE}/auth/google/complete`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        google_id: googleUserData.google_id,
-                        email: googleUserData.email,
-                        full_name: googleUserData.full_name,
-                        username: username,
-                        password: password,
-                        birth_year: birthYear,
-                        avatar_url: googleUserData.avatar_url || '',
-                        auth_method: 'google'
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Ошибка регистрации');
-                }
-                
-                // Сохраняем токен и пользователя
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                
-                // Скрываем модальное окно
-                document.getElementById('google-complete-modal').style.display = 'none';
-                
-                // Показываем успех и редиректим
-                showSuccess('Регистрация завершена! Перенаправляем...');
-                
-                setTimeout(() => {
-                    window.location.href = 'profile.html';
-                }, 1500);
-                
-            } catch (error) {
-                console.error('Google complete registration error:', error);
-                showModalError(error.message);
-                
-                // Восстанавливаем кнопку
-                btnText.textContent = 'Завершить регистрацию';
-                btnIcon.className = 'fa fa-check';
-                submitBtn.disabled = false;
-            }
-        }
-
-        // Вспомогательные функции
-        function hideMessages() {
-            document.getElementById('error-message').style.display = 'none';
-            document.getElementById('success-message').style.display = 'none';
-        }
-
-        function showError(message) {
-            const errorDiv = document.getElementById('error-message');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            
-            // Автоскрытие через 5 секунд
             setTimeout(() => {
-                errorDiv.style.display = 'none';
-            }, 5000);
-        }
-
-        function showSuccess(message) {
-            const successDiv = document.getElementById('success-message');
-            successDiv.textContent = message;
-            successDiv.style.display = 'block';
+                window.location.href = 'profile.html';
+            }, 1000);
             
-            // Автоскрытие через 3 секунды
+        } catch (error) {
+            console.error('Ошибка сохранения пользователя:', error);
+            showError('Ошибка сохранения данных пользователя');
+        }
+    }
+
+    // Показать модальное окно для завершения регистрации через Google
+    function showGoogleCompleteModal() {
+        const modal = document.getElementById('google-complete-modal');
+        modal.style.display = 'flex';
+        
+        // Заполняем поле имени пользователя на основе email
+        const email = googleUserData.email;
+        const usernameBase = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '_');
+        document.getElementById('google-username').value = usernameBase;
+        
+        // Устанавливаем год рождения по умолчанию
+        const currentYear = new Date().getFullYear();
+        document.getElementById('google-birth_year').value = currentYear - 25;
+        
+        // Очищаем ошибки
+        document.getElementById('modal-error-message').style.display = 'none';
+        
+        // Фокус на первом поле
+        document.getElementById('google-username').focus();
+    }
+
+    // Завершение регистрации через Google
+    async function handleGoogleComplete(event) {
+        event.preventDefault();
+        
+        const submitBtn = document.getElementById('google-complete-btn');
+        const btnText = submitBtn.querySelector('span');
+        const btnIcon = submitBtn.querySelector('i');
+        
+        // Скрываем предыдущие сообщения
+        document.getElementById('modal-error-message').style.display = 'none';
+        
+        const username = document.getElementById('google-username').value.trim();
+        const birthYear = parseInt(document.getElementById('google-birth_year').value);
+        const password = document.getElementById('google-password').value;
+        
+        // Валидация
+        if (!username || !birthYear || !password) {
+            showModalError('Заполните все обязательные поля');
+            return;
+        }
+        
+        // Проверка username
+        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+            showModalError('Имя пользователя может содержать только буквы, цифры и подчеркивания');
+            return;
+        }
+        
+        if (password.length < 6) {
+            showModalError('Пароль должен быть не менее 6 символов');
+            return;
+        }
+        
+        const currentYear = new Date().getFullYear();
+        if (birthYear < 1900 || birthYear > currentYear) {
+            showModalError('Укажите корректный год рождения');
+            return;
+        }
+        
+        try {
+            // Показываем загрузку
+            btnText.textContent = 'Регистрация...';
+            btnIcon.className = 'fa fa-spinner fa-spin';
+            submitBtn.disabled = true;
+            
+            const response = await fetch(`${API_BASE}/auth/google/complete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    google_id: googleUserData.google_id,
+                    email: googleUserData.email,
+                    full_name: googleUserData.full_name,
+                    username: username,
+                    password: password,
+                    birth_year: birthYear,
+                    avatar_url: googleUserData.avatar_url || '',
+                    auth_method: 'google'
+                })
+            });
+
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Ошибка регистрации');
+            }
+            
+            // Сохраняем токен и пользователя
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            
+            // Скрываем модальное окно
+            document.getElementById('google-complete-modal').style.display = 'none';
+            
+            // Показываем успех и редиректим
+            showSuccess('Регистрация завершена! Перенаправляем...');
+            
             setTimeout(() => {
-                successDiv.style.display = 'none';
-            }, 3000);
+                window.location.href = 'profile.html';
+            }, 1500);
+            
+        } catch (error) {
+            console.error('Google complete registration error:', error);
+            showModalError(error.message);
+            
+            // Восстанавливаем кнопку
+            btnText.textContent = 'Завершить регистрацию';
+            btnIcon.className = 'fa fa-check';
+            submitBtn.disabled = false;
         }
+    }
 
-        function showModalError(message) {
-            const errorDiv = document.getElementById('modal-error-message');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
+    // Вспомогательные функции
+    function hideMessages() {
+        document.getElementById('error-message').style.display = 'none';
+        document.getElementById('success-message').style.display = 'none';
+    }
 
-        // Инициализация
-        document.addEventListener('DOMContentLoaded', function() {
-            // Проверяем OAuth callback (это должно быть ПЕРВОЙ операцией)
-            checkForOAuthCallback();
-            
-            // Проверяем авторизацию
-            checkExistingAuth();
-            
-            // Загружаем конфигурацию Google
-            loadGoogleConfig();
-            
-            // Обработчики форм
-            document.getElementById('login-form').addEventListener('submit', handleLogin);
-            document.getElementById('register-form').addEventListener('submit', handleRegister);
-            document.getElementById('google-complete-form').addEventListener('submit', handleGoogleComplete);
-            
-            // Обработчик кнопки Google
-            document.getElementById('google-auth-btn').addEventListener('click', handleGoogleRedirectAuth);
-            
-            // Автозаполнение года рождения
-            const currentYear = new Date().getFullYear();
-            document.getElementById('reg-birth_year').value = currentYear - 25;
-            
-            // Валидация username в реальном времени
-            document.getElementById('reg-username').addEventListener('input', function(e) {
-                const value = e.target.value;
-                if (!/^[a-zA-Z0-9_]*$/.test(value)) {
-                    e.target.value = value.replace(/[^a-zA-Z0-9_]/g, '');
-                }
-            });
-            
-            document.getElementById('google-username').addEventListener('input', function(e) {
-                const value = e.target.value;
-                if (!/^[a-zA-Z0-9_]*$/.test(value)) {
-                    e.target.value = value.replace(/[^a-zA-Z0-9_]/g, '');
-                }
-            });
+    function showError(message) {
+        const errorDiv = document.getElementById('error-message');
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+        
+        // Автоскрытие через 5 секунд
+        setTimeout(() => {
+            errorDiv.style.display = 'none';
+        }, 5000);
+    }
+
+    function showSuccess(message) {
+        const successDiv = document.getElementById('success-message');
+        successDiv.textContent = message;
+        successDiv.style.display = 'block';
+        
+        // Автоскрытие через 3 секунды
+        setTimeout(() => {
+            successDiv.style.display = 'none';
+        }, 3000);
+    }
+
+    function showModalError(message) {
+        const errorDiv = document.getElementById('modal-error-message');
+        errorDiv.textContent = message;
+        errorDiv.style.display = 'block';
+    }
+
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', function() {
+        // Проверяем OAuth callback (это должно быть ПЕРВОЙ операцией)
+        checkForOAuthCallback();
+        
+        // Проверяем авторизацию
+        checkExistingAuth();
+        
+        // Загружаем конфигурацию Google
+        loadGoogleConfig();
+        
+        // Обработчики форм
+        document.getElementById('login-form').addEventListener('submit', handleLogin);
+        document.getElementById('register-form').addEventListener('submit', handleRegister);
+        document.getElementById('google-complete-form').addEventListener('submit', handleGoogleComplete);
+        
+        // Обработчик кнопки Google
+        document.getElementById('google-auth-btn').addEventListener('click', handleGoogleRedirectAuth);
+        
+        // Автозаполнение года рождения
+        const currentYear = new Date().getFullYear();
+        document.getElementById('reg-birth_year').value = currentYear - 25;
+        
+        // Валидация username в реальном времени
+        document.getElementById('reg-username').addEventListener('input', function(e) {
+            const value = e.target.value;
+            if (!/^[a-zA-Z0-9_]*$/.test(value)) {
+                e.target.value = value.replace(/[^a-zA-Z0-9_]/g, '');
+            }
         });
-    </script>
+        
+        document.getElementById('google-username').addEventListener('input', function(e) {
+            const value = e.target.value;
+            if (!/^[a-zA-Z0-9_]*$/.test(value)) {
+                e.target.value = value.replace(/[^a-zA-Z0-9_]/g, '');
+            }
+        });
+    });
+</script>
 </body>
 </html>
