@@ -178,6 +178,11 @@ async function exchangeCodeForToken(code) {
     try {
         console.log('🔄 Exchanging code for token...');
         
+        // Укажите ТОЧНО ТАКОЙ ЖЕ redirect_uri как на фронтенде
+        const redirectUri = process.env.NODE_ENV === 'production' 
+            ? 'https://zeeptook.vercel.app/register.html' 
+            : 'http://localhost:3000/register.html';
+        
         const response = await fetch('https://oauth2.googleapis.com/token', {
             method: 'POST',
             headers: {
@@ -187,9 +192,7 @@ async function exchangeCodeForToken(code) {
                 code: code,
                 client_id: GOOGLE_CLIENT_ID,
                 client_secret: GOOGLE_CLIENT_SECRET,
-                redirect_uri: process.env.NODE_ENV === 'production' 
-                    ? 'https://zeeptook.vercel.app' 
-                    : 'http://localhost:3000',
+                redirect_uri: redirectUri, // должно совпадать с frontend
                 grant_type: 'authorization_code'
             })
         });
@@ -197,7 +200,7 @@ async function exchangeCodeForToken(code) {
         if (!response.ok) {
             const errorData = await response.json();
             console.error('❌ Token exchange error:', errorData);
-            throw new Error('Failed to exchange code for token');
+            throw new Error('Failed to exchange code for token: ' + (errorData.error || 'unknown'));
         }
 
         const tokenData = await response.json();
