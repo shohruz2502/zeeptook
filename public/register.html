@@ -546,6 +546,25 @@
     }
 }
 
+// В самом начале DOMContentLoaded в register.html:
+document.addEventListener('DOMContentLoaded', function() {
+    // Проверяем, есть ли сохраненный код от Google
+    const savedCode = sessionStorage.getItem('google_auth_code');
+    if (savedCode) {
+        sessionStorage.removeItem('google_auth_code');
+        handleGoogleAuthorizationCode(savedCode);
+    }
+    
+    // Проверяем ошибки
+    const error = localStorage.getItem('google_auth_error');
+    if (error) {
+        localStorage.removeItem('google_auth_error');
+        showError('Ошибка Google авторизации: ' + error);
+    }
+    
+    // ... остальной код инициализации
+});
+
 // Новая функция для обработки кода авторизации
 async function handleGoogleAuthorizationCode(code) {
     try {
@@ -848,10 +867,12 @@ async function handleGoogleAuthorizationCode(code) {
                 googleOAuthState = 'google_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                 sessionStorage.setItem('google_oauth_state', googleOAuthState);
                 
-                // Создаем URL для Google OAuth (Implicit flow)
-                const redirectUri = encodeURIComponent(window.location.origin);
-                const scope = encodeURIComponent('email profile openid');
-                const responseType = 'code';
+                // В функции handleGoogleRedirectAuth:
+const redirectUri = encodeURIComponent(
+    window.location.hostname === 'localhost' 
+        ? 'http://localhost:3000/google-callback.html'
+        : 'https://zeeptook.vercel.app/google-callback.html'
+);
                 
                 const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
                     `client_id=${googleClientId}` +
