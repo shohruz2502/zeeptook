@@ -1445,10 +1445,12 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
         // Проверяем подключение к БД
         console.log('📊 Querying user with ID:', user_id);
         
+        // ЗАМЕНИТЕ ЭТОТ ЗАПРОС:
         const userResult = await pool.query(`
-            SELECT id, username, email, full_name, avatar_url, rating, created_at, birth_year
+            SELECT id, username, email, full_name, avatar_url, rating, created_at
             FROM users WHERE id = $1
         `, [user_id]);
+        // Убрали birth_year из запроса, если его нет в таблице
 
         console.log('📊 User query result:', userResult.rows.length, 'rows');
         
