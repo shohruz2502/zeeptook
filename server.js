@@ -165,6 +165,72 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+// ============================================
+// === ADDED CODE START: OPERATOR MIDDLEWARE ===
+// ============================================
+
+// Middleware для проверки оператора
+const requireOperator = async (req, res, next) => {
+    try {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+
+        if (!token) {
+            return res.status(401).json({ error: 'Operator token required' });
+        }
+
+        jwt.verify(token, JWT_SECRET, async (err, decoded) => {
+            if (err) {
+                return res.status(403).json({ error: 'Invalid operator token' });
+            }
+
+            // Проверяем в базе данных, является ли пользователь оператором
+            try {
+                const userResult = await pool.query(
+                    `SELECT id, username, role FROM users WHERE id = $1`,
+                    [decoded.userId]
+                );
+
+                if (userResult.rows.length === 0) {
+                    return res.status(403).json({ error: 'User not found' });
+                }
+
+                const user = userResult.rows[0];
+                
+                // Проверяем роль (operator или admin)
+                if (user.role !== 'operator' && user.role !== 'admin') {
+                    return res.status(403).json({ error: 'Operator privileges required' });
+                }
+
+                req.operator = {
+                    ...decoded,
+                    role: user.role,
+                    username: user.username
+                };
+                next();
+            } catch (dbError) {
+                console.error('❌ Database error in operator middleware:', dbError);
+                return res.status(500).json({ error: 'Internal server error' });
+            }
+        });
+    } catch (error) {
+        console.error('❌ Operator middleware error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+// Функция для генерации кода сделки
+function generateDealCode() {
+    const date = new Date();
+    const dateStr = date.toISOString().slice(2, 10).replace(/-/g, '');
+    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+    return `DEAL-${dateStr}-${random}`;
+}
+
+// ============================================
+// === ADDED CODE END: OPERATOR MIDDLEWARE ===
+// ============================================
+
 // Routes
 
 // Serve main pages
@@ -199,6 +265,39 @@ app.get('/register', (req, res) => {
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
+
+// ============================================
+// === ADDED CODE START: OPERATOR PAGES ===
+// ============================================
+
+// Operator pages
+app.get('/operator-login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'operator-login.html'));
+});
+
+app.get('/operator-dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'operator-dashboard.html'));
+});
+
+app.get('/operator-deals', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'operator-deals.html'));
+});
+
+app.get('/operator-chat', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'operator-chat.html'));
+});
+
+app.get('/deal-page', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'deal-page.html'));
+});
+
+app.get('/operator-profile', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'operator-profile.html'));
+});
+
+// ============================================
+// === ADDED CODE END: OPERATOR PAGES ===
+// ============================================
 
 // Google Config endpoint
 app.get('/api/config/google', (req, res) => {
@@ -659,6 +758,116 @@ app.post('/api/login', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
+// ============================================
+// === ADDED CODE START: OPERATOR AUTH ===
+// ============================================
+
+// Вход для оператора
+app.post('/api/operator/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        if (!username || !password) {
+            return res.status(400).json({ error: 'Username and password are required' });
+        }
+
+        // Ищем пользователя с ролью оператора или администратора
+        const result = await pool.query(
+            `SELECT * FROM users 
+             WHERE (username = $1 OR email = $1) 
+             AND (role = 'operator' OR role = 'admin')`,
+            [username]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(401).json({ error: 'Invalid operator credentials' });
+        }
+
+        const operator = result.rows[0];
+
+        // Проверяем пароль
+        const validPassword = await bcrypt.compare(password, operator.password);
+        if (!validPassword) {
+            return res.status(401).json({ error: 'Invalid operator credentials' });
+        }
+
+        // Создаем JWT токен с дополнительной информацией
+        const token = jwt.sign({ 
+            userId: operator.id, 
+            username: operator.username,
+            role: operator.role,
+            isOperator: true 
+        }, JWT_SECRET, { expiresIn: '8h' });
+
+        console.log(`🔐 Operator logged in: ${operator.username} (${operator.role})`);
+
+        res.json({
+            success: true,
+            message: 'Operator login successful',
+            token,
+            operator: {
+                id: operator.id,
+                username: operator.username,
+                email: operator.email,
+                full_name: operator.full_name,
+                avatar_url: operator.avatar_url,
+                role: operator.role
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Operator login error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Проверка токена оператора
+app.get('/api/operator/verify', async (req, res) => {
+    try {
+        const authHeader = req.headers['authorization'];
+        const token = authHeader && authHeader.split(' ')[1];
+
+        if (!token) {
+            return res.status(401).json({ error: 'Token required' });
+        }
+
+        jwt.verify(token, JWT_SECRET, async (err, decoded) => {
+            if (err) {
+                return res.status(403).json({ error: 'Invalid token' });
+            }
+
+            if (!decoded.isOperator) {
+                return res.status(403).json({ error: 'Operator privileges required' });
+            }
+
+            // Проверяем в базе данных
+            const userResult = await pool.query(
+                `SELECT id, username, email, full_name, avatar_url, role 
+                 FROM users 
+                 WHERE id = $1 AND (role = 'operator' OR role = 'admin')`,
+                [decoded.userId]
+            );
+
+            if (userResult.rows.length === 0) {
+                return res.status(403).json({ error: 'Operator not found' });
+            }
+
+            res.json({
+                success: true,
+                operator: userResult.rows[0]
+            });
+        });
+
+    } catch (error) {
+        console.error('❌ Operator verify error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// ============================================
+// === ADDED CODE END: OPERATOR AUTH ===
+// ============================================
 
 // Ads routes - UPDATED WITH BASE64 PHOTO SUPPORT
 app.get('/api/ads', async (req, res) => {
@@ -1570,6 +1779,385 @@ app.get('/api/profile/ads', authenticateToken, async (req, res) => {
     }
 });
 
+// ============================================
+// === ADDED CODE START: OPERATOR ROUTES ===
+// ============================================
+
+// Получение дашборда оператора
+app.get('/api/operator/dashboard', requireOperator, async (req, res) => {
+    try {
+        const operatorId = req.operator.userId;
+        
+        // Получаем статистику оператора
+        const statsQuery = await pool.query(`
+            SELECT 
+                COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending_count,
+                COUNT(CASE WHEN status = 'active' THEN 1 END) as active_count,
+                COUNT(CASE WHEN status = 'payment' THEN 1 END) as payment_count,
+                COUNT(CASE WHEN status = 'transfer' THEN 1 END) as transfer_count,
+                COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_count,
+                COUNT(CASE WHEN status = 'disputed' THEN 1 END) as disputed_count,
+                SUM(CASE WHEN is_urgent THEN 1 ELSE 0 END) as urgent_count
+            FROM operator_deals 
+            WHERE operator_id = $1
+        `, [operatorId]);
+
+        // Последние сделки
+        const recentDeals = await pool.query(`
+            SELECT 
+                od.*,
+                u1.username as buyer_username,
+                u1.full_name as buyer_name,
+                u2.username as seller_username,
+                u2.full_name as seller_name
+            FROM operator_deals od
+            LEFT JOIN users u1 ON od.buyer_id = u1.id
+            LEFT JOIN users u2 ON od.seller_id = u2.id
+            WHERE od.operator_id = $1
+            ORDER BY od.created_at DESC
+            LIMIT 5
+        `, [operatorId]);
+
+        // Сегодняшняя статистика
+        const today = new Date().toISOString().split('T')[0];
+        const todayStats = await pool.query(`
+            SELECT 
+                COUNT(*) as deals_today,
+                COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_today
+            FROM operator_deals 
+            WHERE operator_id = $1 
+            AND DATE(created_at) = $2
+        `, [operatorId, today]);
+
+        const stats = statsQuery.rows[0] || {
+            pending_count: 0,
+            active_count: 0,
+            payment_count: 0,
+            transfer_count: 0,
+            completed_count: 0,
+            disputed_count: 0,
+            urgent_count: 0
+        };
+
+        console.log(`📊 Dashboard loaded for operator ${operatorId}`);
+
+        res.json({
+            success: true,
+            stats: {
+                pending: parseInt(stats.pending_count) || 0,
+                active: parseInt(stats.active_count) || 0,
+                payment: parseInt(stats.payment_count) || 0,
+                transfer: parseInt(stats.transfer_count) || 0,
+                completed: parseInt(stats.completed_count) || 0,
+                disputed: parseInt(stats.disputed_count) || 0,
+                urgent: parseInt(stats.urgent_count) || 0,
+                deals_today: parseInt(todayStats.rows[0]?.deals_today) || 0,
+                completed_today: parseInt(todayStats.rows[0]?.completed_today) || 0
+            },
+            recent_deals: recentDeals.rows.map(deal => ({
+                id: deal.id,
+                deal_code: deal.deal_code,
+                title: deal.title,
+                price: deal.price,
+                status: deal.status,
+                is_urgent: deal.is_urgent,
+                buyer: deal.buyer_username || 'Unknown',
+                seller: deal.seller_username || 'Unknown',
+                created_at: deal.created_at,
+                time_ago: formatTimeAgo(deal.created_at)
+            })),
+            operator: {
+                id: operatorId,
+                username: req.operator.username,
+                role: req.operator.role
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Operator dashboard error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Получение списка сделок оператора
+app.get('/api/operator/deals', requireOperator, async (req, res) => {
+    try {
+        const operatorId = req.operator.userId;
+        const { 
+            status, 
+            page = 1, 
+            limit = 20,
+            search,
+            sort_by = 'created_at',
+            sort_order = 'DESC'
+        } = req.query;
+
+        const offset = (page - 1) * limit;
+
+        let query = `
+            SELECT 
+                od.*,
+                u1.username as buyer_username,
+                u1.full_name as buyer_name,
+                u2.username as seller_username,
+                u2.full_name as seller_name,
+                a.title as ad_title,
+                COUNT(*) OVER() as total_count
+            FROM operator_deals od
+            LEFT JOIN users u1 ON od.buyer_id = u1.id
+            LEFT JOIN users u2 ON od.seller_id = u2.id
+            LEFT JOIN ads a ON od.ad_id = a.id
+            WHERE od.operator_id = $1
+        `;
+
+        let params = [operatorId];
+        let paramCount = 1;
+
+        if (status && status !== 'all') {
+            paramCount++;
+            query += ` AND od.status = $${paramCount}`;
+            params.push(status);
+        }
+
+        if (search) {
+            paramCount++;
+            query += ` AND (
+                od.title ILIKE $${paramCount} OR
+                od.deal_code ILIKE $${paramCount} OR
+                u1.username ILIKE $${paramCount} OR
+                u1.full_name ILIKE $${paramCount} OR
+                u2.username ILIKE $${paramCount} OR
+                u2.full_name ILIKE $${paramCount}
+            )`;
+            params.push(`%${search}%`);
+        }
+
+        // Сортировка
+        const validSortColumns = ['created_at', 'updated_at', 'price', 'status'];
+        const sortColumn = validSortColumns.includes(sort_by) ? sort_by : 'created_at';
+        const sortDirection = sort_order.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+        
+        query += ` ORDER BY od.${sortColumn} ${sortDirection}`;
+        query += ` LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}`;
+        params.push(parseInt(limit), offset);
+
+        const result = await pool.query(query, params);
+
+        // Статистика по статусам
+        const statusStats = await pool.query(`
+            SELECT 
+                status,
+                COUNT(*) as count
+            FROM operator_deals
+            WHERE operator_id = $1
+            GROUP BY status
+        `, [operatorId]);
+
+        console.log(`📋 Deals list loaded for operator ${operatorId}: ${result.rows.length} deals`);
+
+        res.json({
+            success: true,
+            deals: result.rows.map(deal => ({
+                id: deal.id,
+                deal_code: deal.deal_code,
+                title: deal.title,
+                price: deal.price,
+                game: deal.game,
+                status: deal.status,
+                payment_method: deal.payment_method,
+                payment_status: deal.payment_status,
+                is_urgent: deal.is_urgent,
+                buyer: {
+                    id: deal.buyer_id,
+                    username: deal.buyer_username,
+                    name: deal.buyer_name
+                },
+                seller: {
+                    id: deal.seller_id,
+                    username: deal.seller_username,
+                    name: deal.seller_name
+                },
+                created_at: deal.created_at,
+                updated_at: deal.updated_at,
+                time_ago: formatTimeAgo(deal.created_at)
+            })),
+            total: result.rows[0]?.total_count || 0,
+            page: parseInt(page),
+            total_pages: Math.ceil((result.rows[0]?.total_count || 0) / limit),
+            status_stats: statusStats.rows.reduce((acc, row) => {
+                acc[row.status] = parseInt(row.count);
+                return acc;
+            }, {})
+        });
+
+    } catch (error) {
+        console.error('❌ Operator deals list error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Получение деталей сделки оператора
+app.get('/api/operator/deals/:dealId', requireOperator, async (req, res) => {
+    try {
+        const { dealId } = req.params;
+        const operatorId = req.operator.userId;
+
+        const dealQuery = await pool.query(`
+            SELECT 
+                od.*,
+                u1.username as buyer_username,
+                u1.full_name as buyer_name,
+                u1.email as buyer_email,
+                u1.avatar_url as buyer_avatar,
+                u2.username as seller_username,
+                u2.full_name as seller_name,
+                u2.email as seller_email,
+                u2.avatar_url as seller_avatar,
+                a.title as ad_title,
+                a.description as ad_description,
+                a.price as ad_price
+            FROM operator_deals od
+            LEFT JOIN users u1 ON od.buyer_id = u1.id
+            LEFT JOIN users u2 ON od.seller_id = u2.id
+            LEFT JOIN ads a ON od.ad_id = a.id
+            WHERE od.id = $1 AND od.operator_id = $2
+        `, [dealId, operatorId]);
+
+        if (dealQuery.rows.length === 0) {
+            return res.status(404).json({ error: 'Deal not found or access denied' });
+        }
+
+        const deal = dealQuery.rows[0];
+
+        console.log(`📄 Deal details loaded: ${deal.deal_code}`);
+
+        res.json({
+            success: true,
+            deal: {
+                id: deal.id,
+                deal_code: deal.deal_code,
+                title: deal.title,
+                description: deal.description,
+                price: deal.price,
+                game: deal.game,
+                status: deal.status,
+                payment_method: deal.payment_method,
+                payment_status: deal.payment_status,
+                is_urgent: deal.is_urgent,
+                created_at: deal.created_at,
+                updated_at: deal.updated_at
+            },
+            buyer: {
+                id: deal.buyer_id,
+                username: deal.buyer_username,
+                name: deal.buyer_name,
+                email: deal.buyer_email,
+                avatar: deal.buyer_avatar
+            },
+            seller: {
+                id: deal.seller_id,
+                username: deal.seller_username,
+                name: deal.seller_name,
+                email: deal.seller_email,
+                avatar: deal.seller_avatar
+            },
+            ad: {
+                id: deal.ad_id,
+                title: deal.ad_title,
+                description: deal.ad_description,
+                price: deal.ad_price
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Get deal details error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Создание новой сделки оператором
+app.post('/api/operator/deals', requireOperator, async (req, res) => {
+    try {
+        const operatorId = req.operator.userId;
+        const { 
+            ad_id, 
+            buyer_id, 
+            seller_id, 
+            title, 
+            price, 
+            game,
+            payment_method = 'Карта'
+        } = req.body;
+
+        // Валидация
+        if (!title || !price || !buyer_id || !seller_id) {
+            return res.status(400).json({ error: 'Title, price, buyer and seller are required' });
+        }
+
+        // Генерируем код сделки
+        const dealCode = generateDealCode();
+
+        // Создаем сделку
+        const result = await pool.query(`
+            INSERT INTO operator_deals (
+                deal_code, ad_id, buyer_id, seller_id, operator_id,
+                title, price, game, payment_method, status
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            RETURNING *
+        `, [
+            dealCode, ad_id, buyer_id, seller_id, operatorId,
+            title, price, game, payment_method, 'pending'
+        ]);
+
+        const deal = result.rows[0];
+
+        console.log(`✅ Deal created: ${deal.deal_code} by operator ${operatorId}`);
+
+        // Отправляем уведомление в Telegram
+        try {
+            const operatorInfo = await pool.query(
+                'SELECT username, full_name FROM users WHERE id = $1',
+                [operatorId]
+            );
+            
+            if (operatorInfo.rows.length > 0 && TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID) {
+                const operator = operatorInfo.rows[0];
+                await sendToTelegram(
+                    `🆕 Новая сделка создана оператором\n` +
+                    `🎮 ${deal.deal_code}: ${title}\n` +
+                    `💰 ${price} руб.\n` +
+                    `👤 Оператор: ${operator.full_name || operator.username}`,
+                    null,
+                    'notification'
+                );
+            }
+        } catch (telegramError) {
+            console.error('Telegram notification failed:', telegramError);
+        }
+
+        res.json({
+            success: true,
+            message: 'Deal created successfully',
+            deal: {
+                id: deal.id,
+                deal_code: deal.deal_code,
+                title: deal.title,
+                price: deal.price,
+                status: deal.status,
+                created_at: deal.created_at
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Create deal error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// ============================================
+// === ADDED CODE END: OPERATOR ROUTES ===
+// ============================================
+
 // Debug routes
 app.get('/api/debug/database', async (req, res) => {
     try {
@@ -1649,6 +2237,19 @@ app.use('/api/*', (req, res) => {
     res.status(404).json({ error: 'API endpoint not found' });
 });
 
+// ============================================
+// === ADDED CODE START: CUSTOM 404 HANDLER ===
+// ============================================
+
+// 404 handler for operator pages
+app.use('/operator-*', (req, res) => {
+    res.status(404).sendFile(path.join(__dirname, 'public', '404.html'));
+});
+
+// ============================================
+// === ADDED CODE END: CUSTOM 404 HANDLER ===
+// ============================================
+
 // 404 handler for pages
 app.use((req, res) => {
     res.status(404).send('Page not found');
@@ -1685,6 +2286,30 @@ if (process.env.NODE_ENV !== 'production') {
             console.log(`   📸 Photos: ${parseInt(photosCount.rows[0].count)}`);
             console.log(`   💬 Messages: ${parseInt(messagesCount.rows[0].count)}`);
             
+            // ============================================
+            // === ADDED CODE START: OPERATOR TABLES CHECK ===
+            // ============================================
+            
+            // Проверяем наличие таблиц оператора
+            try {
+                const operatorDealsCount = await pool.query('SELECT COUNT(*) as count FROM operator_deals');
+                console.log(`   🤝 Operator deals: ${parseInt(operatorDealsCount.rows[0].count)}`);
+                
+                // Проверяем наличие операторов
+                const operatorsCount = await pool.query("SELECT COUNT(*) as count FROM users WHERE role = 'operator' OR role = 'admin'");
+                console.log(`   👮 Operators: ${parseInt(operatorsCount.rows[0].count)}`);
+                
+                if (parseInt(operatorsCount.rows[0].count) === 0) {
+                    console.log('   ⚠️  No operators found. Create operators in the database.');
+                }
+            } catch (tableError) {
+                console.log('   ⚠️  Operator tables not found. Run SQL migrations to create them.');
+            }
+            
+            // ============================================
+            // === ADDED CODE END: OPERATOR TABLES CHECK ===
+            // ============================================
+            
         } catch (error) {
             console.error('❌ Error checking database tables:', error);
             console.log('💡 Tip: Make sure all tables are created in your Neon database');
@@ -1696,6 +2321,14 @@ if (process.env.NODE_ENV !== 'production') {
             console.log('📍 Running on http://localhost:' + PORT);
             console.log('');
             console.log('📱 Support chat is ENABLED with Telegram integration');
+            console.log('👮 Operator system is ENABLED');
+            console.log('');
+            console.log('🚀 Available operator pages:');
+            console.log('   👉 http://localhost:' + PORT + '/operator-login');
+            console.log('   👉 http://localhost:' + PORT + '/operator-dashboard');
+            console.log('   👉 http://localhost:' + PORT + '/operator-deals');
+            console.log('   👉 http://localhost:' + PORT + '/operator-chat');
+            console.log('   👉 http://localhost:' + PORT + '/deal-page');
             console.log('');
         });
     }
