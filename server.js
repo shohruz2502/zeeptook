@@ -12,7 +12,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-for-development';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET; // ДОБАВЛЕНО
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
@@ -67,14 +67,35 @@ async function testDatabaseConnection() {
     }
 }
 
-// Функция для отправки в Telegram
-async function sendToTelegram(message, userInfo = null) {
-    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return false;
+// Функция для генерации уникального ID чата поддержки
+function generateSupportChatId(userId) {
+    return `support_${userId}_${Date.now()}`;
+}
+
+// Функция для отправки сообщения в Telegram через бота
+async function sendToTelegram(message, userInfo = null, chatType = 'support') {
+    if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+        console.error('❌ Telegram bot token or chat ID not configured');
+        return false;
+    }
     
     try {
-        let text = message;
-        if (userInfo) {
-            text = `👤 ${userInfo.name}\n📧 ${userInfo.email}\n💬 ${message}`;
+        let text = '';
+        
+        // Форматируем сообщение в зависимости от типа чата
+        if (chatType === 'support') {
+            text = `🆘 НОВОЕ СООБЩЕНИЕ В ЧАТ ПОДДЕРЖКИ\n`;
+            text += `👤 ID пользователя: ${userInfo?.userId || 'Неизвестно'}\n`;
+            text += `📧 Email: ${userInfo?.email || 'Не указан'}\n`;
+            text += `👤 Имя: ${userInfo?.name || 'Не указано'}\n`;
+            text += `🆔 Chat ID: ${userInfo?.chatId || 'Не указан'}\n`;
+            text += `📝 Сообщение: ${message}`;
+        } else {
+            // Для обычных уведомлений
+            text = message;
+            if (userInfo) {
+                text = `👤 ${userInfo.name}\n📧 ${userInfo.email}\n💬 ${message}`;
+            }
         }
         
         const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
@@ -89,11 +110,26 @@ async function sendToTelegram(message, userInfo = null) {
             })
         });
         
-        return response.ok;
+        const responseData = await response.json();
+        
+        if (!response.ok) {
+            console.error('❌ Telegram API error:', responseData);
+            return false;
+        }
+        
+        console.log('✅ Message sent to Telegram successfully');
+        return true;
     } catch (error) {
-        console.error('Telegram send error:', error);
+        console.error('❌ Telegram send error:', error);
         return false;
     }
+}
+
+// Функция для сохранения/получения ID чата поддержки в LocalStorage (симуляция на сервере)
+function getSupportChatIdFromStorage(userId) {
+    // В реальности это должно быть на клиенте
+    // Здесь мы имитируем хранение в базе данных
+    return `support_${userId}`;
 }
 
 // Utility function to format time ago
@@ -178,7 +214,6 @@ async function exchangeCodeForToken(code) {
     try {
         console.log('🔄 Exchanging code for token...');
         
-        // Укажите ТОЧНО ТАКОЙ ЖЕ redirect_uri как на фронтенде
         const redirectUri = process.env.NODE_ENV === 'production' 
             ? 'https://zeeptook.vercel.app/register.html' 
             : 'http://localhost:3000/register.html';
@@ -192,7 +227,7 @@ async function exchangeCodeForToken(code) {
                 code: code,
                 client_id: GOOGLE_CLIENT_ID,
                 client_secret: GOOGLE_CLIENT_SECRET,
-                redirect_uri: redirectUri, // должно совпадать с frontend
+                redirect_uri: redirectUri,
                 grant_type: 'authorization_code'
             })
         });
@@ -321,7 +356,7 @@ app.post('/api/auth/google', async (req, res) => {
     }
 });
 
-// Backup endpoint for direct access token (если фронтенд все еще отправляет access_token)
+// Backup endpoint for direct access token
 app.post('/api/auth/google/token', async (req, res) => {
     try {
         const { access_token } = req.body;
@@ -1151,20 +1186,18 @@ app.get('/api/messages/chats', authenticateToken, async (req, res) => {
             ORDER BY c.last_message_time DESC
         `, [user_id]);
 
-        // Add support chat if no chats exist
-        if (result.rows.length === 0) {
-            const supportChat = {
-                id: 'support',
-                name: 'Поддержка Zeeptook',
-                contact_id: 'support',
-                last_message: 'Здравствуйте! Чем могу помочь?',
-                last_message_time: new Date(),
-                unread_count: 0,
-                type: 'support',
-                is_online: true
-            };
-            result.rows.push(supportChat);
-        }
+        // Add support chat
+        const supportChat = {
+            id: 'support',
+            name: 'Поддержка Zeeptook',
+            contact_id: 'support',
+            last_message: 'Здравствуйте! Чем могу помочь?',
+            last_message_time: new Date(),
+            unread_count: 0,
+            type: 'support',
+            is_online: true
+        };
+        result.rows.unshift(supportChat);
 
         console.log(`💬 Loaded ${result.rows.length} chats for user ${user_id}`);
 
@@ -1181,15 +1214,14 @@ app.get('/api/messages/chat/:chatId', authenticateToken, async (req, res) => {
         const user_id = req.user.userId;
 
         if (chatId === 'support') {
-            // Return support messages
+            // Return support messages from database
             const result = await pool.query(`
                 SELECT 
                     m.*,
                     u.username as sender_username
                 FROM messages m
                 LEFT JOIN users u ON m.sender_id = u.id
-                WHERE (m.sender_id = $1 AND m.receiver_id = 1) 
-                   OR (m.sender_id = 1 AND m.receiver_id = $1)
+                WHERE m.chat_type = 'support' AND m.sender_id = $1
                 ORDER BY m.created_at ASC
             `, [user_id]);
 
@@ -1227,6 +1259,68 @@ app.get('/api/messages/chat/:chatId', authenticateToken, async (req, res) => {
     }
 });
 
+// ОТПРАВКА СООБЩЕНИЙ В ЧАТ ПОДДЕРЖКИ
+app.post('/api/messages/support', authenticateToken, async (req, res) => {
+    try {
+        const { content, chatId } = req.body;
+        const sender_id = req.user.userId;
+
+        if (!content) {
+            return res.status(400).json({ error: 'Message content is required' });
+        }
+
+        // Получаем информацию о пользователе
+        const userResult = await pool.query(
+            'SELECT id, username, email, full_name FROM users WHERE id = $1',
+            [sender_id]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const user = userResult.rows[0];
+
+        // Генерируем chatId, если его нет
+        const actualChatId = chatId || generateSupportChatId(sender_id);
+
+        // Сохраняем сообщение в базу данных
+        const messageResult = await pool.query(`
+            INSERT INTO messages (sender_id, receiver_id, content, chat_type, chat_id)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING *
+        `, [sender_id, 1, content, 'support', actualChatId]);
+
+        const savedMessage = messageResult.rows[0];
+
+        // Отправляем сообщение в Telegram
+        const telegramSent = await sendToTelegram(content, {
+            userId: user.id,
+            email: user.email,
+            name: user.full_name || user.username,
+            chatId: actualChatId
+        }, 'support');
+
+        if (!telegramSent) {
+            console.warn('⚠️ Failed to send message to Telegram, but saved to database');
+        }
+
+        console.log(`💬 Support message sent from user ${sender_id} (chatId: ${actualChatId})`);
+
+        res.json({
+            message: 'Support message sent successfully',
+            savedMessage,
+            chatId: actualChatId,
+            telegramSent
+        });
+
+    } catch (error) {
+        console.error('❌ Send support message error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Регулярные сообщения
 app.post('/api/messages', authenticateToken, async (req, res) => {
     try {
         const { chat_id, content, receiver_id, ad_id } = req.body;
@@ -1244,18 +1338,21 @@ app.post('/api/messages', authenticateToken, async (req, res) => {
             actual_receiver_id = 1; // Admin user ID
             actual_chat_id = null;
             
-            // Send to Telegram
-            try {
-                const userResult = await pool.query(
-                    'SELECT full_name, email FROM users WHERE id = $1',
-                    [sender_id]
-                );
-                if (userResult.rows.length > 0) {
-                    const user = userResult.rows[0];
-                    await sendToTelegram(content, user);
-                }
-            } catch (telegramError) {
-                console.error('Telegram notification failed:', telegramError);
+            // Получаем информацию о пользователе
+            const userResult = await pool.query(
+                'SELECT full_name, email FROM users WHERE id = $1',
+                [sender_id]
+            );
+            
+            if (userResult.rows.length > 0) {
+                const user = userResult.rows[0];
+                // Отправляем в Telegram
+                await sendToTelegram(content, {
+                    userId: sender_id,
+                    email: user.email,
+                    name: user.full_name,
+                    chatId: `support_${sender_id}`
+                }, 'support');
             }
         }
 
@@ -1286,21 +1383,39 @@ app.post('/api/messages', authenticateToken, async (req, res) => {
     }
 });
 
-app.post('/api/messages/support', authenticateToken, async (req, res) => {
+// Инициализация чата поддержки для пользователя
+app.post('/api/messages/support/init', authenticateToken, async (req, res) => {
     try {
-        const { user_id } = req.body;
+        const user_id = req.user.userId;
 
-        // Create initial support message
+        // Получаем информацию о пользователе
+        const userResult = await pool.query(
+            'SELECT id, username, email, full_name FROM users WHERE id = $1',
+            [user_id]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const user = userResult.rows[0];
+        const chatId = generateSupportChatId(user_id);
+
+        // Создаем приветственное сообщение от поддержки
         await pool.query(`
-            INSERT INTO messages (sender_id, receiver_id, content)
-            VALUES (1, $1, 'Здравствуйте! Чем могу помочь?')
-        `, [user_id]);
+            INSERT INTO messages (sender_id, receiver_id, content, chat_type, chat_id)
+            VALUES ($1, $2, $3, $4, $5)
+        `, [1, user_id, 'Здравствуйте! Чем могу помочь?', 'support', chatId]);
 
-        console.log(`🆕 Support chat created for user ${user_id}`);
+        console.log(`🆕 Support chat initialized for user ${user_id} (chatId: ${chatId})`);
 
-        res.json({ message: 'Support chat created successfully' });
+        res.json({
+            success: true,
+            chatId: chatId,
+            message: 'Support chat initialized'
+        });
     } catch (error) {
-        console.error('❌ Create support chat error:', error);
+        console.error('❌ Init support chat error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -1431,6 +1546,7 @@ app.get('/api/debug/database', async (req, res) => {
         const adsCount = await pool.query('SELECT COUNT(*) as count FROM ads');
         const activeAdsCount = await pool.query('SELECT COUNT(*) as count FROM ads WHERE is_active = TRUE');
         const photosCount = await pool.query('SELECT COUNT(*) as count FROM ad_photos');
+        const messagesCount = await pool.query('SELECT COUNT(*) as count FROM messages');
         
         const sampleAds = await pool.query(`
             SELECT a.id, a.title, a.is_active, c.name as category_name 
@@ -1448,12 +1564,18 @@ app.get('/api/debug/database', async (req, res) => {
                     total: parseInt(adsCount.rows[0].count),
                     active: parseInt(activeAdsCount.rows[0].count)
                 },
-                ad_photos: parseInt(photosCount.rows[0].count)
+                ad_photos: parseInt(photosCount.rows[0].count),
+                messages: parseInt(messagesCount.rows[0].count)
             },
             sample_ads: sampleAds.rows,
             connection_info: {
                 database: process.env.DB_NAME || 'from DATABASE_URL',
                 host: process.env.DB_HOST || 'from DATABASE_URL'
+            },
+            telegram_bot: {
+                configured: !!(TELEGRAM_BOT_TOKEN && TELEGRAM_CHAT_ID),
+                bot_token: TELEGRAM_BOT_TOKEN ? '***' + TELEGRAM_BOT_TOKEN.slice(-4) : 'not set',
+                chat_id: TELEGRAM_CHAT_ID ? '***' + TELEGRAM_CHAT_ID.slice(-4) : 'not set'
             }
         });
     } catch (error) {
@@ -1500,52 +1622,16 @@ app.use((req, res) => {
     res.status(404).send('Page not found');
 });
 
-// Profile routes - ДОБАВЬТЕ ЭТО
-app.get('/api/profile', authenticateToken, async (req, res) => {
-    try {
-        const user_id = req.user.userId;
-
-        const userResult = await pool.query(`
-            SELECT id, username, email, full_name, avatar_url, rating, created_at, birth_year
-            FROM users WHERE id = $1
-        `, [user_id]);
-
-        if (userResult.rows.length === 0) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        const adsResult = await pool.query(`
-            SELECT COUNT(*) as total_ads,
-                   COUNT(CASE WHEN is_active = TRUE THEN 1 END) as active_ads
-            FROM ads WHERE user_id = $1
-        `, [user_id]);
-
-        const favoritesResult = await pool.query(`
-            SELECT COUNT(*) as total_favorites
-            FROM favorites WHERE user_id = $1
-        `, [user_id]);
-
-        console.log(`👤 Profile loaded for user ${user_id}`);
-
-        res.json({
-            user: userResult.rows[0],
-            stats: {
-                total_ads: parseInt(adsResult.rows[0].total_ads || 0),
-                active_ads: parseInt(adsResult.rows[0].active_ads || 0),
-                total_favorites: parseInt(favoritesResult.rows[0].total_favorites || 0)
-            }
-        });
-    } catch (error) {
-        console.error('❌ Get profile error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
 // Start server
 if (process.env.NODE_ENV !== 'production') {
     async function startServer() {
         console.log('🚀 Starting Zeeptook server in development mode...');
         console.log('📁 Environment:', process.env.NODE_ENV || 'development');
+        
+        // Проверка конфигурации Telegram
+        console.log('🤖 Telegram Bot Configuration:');
+        console.log('   Token:', TELEGRAM_BOT_TOKEN ? '***' + TELEGRAM_BOT_TOKEN.slice(-4) : '❌ NOT SET');
+        console.log('   Chat ID:', TELEGRAM_CHAT_ID ? '***' + TELEGRAM_CHAT_ID.slice(-4) : '❌ NOT SET');
         
         const dbConnected = await testDatabaseConnection();
         if (!dbConnected) {
@@ -1558,12 +1644,14 @@ if (process.env.NODE_ENV !== 'production') {
             const categoriesCount = await pool.query('SELECT COUNT(*) as count FROM categories');
             const adsCount = await pool.query('SELECT COUNT(*) as count FROM ads');
             const photosCount = await pool.query('SELECT COUNT(*) as count FROM ad_photos');
+            const messagesCount = await pool.query('SELECT COUNT(*) as count FROM messages');
             
             console.log('📊 Database status:');
             console.log(`   👥 Users: ${parseInt(usersCount.rows[0].count)}`);
             console.log(`   📂 Categories: ${parseInt(categoriesCount.rows[0].count)}`);
             console.log(`   📢 Ads: ${parseInt(adsCount.rows[0].count)}`);
             console.log(`   📸 Photos: ${parseInt(photosCount.rows[0].count)}`);
+            console.log(`   💬 Messages: ${parseInt(messagesCount.rows[0].count)}`);
             
         } catch (error) {
             console.error('❌ Error checking database tables:', error);
@@ -1574,6 +1662,8 @@ if (process.env.NODE_ENV !== 'production') {
             console.log('');
             console.log('🎉 Server started successfully!');
             console.log('📍 Running on http://localhost:' + PORT);
+            console.log('');
+            console.log('📱 Support chat is ENABLED with Telegram integration');
             console.log('');
         });
     }
