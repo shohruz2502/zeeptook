@@ -952,640 +952,734 @@
     </div>
 
     <script>
-        // API базовый URL
-        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
-        
-        // Переменные для управления данными
-        let chats = [];
-        let stories = [];
-        let currentChat = null;
-        let currentStoryIndex = 0;
-        let currentStoryUserIndex = 0;
-        let storyProgressInterval = null;
-        let userId = null;
+    // API базовый URL
+    const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
+    
+    // Переменные для управления данными
+    let chats = [];
+    let stories = [];
+    let currentChat = null;
+    let currentStoryIndex = 0;
+    let currentStoryUserIndex = 0;
+    let storyProgressInterval = null;
+    let userId = null;
+    let supportChatId = null;
 
-        // Получение ID пользователя
-        function getUserId() {
-            const token = localStorage.getItem('token');
-            if (token) {
-                try {
-                    const payload = JSON.parse(atob(token.split('.')[1]));
-                    return payload.userId;
-                } catch (e) {
-                    console.error('Error parsing token:', e);
-                }
-            }
-            return null;
-        }
-
-        // Функция для загрузки историй с сервера
-        async function loadStories() {
-            const storiesContainer = document.getElementById('stories-container');
-            
+    // Получение ID пользователя
+    function getUserId() {
+        const token = localStorage.getItem('token');
+        if (token) {
             try {
-                const token = localStorage.getItem('token');
-                
-                // Если пользователь не авторизован, показываем демо-истории
-                if (!token) {
-                    showDemoStories();
-                    return;
-                }
-
-                const response = await fetch(`${API_BASE}/stories`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to load stories');
-                }
-
-                const storiesData = await response.json();
-                
-                if (storiesData.length === 0) {
-                    showDemoStories();
-                    return;
-                }
-                
-                stories = storiesData;
-                displayStories();
-                
-            } catch (error) {
-                console.error('Error loading stories:', error);
-                showDemoStories();
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.userId;
+            } catch (e) {
+                console.error('Error parsing token:', e);
             }
         }
+        return null;
+    }
 
-        // Функция для показа демо-историй
-        function showDemoStories() {
-            const storiesContainer = document.getElementById('stories-container');
+    // Функция для генерации уникального ID чата поддержки
+    function generateSupportChatId() {
+        userId = getUserId();
+        return `support_${userId || 'anonymous'}_${Date.now()}`;
+    }
+
+    // Получение/сохранение chatId поддержки в localStorage
+    function getSupportChatId() {
+        if (!supportChatId) {
+            supportChatId = localStorage.getItem('supportChatId');
+            if (!supportChatId) {
+                supportChatId = generateSupportChatId();
+                localStorage.setItem('supportChatId', supportChatId);
+            }
+        }
+        return supportChatId;
+    }
+
+    // Сохранение chatId поддержки
+    function setSupportChatId(id) {
+        supportChatId = id;
+        localStorage.setItem('supportChatId', id);
+    }
+
+    // Функция для загрузки историй с сервера
+    async function loadStories() {
+        const storiesContainer = document.getElementById('stories-container');
+        
+        try {
+            const token = localStorage.getItem('token');
             
-            // Демо-данные для историй
-            const demoStories = [
-                {
-                    id: 1,
-                    user_id: 101,
-                    user_name: "Магазин Электроники",
-                    user_avatar: "https://images.unsplash.com/photo-1556656793-08538906a9f8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-                    stories: [
-                        {
-                            id: 1,
-                            type: "image",
-                            url: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-                            caption: "Новые смартфоны в наличии!",
-                            created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-                        }
-                    ],
-                    is_viewed: false,
-                    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-                },
-                {
-                    id: 2,
-                    user_id: 102,
-                    user_name: "АвтоМир",
-                    user_avatar: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-                    stories: [
-                        {
-                            id: 2,
-                            type: "image",
-                            url: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-                            caption: "Авто с пробегом от 500 тыс.",
-                            created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
-                        }
-                    ],
-                    is_viewed: true,
-                    created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
-                },
-                {
-                    id: 3,
-                    user_id: 103,
-                    user_name: "Недвижимость",
-                    user_avatar: "https://images.unsplash.com/photo-1513584684374-8bab748fbf90?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-                    stories: [
-                        {
-                            id: 3,
-                            type: "image",
-                            url: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
-                            caption: "Квартиры в новостройках от 3 млн",
-                            created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
-                        }
-                    ],
-                    is_viewed: false,
-                    created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+            // Если пользователь не авторизован, показываем демо-истории
+            if (!token) {
+                showDemoStories();
+                return;
+            }
+
+            const response = await fetch(`${API_BASE}/stories`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
                 }
-            ];
-            
-            stories = demoStories;
-            displayStories();
-        }
-
-        // Функция для отображения историй
-        function displayStories() {
-            const storiesContainer = document.getElementById('stories-container');
-            storiesContainer.innerHTML = '';
-            
-            // Добавляем кнопку создания своей истории
-            const addStoryElement = document.createElement('div');
-            addStoryElement.className = 'story-item';
-            addStoryElement.innerHTML = `
-                <div class="story-add" id="add-story-btn">
-                    <i class="fa fa-plus"></i>
-                </div>
-                <div class="story-name">Ваша история</div>
-            `;
-            
-            addStoryElement.addEventListener('click', () => {
-                showNotification('Функция создания историй скоро появится', 'info');
             });
-            
-            storiesContainer.appendChild(addStoryElement);
-            
-            // Добавляем истории пользователей
-            stories.forEach(story => {
-                const storyElement = createStoryElement(story);
-                storiesContainer.appendChild(storyElement);
-            });
-        }
 
-        // Функция для создания элемента истории
-        function createStoryElement(story) {
-            const storyElement = document.createElement('div');
-            storyElement.className = 'story-item';
-            
-            const time = formatStoryTime(story.created_at);
-            
-            storyElement.innerHTML = `
-                <div class="story-avatar ${story.is_viewed ? '' : 'unread'}" data-story-id="${story.id}">
-                    ${story.user_avatar ? 
-                        `<img src="${story.user_avatar}" alt="${story.user_name}" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\"fa fa-user\" style=\"font-size: 18px; color: white;\"></i>';">` :
-                        `<i class="fa fa-user" style="font-size: 18px; color: white;"></i>`
-                    }
-                </div>
-                <div class="story-name" title="${story.user_name}">${story.user_name}</div>
-            `;
-            
-            storyElement.addEventListener('click', () => {
-                openStoryViewer(story.id);
-            });
-            
-            return storyElement;
-        }
+            if (!response.ok) {
+                throw new Error('Failed to load stories');
+            }
 
-        // Функция для открытия просмотра истории
-        function openStoryViewer(storyId) {
-            const story = stories.find(s => s.id === storyId);
-            if (!story || !story.stories || story.stories.length === 0) {
-                showNotification('История не найдена', 'error');
+            const storiesData = await response.json();
+            
+            if (storiesData.length === 0) {
+                showDemoStories();
                 return;
             }
             
-            currentStoryIndex = 0;
-            currentStoryUserIndex = stories.findIndex(s => s.id === storyId);
+            stories = storiesData;
+            displayStories();
             
-            const viewer = document.getElementById('story-viewer');
-            const content = document.getElementById('story-content');
+        } catch (error) {
+            console.error('Error loading stories:', error);
+            showDemoStories();
+        }
+    }
+
+    // Функция для показа демо-историй
+    function showDemoStories() {
+        const storiesContainer = document.getElementById('stories-container');
+        
+        // Демо-данные для историй
+        const demoStories = [
+            {
+                id: 1,
+                user_id: 101,
+                user_name: "Магазин Электроники",
+                user_avatar: "https://images.unsplash.com/photo-1556656793-08538906a9f8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+                stories: [
+                    {
+                        id: 1,
+                        type: "image",
+                        url: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+                        caption: "Новые смартфоны в наличии!",
+                        created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+                    }
+                ],
+                is_viewed: false,
+                created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+            },
+            {
+                id: 2,
+                user_id: 102,
+                user_name: "АвтоМир",
+                user_avatar: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+                stories: [
+                    {
+                        id: 2,
+                        type: "image",
+                        url: "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+                        caption: "Авто с пробегом от 500 тыс.",
+                        created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
+                    }
+                ],
+                is_viewed: true,
+                created_at: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()
+            },
+            {
+                id: 3,
+                user_id: 103,
+                user_name: "Недвижимость",
+                user_avatar: "https://images.unsplash.com/photo-1513584684374-8bab748fbf90?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+                stories: [
+                    {
+                        id: 3,
+                        type: "image",
+                        url: "https://images.unsplash.com/photo-1518780664697-55e3ad937233?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80",
+                        caption: "Квартиры в новостройках от 3 млн",
+                        created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+                    }
+                ],
+                is_viewed: false,
+                created_at: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString()
+            }
+        ];
+        
+        stories = demoStories;
+        displayStories();
+    }
+
+    // Функция для отображения историй
+    function displayStories() {
+        const storiesContainer = document.getElementById('stories-container');
+        storiesContainer.innerHTML = '';
+        
+        // Добавляем кнопку создания своей истории
+        const addStoryElement = document.createElement('div');
+        addStoryElement.className = 'story-item';
+        addStoryElement.innerHTML = `
+            <div class="story-add" id="add-story-btn">
+                <i class="fa fa-plus"></i>
+            </div>
+            <div class="story-name">Ваша история</div>
+        `;
+        
+        addStoryElement.addEventListener('click', () => {
+            showNotification('Функция создания историй скоро появится', 'info');
+        });
+        
+        storiesContainer.appendChild(addStoryElement);
+        
+        // Добавляем истории пользователей
+        stories.forEach(story => {
+            const storyElement = createStoryElement(story);
+            storiesContainer.appendChild(storyElement);
+        });
+    }
+
+    // Функция для создания элемента истории
+    function createStoryElement(story) {
+        const storyElement = document.createElement('div');
+        storyElement.className = 'story-item';
+        
+        const time = formatStoryTime(story.created_at);
+        
+        storyElement.innerHTML = `
+            <div class="story-avatar ${story.is_viewed ? '' : 'unread'}" data-story-id="${story.id}">
+                ${story.user_avatar ? 
+                    `<img src="${story.user_avatar}" alt="${story.user_name}" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\"fa fa-user\" style=\"font-size: 18px; color: white;\"></i>';">` :
+                    `<i class="fa fa-user" style="font-size: 18px; color: white;"></i>`
+                }
+            </div>
+            <div class="story-name" title="${story.user_name}">${story.user_name}</div>
+        `;
+        
+        storyElement.addEventListener('click', () => {
+            openStoryViewer(story.id);
+        });
+        
+        return storyElement;
+    }
+
+    // Функция для открытия просмотра истории
+    function openStoryViewer(storyId) {
+        const story = stories.find(s => s.id === storyId);
+        if (!story || !story.stories || story.stories.length === 0) {
+            showNotification('История не найдена', 'error');
+            return;
+        }
+        
+        currentStoryIndex = 0;
+        currentStoryUserIndex = stories.findIndex(s => s.id === storyId);
+        
+        const viewer = document.getElementById('story-viewer');
+        const content = document.getElementById('story-content');
+        const avatar = document.getElementById('story-viewer-avatar');
+        const name = document.getElementById('story-viewer-name');
+        const time = document.getElementById('story-viewer-time');
+        const progress = document.getElementById('story-progress');
+        
+        // Заполняем информацию
+        name.textContent = story.user_name;
+        time.textContent = formatStoryTime(story.created_at);
+        
+        if (story.user_avatar) {
+            avatar.innerHTML = `<img src="${story.user_avatar}" alt="${story.user_name}">`;
+        } else {
+            avatar.innerHTML = '<i class="fa fa-user" style="font-size: 18px; color: white;"></i>';
+        }
+        
+        // Создаем прогресс-бары
+        progress.innerHTML = '';
+        story.stories.forEach((s, index) => {
+            const progressBar = document.createElement('div');
+            progressBar.className = 'story-progress-bar';
+            progressBar.innerHTML = `<div class="story-progress-fill" id="progress-${index}"></div>`;
+            progress.appendChild(progressBar);
+        });
+        
+        // Показываем первую историю
+        showStoryContent(story.stories[0]);
+        
+        // Запускаем прогресс
+        startStoryProgress(story.stories);
+        
+        // Показываем окно просмотра
+        viewer.classList.add('active');
+        
+        // Добавляем обработчики навигации
+        setupStoryNavigation();
+    }
+
+    // Функция для показа контента истории
+    function showStoryContent(storyItem) {
+        const content = document.getElementById('story-content');
+        
+        if (storyItem.type === 'image') {
+            content.innerHTML = `
+                <img src="${storyItem.url}" class="story-image" alt="История" onerror="this.onerror=null; this.style.display='none'; document.getElementById('story-content').innerHTML='<div style=\"color:white; text-align:center; padding:20px;\">Ошибка загрузки изображения</div>'">
+                ${storyItem.caption ? `<div style="position:absolute; bottom:20px; left:20px; right:20px; color:white; text-align:center; font-size:14px; text-shadow:0 2px 4px rgba(0,0,0,0.5);">${storyItem.caption}</div>` : ''}
+            `;
+        } else {
+            content.innerHTML = '<div style="color:white; text-align:center; padding:20px;">Неизвестный формат истории</div>';
+        }
+    }
+
+    // Функция для запуска прогресса историй
+    function startStoryProgress(storyItems) {
+        if (storyProgressInterval) {
+            clearInterval(storyProgressInterval);
+        }
+        
+        let currentProgress = 0;
+        const totalDuration = 5000; // 5 секунд на каждую историю
+        const updateInterval = 50; // Обновляем каждые 50мс
+        const progressIncrement = (updateInterval / totalDuration) * 100;
+        
+        storyProgressInterval = setInterval(() => {
+            currentProgress += progressIncrement;
+            const progressBar = document.getElementById(`progress-${currentStoryIndex}`);
+            if (progressBar) {
+                progressBar.style.width = `${currentProgress}%`;
+            }
+            
+            if (currentProgress >= 100) {
+                nextStory();
+            }
+        }, updateInterval);
+    }
+
+    // Функция для переключения на следующую историю
+    function nextStory() {
+        const currentUser = stories[currentStoryUserIndex];
+        
+        if (currentStoryIndex < currentUser.stories.length - 1) {
+            // Следующая история у того же пользователя
+            currentStoryIndex++;
+            showStoryContent(currentUser.stories[currentStoryIndex]);
+            resetProgress();
+        } else if (currentStoryUserIndex < stories.length - 1) {
+            // Переход к следующему пользователю
+            currentStoryUserIndex++;
+            currentStoryIndex = 0;
+            const nextUser = stories[currentStoryUserIndex];
+            
+            // Обновляем информацию
             const avatar = document.getElementById('story-viewer-avatar');
             const name = document.getElementById('story-viewer-name');
             const time = document.getElementById('story-viewer-time');
             const progress = document.getElementById('story-progress');
             
-            // Заполняем информацию
-            name.textContent = story.user_name;
-            time.textContent = formatStoryTime(story.created_at);
+            name.textContent = nextUser.user_name;
+            time.textContent = formatStoryTime(nextUser.created_at);
             
-            if (story.user_avatar) {
-                avatar.innerHTML = `<img src="${story.user_avatar}" alt="${story.user_name}">`;
+            if (nextUser.user_avatar) {
+                avatar.innerHTML = `<img src="${nextUser.user_avatar}" alt="${nextUser.user_name}">`;
             } else {
                 avatar.innerHTML = '<i class="fa fa-user" style="font-size: 18px; color: white;"></i>';
             }
             
-            // Создаем прогресс-бары
+            // Обновляем прогресс-бары
             progress.innerHTML = '';
-            story.stories.forEach((s, index) => {
+            nextUser.stories.forEach((s, index) => {
                 const progressBar = document.createElement('div');
                 progressBar.className = 'story-progress-bar';
                 progressBar.innerHTML = `<div class="story-progress-fill" id="progress-${index}"></div>`;
                 progress.appendChild(progressBar);
             });
             
-            // Показываем первую историю
-            showStoryContent(story.stories[0]);
-            
-            // Запускаем прогресс
-            startStoryProgress(story.stories);
-            
-            // Показываем окно просмотра
-            viewer.classList.add('active');
-            
-            // Добавляем обработчики навигации
-            setupStoryNavigation();
+            showStoryContent(nextUser.stories[0]);
+            resetProgress();
+        } else {
+            // Все истории просмотрены, закрываем окно
+            closeStoryViewer();
         }
+    }
 
-        // Функция для показа контента истории
-        function showStoryContent(storyItem) {
-            const content = document.getElementById('story-content');
+    // Функция для переключения на предыдущую историю
+    function prevStory() {
+        if (currentStoryIndex > 0) {
+            // Предыдущая история у того же пользователя
+            currentStoryIndex--;
+            showStoryContent(stories[currentStoryUserIndex].stories[currentStoryIndex]);
+            resetProgress();
+        } else if (currentStoryUserIndex > 0) {
+            // Переход к предыдущему пользователю
+            currentStoryUserIndex--;
+            currentStoryIndex = stories[currentStoryUserIndex].stories.length - 1;
+            const prevUser = stories[currentStoryUserIndex];
             
-            if (storyItem.type === 'image') {
-                content.innerHTML = `
-                    <img src="${storyItem.url}" class="story-image" alt="История" onerror="this.onerror=null; this.style.display='none'; document.getElementById('story-content').innerHTML='<div style=\"color:white; text-align:center; padding:20px;\">Ошибка загрузки изображения</div>'">
-                    ${storyItem.caption ? `<div style="position:absolute; bottom:20px; left:20px; right:20px; color:white; text-align:center; font-size:14px; text-shadow:0 2px 4px rgba(0,0,0,0.5);">${storyItem.caption}</div>` : ''}
-                `;
+            // Обновляем информацию
+            const avatar = document.getElementById('story-viewer-avatar');
+            const name = document.getElementById('story-viewer-name');
+            const time = document.getElementById('story-viewer-time');
+            const progress = document.getElementById('story-progress');
+            
+            name.textContent = prevUser.user_name;
+            time.textContent = formatStoryTime(prevUser.created_at);
+            
+            if (prevUser.user_avatar) {
+                avatar.innerHTML = `<img src="${prevUser.user_avatar}" alt="${prevUser.user_name}">`;
             } else {
-                content.innerHTML = '<div style="color:white; text-align:center; padding:20px;">Неизвестный формат истории</div>';
-            }
-        }
-
-        // Функция для запуска прогресса историй
-        function startStoryProgress(storyItems) {
-            if (storyProgressInterval) {
-                clearInterval(storyProgressInterval);
+                avatar.innerHTML = '<i class="fa fa-user" style="font-size: 18px; color: white;"></i>';
             }
             
-            let currentProgress = 0;
-            const totalDuration = 5000; // 5 секунд на каждую историю
-            const updateInterval = 50; // Обновляем каждые 50мс
-            const progressIncrement = (updateInterval / totalDuration) * 100;
-            
-            storyProgressInterval = setInterval(() => {
-                currentProgress += progressIncrement;
-                const progressBar = document.getElementById(`progress-${currentStoryIndex}`);
-                if (progressBar) {
-                    progressBar.style.width = `${currentProgress}%`;
-                }
-                
-                if (currentProgress >= 100) {
-                    nextStory();
-                }
-            }, updateInterval);
-        }
-
-        // Функция для переключения на следующую историю
-        function nextStory() {
-            const currentUser = stories[currentStoryUserIndex];
-            
-            if (currentStoryIndex < currentUser.stories.length - 1) {
-                // Следующая история у того же пользователя
-                currentStoryIndex++;
-                showStoryContent(currentUser.stories[currentStoryIndex]);
-                resetProgress();
-            } else if (currentStoryUserIndex < stories.length - 1) {
-                // Переход к следующему пользователю
-                currentStoryUserIndex++;
-                currentStoryIndex = 0;
-                const nextUser = stories[currentStoryUserIndex];
-                
-                // Обновляем информацию
-                const avatar = document.getElementById('story-viewer-avatar');
-                const name = document.getElementById('story-viewer-name');
-                const time = document.getElementById('story-viewer-time');
-                const progress = document.getElementById('story-progress');
-                
-                name.textContent = nextUser.user_name;
-                time.textContent = formatStoryTime(nextUser.created_at);
-                
-                if (nextUser.user_avatar) {
-                    avatar.innerHTML = `<img src="${nextUser.user_avatar}" alt="${nextUser.user_name}">`;
-                } else {
-                    avatar.innerHTML = '<i class="fa fa-user" style="font-size: 18px; color: white;"></i>';
-                }
-                
-                // Обновляем прогресс-бары
-                progress.innerHTML = '';
-                nextUser.stories.forEach((s, index) => {
-                    const progressBar = document.createElement('div');
-                    progressBar.className = 'story-progress-bar';
-                    progressBar.innerHTML = `<div class="story-progress-fill" id="progress-${index}"></div>`;
-                    progress.appendChild(progressBar);
-                });
-                
-                showStoryContent(nextUser.stories[0]);
-                resetProgress();
-            } else {
-                // Все истории просмотрены, закрываем окно
-                closeStoryViewer();
-            }
-        }
-
-        // Функция для переключения на предыдущую историю
-        function prevStory() {
-            if (currentStoryIndex > 0) {
-                // Предыдущая история у того же пользователя
-                currentStoryIndex--;
-                showStoryContent(stories[currentStoryUserIndex].stories[currentStoryIndex]);
-                resetProgress();
-            } else if (currentStoryUserIndex > 0) {
-                // Переход к предыдущему пользователю
-                currentStoryUserIndex--;
-                currentStoryIndex = stories[currentStoryUserIndex].stories.length - 1;
-                const prevUser = stories[currentStoryUserIndex];
-                
-                // Обновляем информацию
-                const avatar = document.getElementById('story-viewer-avatar');
-                const name = document.getElementById('story-viewer-name');
-                const time = document.getElementById('story-viewer-time');
-                const progress = document.getElementById('story-progress');
-                
-                name.textContent = prevUser.user_name;
-                time.textContent = formatStoryTime(prevUser.created_at);
-                
-                if (prevUser.user_avatar) {
-                    avatar.innerHTML = `<img src="${prevUser.user_avatar}" alt="${prevUser.user_name}">`;
-                } else {
-                    avatar.innerHTML = '<i class="fa fa-user" style="font-size: 18px; color: white;"></i>';
-                }
-                
-                // Обновляем прогресс-бары
-                progress.innerHTML = '';
-                prevUser.stories.forEach((s, index) => {
-                    const progressBar = document.createElement('div');
-                    progressBar.className = 'story-progress-bar';
-                    progressBar.innerHTML = `<div class="story-progress-fill" id="progress-${index}"></div>`;
-                    progress.appendChild(progressBar);
-                });
-                
-                showStoryContent(prevUser.stories[currentStoryIndex]);
-                resetProgress();
-            }
-        }
-
-        // Функция для сброса прогресса
-        function resetProgress() {
-            if (storyProgressInterval) {
-                clearInterval(storyProgressInterval);
-            }
-            startStoryProgress(stories[currentStoryUserIndex].stories);
-        }
-
-        // Функция для закрытия окна просмотра историй
-        function closeStoryViewer() {
-            if (storyProgressInterval) {
-                clearInterval(storyProgressInterval);
-                storyProgressInterval = null;
-            }
-            
-            document.getElementById('story-viewer').classList.remove('active');
-            
-            // Отмечаем историю как просмотренную
-            if (stories[currentStoryUserIndex]) {
-                stories[currentStoryUserIndex].is_viewed = true;
-                updateStoryElement(currentStoryUserIndex);
-            }
-        }
-
-        // Функция для обновления элемента истории
-        function updateStoryElement(index) {
-            const storyElements = document.querySelectorAll('.story-item');
-            // +1 потому что первый элемент - кнопка добавления
-            const storyElement = storyElements[index + 1];
-            if (storyElement) {
-                const avatar = storyElement.querySelector('.story-avatar');
-                if (avatar) {
-                    avatar.classList.remove('unread');
-                }
-            }
-        }
-
-        // Функция для настройки навигации по историям
-        function setupStoryNavigation() {
-            const prevBtn = document.getElementById('story-prev');
-            const nextBtn = document.getElementById('story-next');
-            
-            // Очищаем старые обработчики
-            prevBtn.onclick = null;
-            nextBtn.onclick = null;
-            prevBtn.ontouchstart = null;
-            nextBtn.ontouchstart = null;
-            
-            // Добавляем новые обработчики
-            prevBtn.onclick = prevStory;
-            nextBtn.onclick = nextStory;
-            
-            // Поддержка touch событий
-            prevBtn.ontouchstart = (e) => {
-                e.preventDefault();
-                prevStory();
-            };
-            
-            nextBtn.ontouchstart = (e) => {
-                e.preventDefault();
-                nextStory();
-            };
-        }
-
-        // Функция для загрузки чатов с сервера
-        async function loadChats() {
-            const chatsContainer = document.getElementById('chats-container');
-            
-            try {
-                const token = localStorage.getItem('token');
-                if (!token) {
-                    showEmptyState('Для просмотра чатов необходимо авторизоваться');
-                    return;
-                }
-
-                const response = await fetch(`${API_BASE}/messages/chats`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to load chats');
-                }
-
-                const chatsData = await response.json();
-                
-                if (chatsData.length === 0) {
-                    showEmptyState('У вас пока нет чатов', 'Начните общение с продавцом из объявления');
-                    return;
-                }
-                
-                chats = chatsData;
-                displayChats();
-                
-            } catch (error) {
-                console.error('Error loading chats:', error);
-                showEmptyState('Не удалось загрузить чаты', 'Проверьте подключение к интернету');
-            }
-        }
-
-        // Функция для отображения пустого состояния
-        function showEmptyState(title, message = '') {
-            const chatsContainer = document.getElementById('chats-container');
-            chatsContainer.innerHTML = `
-                <div class="empty-state">
-                    <i class="fa fa-comments"></i>
-                    <h3>${title}</h3>
-                    ${message ? `<p>${message}</p>` : ''}
-                    <button onclick="window.location.href='index.html'" style="
-                        background: var(--gradient);
-                        color: white;
-                        border: none;
-                        padding: 12px 25px;
-                        border-radius: 25px;
-                        font-size: 14px;
-                        font-weight: 600;
-                        cursor: pointer;
-                        margin-top: 15px;
-                    ">На главную</button>
-                </div>
-            `;
-        }
-
-        // Функция для отображения чатов
-        function displayChats() {
-            const chatsContainer = document.getElementById('chats-container');
-            chatsContainer.innerHTML = '';
-            
-            // Сортируем чаты по времени последнего сообщения
-            chats.sort((a, b) => new Date(b.last_message_time) - new Date(a.last_message_time));
-            
-            chats.forEach(chat => {
-                const chatElement = createChatElement(chat);
-                chatsContainer.appendChild(chatElement);
-            });
-        }
-
-        // Функция для создания элемента чата
-        function createChatElement(chat) {
-            const chatElement = document.createElement('div');
-            chatElement.className = 'chat-item';
-            
-            const lastMessage = chat.last_message || 'Нет сообщений';
-            const time = formatTime(chat.last_message_time);
-            const unreadCount = chat.unread_count > 0 ? `<div class="chat-unread">${chat.unread_count}</div>` : '';
-            
-            chatElement.innerHTML = `
-                <div class="chat-header">
-                    <div class="chat-avatar ${chat.is_online ? 'online' : ''}">
-                        <i class="fa ${chat.type === 'support' ? 'fa-headphones' : 'fa-user'}"></i>
-                    </div>
-                    <div class="chat-info">
-                        <div class="chat-name">${chat.name}</div>
-                        <div class="chat-status">${chat.type === 'support' ? 'Поддержка' : 'Продавец'}</div>
-                    </div>
-                </div>
-                <div class="chat-preview">
-                    <div class="chat-message">${lastMessage}</div>
-                    <div class="chat-meta">
-                        <div class="chat-time">${time}</div>
-                        ${unreadCount}
-                    </div>
-                </div>
-            `;
-            
-            chatElement.addEventListener('click', () => {
-                openChat(chat);
+            // Обновляем прогресс-бары
+            progress.innerHTML = '';
+            prevUser.stories.forEach((s, index) => {
+                const progressBar = document.createElement('div');
+                progressBar.className = 'story-progress-bar';
+                progressBar.innerHTML = `<div class="story-progress-fill" id="progress-${index}"></div>`;
+                progress.appendChild(progressBar);
             });
             
-            return chatElement;
+            showStoryContent(prevUser.stories[currentStoryIndex]);
+            resetProgress();
         }
+    }
 
-        // Функция для открытия чата
-        async function openChat(chat) {
-            currentChat = chat;
-            const chatWindow = document.getElementById('chat-window');
-            const contactName = document.getElementById('chat-contact-name');
-            const contactStatus = document.getElementById('chat-contact-status');
-            const messagesContainer = document.getElementById('messages-container');
-            
-            contactName.textContent = chat.name;
-            contactStatus.textContent = chat.type === 'support' ? 'Поддержка • онлайн' : 'Продавец • онлайн';
-            
-            // Загружаем сообщения чата
-            await loadChatMessages(chat.id);
-            
-            chatWindow.classList.add('active');
-            
-            // Прокручиваем вниз
-            setTimeout(() => {
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }, 100);
+    // Функция для сброса прогресса
+    function resetProgress() {
+        if (storyProgressInterval) {
+            clearInterval(storyProgressInterval);
         }
+        startStoryProgress(stories[currentStoryUserIndex].stories);
+    }
 
-        // Функция для загрузки сообщений чата
-        async function loadChatMessages(chatId) {
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${API_BASE}/messages/chat/${chatId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+    // Функция для закрытия окна просмотра историй
+    function closeStoryViewer() {
+        if (storyProgressInterval) {
+            clearInterval(storyProgressInterval);
+            storyProgressInterval = null;
+        }
+        
+        document.getElementById('story-viewer').classList.remove('active');
+        
+        // Отмечаем историю как просмотренную
+        if (stories[currentStoryUserIndex]) {
+            stories[currentStoryUserIndex].is_viewed = true;
+            updateStoryElement(currentStoryUserIndex);
+        }
+    }
 
-                if (!response.ok) {
-                    throw new Error('Failed to load messages');
-                }
-
-                const messages = await response.json();
-                displayMessages(messages);
-                
-            } catch (error) {
-                console.error('Error loading messages:', error);
-                showNotification('Ошибка загрузки сообщений', 'error');
+    // Функция для обновления элемента истории
+    function updateStoryElement(index) {
+        const storyElements = document.querySelectorAll('.story-item');
+        // +1 потому что первый элемент - кнопка добавления
+        const storyElement = storyElements[index + 1];
+        if (storyElement) {
+            const avatar = storyElement.querySelector('.story-avatar');
+            if (avatar) {
+                avatar.classList.remove('unread');
             }
         }
+    }
 
-        // Функция для отображения сообщений
-        function displayMessages(messages) {
-            const messagesContainer = document.getElementById('messages-container');
-            messagesContainer.innerHTML = '';
+    // Функция для настройки навигации по историям
+    function setupStoryNavigation() {
+        const prevBtn = document.getElementById('story-prev');
+        const nextBtn = document.getElementById('story-next');
+        
+        // Очищаем старые обработчики
+        prevBtn.onclick = null;
+        nextBtn.onclick = null;
+        prevBtn.ontouchstart = null;
+        nextBtn.ontouchstart = null;
+        
+        // Добавляем новые обработчики
+        prevBtn.onclick = prevStory;
+        nextBtn.onclick = nextStory;
+        
+        // Поддержка touch событий
+        prevBtn.ontouchstart = (e) => {
+            e.preventDefault();
+            prevStory();
+        };
+        
+        nextBtn.ontouchstart = (e) => {
+            e.preventDefault();
+            nextStory();
+        };
+    }
+
+    // Функция для загрузки чатов с сервера
+    async function loadChats() {
+        const chatsContainer = document.getElementById('chats-container');
+        
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showEmptyState('Для просмотра чатов необходимо авторизоваться');
+                return;
+            }
+
+            const response = await fetch(`${API_BASE}/messages/chats`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load chats');
+            }
+
+            const chatsData = await response.json();
             
-            if (messages.length === 0) {
-                messagesContainer.innerHTML = `
-                    <div class="empty-state" style="padding: 20px;">
-                        <i class="fa fa-comment" style="font-size: 48px;"></i>
-                        <p>Нет сообщений</p>
-                    </div>
-                `;
+            if (chatsData.length === 0) {
+                showEmptyState('У вас пока нет чатов', 'Начните общение с продавцом из объявления');
                 return;
             }
             
-            // Сортируем сообщения по времени
-            messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+            chats = chatsData;
+            displayChats();
             
-            messages.forEach(message => {
-                const messageElement = createMessageElement(message);
-                messagesContainer.appendChild(messageElement);
+        } catch (error) {
+            console.error('Error loading chats:', error);
+            showEmptyState('Не удалось загрузить чаты', 'Проверьте подключение к интернету');
+        }
+    }
+
+    // Функция для отображения пустого состояния
+    function showEmptyState(title, message = '') {
+        const chatsContainer = document.getElementById('chats-container');
+        chatsContainer.innerHTML = `
+            <div class="empty-state">
+                <i class="fa fa-comments"></i>
+                <h3>${title}</h3>
+                ${message ? `<p>${message}</p>` : ''}
+                <button onclick="window.location.href='index.html'" style="
+                    background: var(--gradient);
+                    color: white;
+                    border: none;
+                    padding: 12px 25px;
+                    border-radius: 25px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    cursor: pointer;
+                    margin-top: 15px;
+                ">На главную</button>
+            </div>
+        `;
+    }
+
+    // Функция для отображения чатов
+    function displayChats() {
+        const chatsContainer = document.getElementById('chats-container');
+        chatsContainer.innerHTML = '';
+        
+        // Сортируем чаты по времени последнего сообщения
+        chats.sort((a, b) => new Date(b.last_message_time) - new Date(a.last_message_time));
+        
+        chats.forEach(chat => {
+            const chatElement = createChatElement(chat);
+            chatsContainer.appendChild(chatElement);
+        });
+    }
+
+    // Функция для создания элемента чата
+    function createChatElement(chat) {
+        const chatElement = document.createElement('div');
+        chatElement.className = 'chat-item';
+        
+        const lastMessage = chat.last_message || 'Нет сообщений';
+        const time = formatTime(chat.last_message_time);
+        const unreadCount = chat.unread_count > 0 ? `<div class="chat-unread">${chat.unread_count}</div>` : '';
+        
+        chatElement.innerHTML = `
+            <div class="chat-header">
+                <div class="chat-avatar ${chat.is_online ? 'online' : ''}">
+                    <i class="fa ${chat.type === 'support' ? 'fa-headphones' : 'fa-user'}"></i>
+                </div>
+                <div class="chat-info">
+                    <div class="chat-name">${chat.name}</div>
+                    <div class="chat-status">${chat.type === 'support' ? 'Поддержка' : 'Продавец'}</div>
+                </div>
+            </div>
+            <div class="chat-preview">
+                <div class="chat-message">${lastMessage}</div>
+                <div class="chat-meta">
+                    <div class="chat-time">${time}</div>
+                    ${unreadCount}
+                </div>
+            </div>
+        `;
+        
+        chatElement.addEventListener('click', () => {
+            openChat(chat);
+        });
+        
+        return chatElement;
+    }
+
+    // Функция для открытия чата
+    async function openChat(chat) {
+        currentChat = chat;
+        const chatWindow = document.getElementById('chat-window');
+        const contactName = document.getElementById('chat-contact-name');
+        const contactStatus = document.getElementById('chat-contact-status');
+        const messagesContainer = document.getElementById('messages-container');
+        
+        contactName.textContent = chat.name;
+        contactStatus.textContent = chat.type === 'support' ? 'Поддержка • онлайн' : 'Продавец • онлайн';
+        
+        // Если это чат поддержки, инициализируем его
+        if (chat.type === 'support') {
+            await initializeSupportChat();
+        }
+        
+        // Загружаем сообщения чата
+        await loadChatMessages(chat.id);
+        
+        chatWindow.classList.add('active');
+        
+        // Прокручиваем вниз
+        setTimeout(() => {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }, 100);
+    }
+
+    // Функция для инициализации чата поддержки
+    async function initializeSupportChat() {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            
+            // Проверяем, есть ли уже chatId
+            let supportChatId = getSupportChatId();
+            
+            // Если chatId не существует, создаем новый
+            if (!supportChatId) {
+                supportChatId = generateSupportChatId();
+                setSupportChatId(supportChatId);
+                
+                // Инициализируем чат на сервере
+                const response = await fetch(`${API_BASE}/messages/support/init`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.chatId) {
+                        setSupportChatId(data.chatId);
+                    }
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error initializing support chat:', error);
+        }
+    }
+
+    // Функция для загрузки сообщений чата
+    async function loadChatMessages(chatId) {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE}/messages/chat/${chatId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
             });
-        }
 
-        // Функция для создания элемента сообщения
-        function createMessageElement(message) {
-            const messageElement = document.createElement('div');
-            const currentUserId = getUserId();
-            const isOutgoing = message.sender_id === currentUserId;
+            if (!response.ok) {
+                throw new Error('Failed to load messages');
+            }
+
+            const messages = await response.json();
+            displayMessages(messages);
             
-            messageElement.className = `message ${isOutgoing ? 'outgoing' : 'incoming'}`;
-            messageElement.innerHTML = `
-                <div class="message-text">${message.content}</div>
-                <div class="message-time">${formatMessageTime(message.created_at)}</div>
+        } catch (error) {
+            console.error('Error loading messages:', error);
+            showNotification('Ошибка загрузки сообщений', 'error');
+        }
+    }
+
+    // Функция для отображения сообщений
+    function displayMessages(messages) {
+        const messagesContainer = document.getElementById('messages-container');
+        messagesContainer.innerHTML = '';
+        
+        if (messages.length === 0) {
+            messagesContainer.innerHTML = `
+                <div class="empty-state" style="padding: 20px;">
+                    <i class="fa fa-comment" style="font-size: 48px;"></i>
+                    <p>Нет сообщений</p>
+                </div>
             `;
-            
-            return messageElement;
+            return;
         }
+        
+        // Сортируем сообщения по времени
+        messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+        
+        messages.forEach(message => {
+            const messageElement = createMessageElement(message);
+            messagesContainer.appendChild(messageElement);
+        });
+    }
 
-        // Функция для отправки сообщения
-        async function sendMessage() {
-            const messageInput = document.getElementById('message-input');
-            const text = messageInput.value.trim();
-            
-            if (!text) return;
-            
-            if (!currentChat) {
-                showNotification('Выберите чат для отправки сообщения', 'error');
+    // Функция для создания элемента сообщения
+    function createMessageElement(message) {
+        const messageElement = document.createElement('div');
+        const currentUserId = getUserId();
+        const isOutgoing = message.sender_id === currentUserId;
+        
+        messageElement.className = `message ${isOutgoing ? 'outgoing' : 'incoming'}`;
+        messageElement.innerHTML = `
+            <div class="message-text">${message.content}</div>
+            <div class="message-time">${formatMessageTime(message.created_at)}</div>
+        `;
+        
+        return messageElement;
+    }
+
+    // Функция для отправки сообщения (обновленная для поддержки)
+    async function sendMessage() {
+        const messageInput = document.getElementById('message-input');
+        const text = messageInput.value.trim();
+        
+        if (!text) return;
+        
+        if (!currentChat) {
+            showNotification('Выберите чат для отправки сообщения', 'error');
+            return;
+        }
+        
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showNotification('Для отправки сообщений необходимо авторизоваться', 'error');
                 return;
             }
             
-            try {
-                const token = localStorage.getItem('token');
-                if (!token) {
-                    showNotification('Для отправки сообщений необходимо авторизоваться', 'error');
-                    return;
+            // Для чата поддержки используем отдельный endpoint
+            if (currentChat.type === 'support') {
+                const supportChatId = getSupportChatId();
+                
+                const response = await fetch(`${API_BASE}/messages/support`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        content: text,
+                        chatId: supportChatId
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to send support message');
                 }
                 
-                // Сохраняем сообщение в БД
+                const data = await response.json();
+                
+                // Сохраняем chatId если пришел новый
+                if (data.chatId && data.chatId !== supportChatId) {
+                    setSupportChatId(data.chatId);
+                }
+                
+            } else {
+                // Обычные чаты
                 const response = await fetch(`${API_BASE}/messages`, {
                     method: 'POST',
                     headers: {
@@ -1598,150 +1692,324 @@
                         receiver_id: currentChat.contact_id
                     })
                 });
-
+                
                 if (!response.ok) {
                     throw new Error('Failed to save message');
                 }
-                
-                // Обновляем сообщения в чате
+            }
+            
+            // Добавляем сообщение в UI немедленно
+            addMessageToUI(text, true);
+            
+            // Очищаем поле ввода
+            messageInput.value = '';
+            messageInput.style.height = 'auto';
+            
+            // Обновляем сообщения в чате
+            setTimeout(async () => {
                 await loadChatMessages(currentChat.id);
-                
-                // Очищаем поле ввода
-                messageInput.value = '';
-                messageInput.style.height = 'auto';
-                
                 // Обновляем список чатов
                 await loadChats();
-                
-                showNotification('Сообщение отправлено');
-                
-            } catch (error) {
-                console.error('Error sending message:', error);
-                showNotification('Ошибка отправки сообщения', 'error');
-            }
-        }
-
-        // Вспомогательные функции
-        function formatTime(dateString) {
-            if (!dateString) return '';
-            const date = new Date(dateString);
-            const now = new Date();
-            const diff = now - date;
-            const diffDays = Math.floor(diff / (1000 * 60 * 60 * 24));
+            }, 500);
             
-            if (diffDays === 0) {
-                return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-            } else if (diffDays === 1) {
-                return 'вчера';
-            } else if (diffDays < 7) {
-                return date.toLocaleDateString('ru-RU', { weekday: 'short' });
-            } else {
-                return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
-            }
-        }
-
-        function formatStoryTime(dateString) {
-            const date = new Date(dateString);
-            const now = new Date();
-            const diff = now - date;
-            const diffMinutes = Math.floor(diff / (1000 * 60));
-            const diffHours = Math.floor(diff / (1000 * 60 * 60));
-            const diffDays = Math.floor(diff / (1000 * 60 * 60 * 24));
+            showNotification('Сообщение отправлено');
             
-            if (diffMinutes < 60) {
-                return `${diffMinutes} минут назад`;
-            } else if (diffHours < 24) {
-                return `${diffHours} часов назад`;
-            } else if (diffDays === 1) {
-                return 'вчера';
-            } else {
-                return `${diffDays} дней назад`;
-            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            showNotification('Ошибка отправки сообщения', 'error');
         }
+    }
 
-        function formatMessageTime(dateString) {
-            const date = new Date(dateString);
+    // Функция для добавления сообщения в UI немедленно
+    function addMessageToUI(text, isOutgoing = true) {
+        const messagesContainer = document.getElementById('messages-container');
+        const messageElement = document.createElement('div');
+        
+        messageElement.className = `message ${isOutgoing ? 'outgoing' : 'incoming'}`;
+        messageElement.innerHTML = `
+            <div class="message-text">${text}</div>
+            <div class="message-time">${formatMessageTime(new Date())}</div>
+        `;
+        
+        messagesContainer.appendChild(messageElement);
+        
+        // Прокручиваем вниз
+        setTimeout(() => {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }, 100);
+    }
+
+    // Вспомогательные функции
+    function formatTime(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = now - date;
+        const diffDays = Math.floor(diff / (1000 * 60 * 60 * 24));
+        
+        if (diffDays === 0) {
             return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        } else if (diffDays === 1) {
+            return 'вчера';
+        } else if (diffDays < 7) {
+            return date.toLocaleDateString('ru-RU', { weekday: 'short' });
+        } else {
+            return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
         }
+    }
 
-        function showNotification(message, type = 'success') {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
+    function formatStoryTime(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = now - date;
+        const diffMinutes = Math.floor(diff / (1000 * 60));
+        const diffHours = Math.floor(diff / (1000 * 60 * 60));
+        const diffDays = Math.floor(diff / (1000 * 60 * 60 * 24));
+        
+        if (diffMinutes < 60) {
+            return `${diffMinutes} минут назад`;
+        } else if (diffHours < 24) {
+            return `${diffHours} часов назад`;
+        } else if (diffDays === 1) {
+            return 'вчера';
+        } else {
+            return `${diffDays} дней назад`;
+        }
+    }
+
+    function formatMessageTime(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function showNotification(message, type = 'success') {
+        // Проверяем, есть ли уже уведомление
+        const existingNotification = document.querySelector('.custom-notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+        
+        const notification = document.createElement('div');
+        notification.className = 'custom-notification';
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100%);
+            background: ${type === 'error' ? 'var(--accent)' : 'var(--primary)'};
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            z-index: 10000;
+            font-weight: 500;
+            font-size: 14px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        `;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        // Показываем уведомление
+        setTimeout(() => {
+            notification.style.transform = 'translateX(-50%) translateY(0)';
+            notification.style.opacity = '1';
+        }, 10);
+        
+        // Скрываем через 3 секунды
+        setTimeout(() => {
+            notification.style.transform = 'translateX(-50%) translateY(-100%)';
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+
+    // Функция для автоматического обновления чатов
+    function startChatAutoRefresh() {
+        // Обновляем чаты каждые 30 секунд
+        setInterval(async () => {
+            if (!document.getElementById('chat-window').classList.contains('active')) {
+                await loadChats();
+            }
+        }, 30000);
+    }
+
+    // Инициализация при загрузке страницы
+    document.addEventListener('DOMContentLoaded', function() {
+        // Получаем ID пользователя
+        userId = getUserId();
+        
+        // Получаем chatId поддержки
+        getSupportChatId();
+        
+        // Загружаем истории
+        loadStories();
+        
+        // Загружаем чаты
+        loadChats();
+        
+        // Запускаем автообновление чатов
+        startChatAutoRefresh();
+        
+        // Настройка обработчиков событий
+        document.getElementById('close-chat').addEventListener('click', function() {
+            document.getElementById('chat-window').classList.remove('active');
+        });
+        
+        document.getElementById('story-close-btn').addEventListener('click', closeStoryViewer);
+        
+        document.getElementById('send-message').addEventListener('click', sendMessage);
+        
+        document.getElementById('message-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Автоматическое изменение высоты textarea
+        const messageInput = document.getElementById('message-input');
+        messageInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+        
+        // Обработка нажатия на кнопку "Написать в поддержку" если есть такая кнопка
+        const supportBtn = document.getElementById('support-btn');
+        if (supportBtn) {
+            supportBtn.addEventListener('click', function() {
+                // Создаем чат поддержки в списке
+                const supportChat = {
+                    id: 'support',
+                    name: 'Поддержка Zeeptook',
+                    contact_id: 'support',
+                    last_message: 'Здравствуйте! Чем могу помочь?',
+                    last_message_time: new Date(),
+                    unread_count: 0,
+                    type: 'support',
+                    is_online: true
+                };
+                
+                // Добавляем чат в начало списка
+                if (!chats.find(c => c.id === 'support')) {
+                    chats.unshift(supportChat);
+                    displayChats();
+                }
+                
+                // Открываем чат поддержки
+                openChat(supportChat);
+            });
+        }
+    });
+
+    // Добавляем стили для анимации уведомлений
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideDown {
+            from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateX(-50%) translateY(0); opacity: 1; }
+            to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+        }
+        
+        /* Адаптивность для очень маленьких экранов */
+        @media (max-width: 320px) {
+            .header {
+                padding: 10px 12px;
+            }
+            
+            .chats-container {
+                padding: 10px;
+            }
+            
+            .chat-item {
+                padding: 10px;
+                margin-bottom: 10px;
+            }
+            
+            .chat-avatar {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .chat-name {
+                font-size: 14px;
+            }
+            
+            .message {
+                max-width: 85%;
+                padding: 10px 14px;
+            }
+            
+            .story-avatar {
+                width: 55px;
+                height: 55px;
+            }
+            
+            .story-name {
+                font-size: 10px;
+            }
+        }
+        
+        /* Улучшения для планшетов */
+        @media (min-width: 768px) and (max-width: 1023px) {
+            .chat-window {
+                max-width: 600px;
                 left: 50%;
                 transform: translateX(-50%);
-                background: ${type === 'error' ? 'var(--accent)' : 'var(--primary)'};
-                color: white;
-                padding: 12px 20px;
-                border-radius: 25px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-                z-index: 10000;
-                font-weight: 500;
-                animation: slideDown 0.3s ease-out;
-            `;
-            notification.textContent = message;
+            }
             
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.animation = 'slideUp 0.3s ease-in';
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 300);
-            }, 3000);
+            .story-viewer {
+                max-width: 600px;
+                left: 50%;
+                transform: translateX(-50%);
+            }
         }
-
-        // Инициализация при загрузке страницы
-        document.addEventListener('DOMContentLoaded', function() {
-            // Получаем ID пользователя
-            userId = getUserId();
-            
-            // Загружаем истории
-            loadStories();
-            
-            // Загружаем чаты
-            loadChats();
-            
-            // Настройка обработчиков событий
-            document.getElementById('close-chat').addEventListener('click', function() {
-                document.getElementById('chat-window').classList.remove('active');
-            });
-            
-            document.getElementById('story-close-btn').addEventListener('click', closeStoryViewer);
-            
-            document.getElementById('send-message').addEventListener('click', sendMessage);
-            
-            document.getElementById('message-input').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                }
-            });
-            
-            // Автоматическое изменение высоты textarea
-            const messageInput = document.getElementById('message-input');
-            messageInput.addEventListener('input', function() {
-                this.style.height = 'auto';
-                this.style.height = Math.min(this.scrollHeight, 120) + 'px';
-            });
-        });
-
-        // Добавляем стили для анимации уведомлений
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideDown {
-                from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
-                to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        
+        /* Улучшения для темной темы */
+        @media (prefers-color-scheme: dark) {
+            .chat-item {
+                background: rgba(15, 23, 42, 0.95);
             }
-            @keyframes slideUp {
-                from { transform: translateX(-50%) translateY(0); opacity: 1; }
-                to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+            
+            .message.incoming {
+                background: rgba(15, 23, 42, 0.8);
             }
-        `;
-        document.head.appendChild(style);
-    </script>
+            
+            .message-input {
+                background: rgba(15, 23, 42, 0.8);
+            }
+        }
+        
+        /* Улучшения для iOS Safari */
+        @supports (-webkit-touch-callout: none) {
+            .message-input {
+                font-size: 16px; /* Предотвращает увеличение шрифта в iOS */
+            }
+            
+            .chat-item:active {
+                background: rgba(30, 41, 59, 0.7);
+            }
+        }
+        
+        /* Поддержка очень высоких экранов */
+        @media (min-height: 1000px) {
+            .messages-container {
+                max-height: 70vh;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
 </body>
 </html>
