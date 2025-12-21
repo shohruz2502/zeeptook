@@ -1166,5 +1166,38 @@
             console.log('🌐 API Base:', API_BASE);
         });
     </script>
+    <script>
+    // Обработка Google OAuth callback на главной странице
+    function checkForGoogleCallback() {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        const state = params.get('state');
+        const error = params.get('error');
+
+        if (code && state) {
+            // Проверяем, что это Google OAuth, а не другой сервис
+            const savedState = sessionStorage.getItem('google_oauth_state');
+            if (state === savedState) {
+                sessionStorage.removeItem('google_oauth_state');
+                
+                // Сохраняем код для обработки
+                sessionStorage.setItem('google_auth_code', code);
+                sessionStorage.setItem('google_auth_state', state);
+                
+                // Перенаправляем на страницу регистрации
+                window.location.href = 'register.html';
+                return;
+            }
+        }
+
+        if (error) {
+            console.error('Google auth error:', error);
+            // Можно показать уведомление об ошибке
+        }
+    }
+
+    // Проверяем при загрузке главной страницы
+    document.addEventListener('DOMContentLoaded', checkForGoogleCallback);
+</script>
 </body>
 </html>
