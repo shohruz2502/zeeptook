@@ -1500,6 +1500,47 @@ app.use((req, res) => {
     res.status(404).send('Page not found');
 });
 
+// Profile routes - ДОБАВЬТЕ ЭТО
+app.get('/api/profile', authenticateToken, async (req, res) => {
+    try {
+        const user_id = req.user.userId;
+
+        const userResult = await pool.query(`
+            SELECT id, username, email, full_name, avatar_url, rating, created_at, birth_year
+            FROM users WHERE id = $1
+        `, [user_id]);
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const adsResult = await pool.query(`
+            SELECT COUNT(*) as total_ads,
+                   COUNT(CASE WHEN is_active = TRUE THEN 1 END) as active_ads
+            FROM ads WHERE user_id = $1
+        `, [user_id]);
+
+        const favoritesResult = await pool.query(`
+            SELECT COUNT(*) as total_favorites
+            FROM favorites WHERE user_id = $1
+        `, [user_id]);
+
+        console.log(`👤 Profile loaded for user ${user_id}`);
+
+        res.json({
+            user: userResult.rows[0],
+            stats: {
+                total_ads: parseInt(adsResult.rows[0].total_ads || 0),
+                active_ads: parseInt(adsResult.rows[0].active_ads || 0),
+                total_favorites: parseInt(favoritesResult.rows[0].total_favorites || 0)
+            }
+        });
+    } catch (error) {
+        console.error('❌ Get profile error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Start server
 if (process.env.NODE_ENV !== 'production') {
     async function startServer() {
