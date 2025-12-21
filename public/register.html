@@ -517,41 +517,70 @@
 
         // Проверка OAuth callback в URL
         function checkForOAuthCallback() {
-            const hash = window.location.hash.substring(1);
-            const params = new URLSearchParams(hash);
-            const accessToken = params.get('access_token');
-            const tokenType = params.get('token_type');
-            const expiresIn = params.get('expires_in');
-            const state = params.get('state');
-            const error = params.get('error');
-            
-            // Убираем токен из URL для безопасности
-            if (accessToken || error) {
-                history.replaceState(null, null, window.location.pathname + window.location.search);
-            }
-            
-            if (error) {
-                showError('Ошибка Google авторизации: ' + error);
-                return;
-            }
-            
-            if (accessToken && state) {
-                // Проверяем state для защиты от CSRF
-                const savedState = sessionStorage.getItem('google_oauth_state');
-                if (state !== savedState) {
-                    showError('Ошибка безопасности. Попробуйте снова.');
-                    return;
-                }
-                
-                sessionStorage.removeItem('google_oauth_state');
-                
-                // Сохраняем токен в sessionStorage для временного использования
-                sessionStorage.setItem('google_access_token', accessToken);
-                
-                // Запускаем процесс авторизации
-                handleGoogleAccessToken(accessToken);
-            }
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const state = params.get('state');
+    const error = params.get('error');
+    
+    // Убираем параметры из URL
+    if (code || error) {
+        history.replaceState(null, null, window.location.pathname);
+    }
+    
+    if (error) {
+        showError('Ошибка Google авторизации: ' + error);
+        return;
+    }
+    
+    if (code && state) {
+        const savedState = sessionStorage.getItem('google_oauth_state');
+        if (state !== savedState) {
+            showError('Ошибка безопасности. Попробуйте снова.');
+            return;
         }
+        
+        sessionStorage.removeItem('google_oauth_state');
+        
+        // Отправляем code на сервер для обмена на токен
+        handleGoogleAuthorizationCode(code);
+    }
+}
+
+// Новая функция для обработки кода авторизации
+async function handleGoogleAuthorizationCode(code) {
+    try {
+        showSuccess('Авторизация Google...');
+        
+        const response = await fetch(`${API_BASE}/auth/google`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                code: code
+            })
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Ошибка авторизации через Google');
+        }
+        
+        if (data.success && data.exists) {
+            saveUserAndRedirect(data);
+        } else if (data.success && !data.exists) {
+            googleUserData = data.user;
+            showGoogleCompleteModal();
+        } else {
+            throw new Error('Неожиданный ответ от сервера');
+        }
+        
+    } catch (error) {
+        console.error('Ошибка обработки Google кода:', error);
+        showError(error.message || 'Ошибка обработки данных Google');
+    }
+}
 
         // Проверяем, если пользователь уже авторизован
         function checkExistingAuth() {
@@ -822,7 +851,7 @@
                 // Создаем URL для Google OAuth (Implicit flow)
                 const redirectUri = encodeURIComponent(window.location.origin);
                 const scope = encodeURIComponent('email profile openid');
-                const responseType = 'token';
+                const responseType = 'code';
                 
                 const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
                     `client_id=${googleClientId}` +
