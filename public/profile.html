@@ -822,33 +822,33 @@
         }
 
         // Загрузка данных профиля с сервера
-        async function loadProfile() {
-            const token = localStorage.getItem('token');
-            
-            try {
-                const response = await fetch(`${API_BASE}/profile`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to load profile');
-                }
-
-                const data = await response.json();
-                currentUser = data.user;
-                
-                // Обновляем интерфейс данными с сервера
-                updateProfileUI(data);
-                
-            } catch (error) {
-                console.error('Error loading profile:', error);
-                showNotification('Ошибка загрузки профиля', 'error');
-                // Если токен невалидный, разлогиниваем
-                logout();
+async function loadProfile() {
+    const token = localStorage.getItem('token');
+    
+    try {
+        const response = await fetch(`${API_BASE}/profile`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
             }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to load profile');
         }
+
+        const data = await response.json();
+        currentUser = data.user;
+        
+        // Обновляем интерфейс данными с сервера
+        updateProfileUI(data);
+        
+    } catch (error) {
+        console.error('Error loading profile:', error);
+        showNotification('Ошибка загрузки профиля', 'error');
+        // Если токен невалидный, разлогиниваем
+        logout();
+    }
+}
 
         // Обновление интерфейса профиля данными с сервера
         function updateProfileUI(data) {
