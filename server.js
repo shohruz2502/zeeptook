@@ -1221,9 +1221,24 @@ app.get('/api/messages/chat/:chatId', authenticateToken, async (req, res) => {
                     u.username as sender_username
                 FROM messages m
                 LEFT JOIN users u ON m.sender_id = u.id
-                WHERE m.chat_type = 'support' AND m.sender_id = $1
+                WHERE (m.sender_id = $1 OR m.receiver_id = $1) 
+                   AND m.chat_type = 'support'
                 ORDER BY m.created_at ASC
             `, [user_id]);
+
+            // Если нет сообщений, возвращаем приветственное сообщение
+            if (result.rows.length === 0) {
+                const welcomeMessage = {
+                    id: 'support_welcome',
+                    sender_id: 1, // Admin ID
+                    receiver_id: user_id,
+                    content: 'Здравствуйте! Чем могу помочь?',
+                    chat_type: 'support',
+                    created_at: new Date(),
+                    sender_username: 'Поддержка'
+                };
+                result.rows.push(welcomeMessage);
+            }
 
             res.json(result.rows);
         } else {
@@ -1422,28 +1437,42 @@ app.post('/api/messages/support/init', authenticateToken, async (req, res) => {
 
 // Profile routes
 app.get('/api/profile', authenticateToken, async (req, res) => {
+    console.log('🔍 /api/profile called for user:', req.user.userId);
+    
     try {
         const user_id = req.user.userId;
 
+        // Проверяем подключение к БД
+        console.log('📊 Querying user with ID:', user_id);
+        
         const userResult = await pool.query(`
             SELECT id, username, email, full_name, avatar_url, rating, created_at, birth_year
             FROM users WHERE id = $1
         `, [user_id]);
 
+        console.log('📊 User query result:', userResult.rows.length, 'rows');
+        
         if (userResult.rows.length === 0) {
+            console.log('❌ User not found in database');
             return res.status(404).json({ error: 'User not found' });
         }
 
+        console.log('📊 User found:', userResult.rows[0].email);
+        
         const adsResult = await pool.query(`
             SELECT COUNT(*) as total_ads,
                    COUNT(CASE WHEN is_active = TRUE THEN 1 END) as active_ads
             FROM ads WHERE user_id = $1
         `, [user_id]);
 
+        console.log('📊 Ads stats:', adsResult.rows[0]);
+
         const favoritesResult = await pool.query(`
             SELECT COUNT(*) as total_favorites
             FROM favorites WHERE user_id = $1
         `, [user_id]);
+
+        console.log('📊 Favorites stats:', favoritesResult.rows[0]);
 
         console.log(`👤 Profile loaded for user ${user_id}`);
 
@@ -1456,8 +1485,9 @@ app.get('/api/profile', authenticateToken, async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('❌ Get profile error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('❌ Get profile error DETAILS:', error);
+        console.error('❌ Error stack:', error.stack);
+        res.status(500).json({ error: 'Internal server error: ' + error.message });
     }
 });
 
