@@ -183,6 +183,24 @@
             animation: slideIn 0.3s ease-out;
         }
         
+        .success-message {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .success-message.show {
+            display: flex;
+            animation: slideIn 0.3s ease-out;
+        }
+        
         .loading {
             display: none;
             align-items: center;
@@ -219,6 +237,57 @@
         
         .footer-links a:hover {
             text-decoration: underline;
+        }
+        
+        .demo-accounts {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 10px;
+            border-left: 3px solid var(--operator);
+        }
+        
+        .demo-accounts h4 {
+            color: var(--white);
+            font-size: 14px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .demo-accounts h4 i {
+            color: var(--operator);
+        }
+        
+        .demo-accounts p {
+            color: var(--gray);
+            font-size: 12px;
+            line-height: 1.5;
+            margin-bottom: 5px;
+        }
+        
+        .demo-accounts .account {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            padding: 3px 0;
+            border-bottom: 1px dashed rgba(100, 116, 139, 0.3);
+        }
+        
+        .demo-accounts .account:last-child {
+            border-bottom: none;
+        }
+        
+        .demo-accounts .username {
+            color: var(--white);
+            font-size: 12px;
+        }
+        
+        .demo-accounts .password {
+            color: var(--operator-light);
+            font-size: 12px;
+            font-family: monospace;
         }
         
         @keyframes fadeIn {
@@ -269,6 +338,11 @@
             <p>Панель управления сделками</p>
         </div>
         
+        <div class="success-message" id="success-message">
+            <i class="fa fa-check-circle"></i>
+            <span id="success-text">Вход выполнен успешно!</span>
+        </div>
+        
         <div class="error-message" id="error-message">
             <i class="fa fa-exclamation-circle"></i>
             <span id="error-text">Неверные учетные данные</span>
@@ -313,6 +387,30 @@
             </button>
         </form>
         
+        <div class="demo-accounts">
+            <h4>
+                <i class="fa fa-info-circle"></i>
+                <span>Демо-аккаунты для тестирования:</span>
+            </h4>
+            <p>Выберите любого оператора для входа:</p>
+            <div class="account">
+                <span class="username">alex_operator</span>
+                <span class="password">SecurePass123!</span>
+            </div>
+            <div class="account">
+                <span class="username">maria.support</span>
+                <span class="password">Zeeptook2024$</span>
+            </div>
+            <div class="account">
+                <span class="username">admin@zeep.com</span>
+                <span class="password">Admin#Zeep789</span>
+            </div>
+            <div class="account">
+                <span class="username">ivan_trade</span>
+                <span class="password">TradeMaster@45</span>
+            </div>
+        </div>
+        
         <div class="footer-links">
             <p>Вернуться на <a href="index.html">главную страницу</a></p>
             <p>Забыли пароль? Обратитесь к администратору</p>
@@ -320,9 +418,42 @@
     </div>
 
     <script>
-        // Конфигурация API
-        const API_BASE = window.location.origin;
-        
+        // Демонстрационные учетные записи операторов
+        const DEMO_OPERATORS = {
+            "alex_operator": {
+                id: 1,
+                username: "alex_operator",
+                fullName: "Александр Петров",
+                role: "старший оператор",
+                password: "SecurePass123!",
+                email: "alex@zeep.com"
+            },
+            "maria.support": {
+                id: 2,
+                username: "maria.support",
+                fullName: "Мария Сидорова",
+                role: "оператор поддержки",
+                password: "Zeeptook2024$",
+                email: "maria@zeep.com"
+            },
+            "admin@zeep.com": {
+                id: 3,
+                username: "admin@zeep.com",
+                fullName: "Администратор Системы",
+                role: "администратор",
+                password: "Admin#Zeep789",
+                email: "admin@zeep.com"
+            },
+            "ivan_trade": {
+                id: 4,
+                username: "ivan_trade",
+                fullName: "Иван Торговый",
+                role: "оператор сделок",
+                password: "TradeMaster@45",
+                email: "ivan@zeep.com"
+            }
+        };
+
         // Элементы DOM
         const loginForm = document.getElementById('login-form');
         const usernameInput = document.getElementById('username');
@@ -333,6 +464,8 @@
         const loading = document.getElementById('loading');
         const errorMessage = document.getElementById('error-message');
         const errorText = document.getElementById('error-text');
+        const successMessage = document.getElementById('success-message');
+        const successText = document.getElementById('success-text');
 
         // Переключение видимости пароля
         togglePasswordBtn.addEventListener('click', function() {
@@ -356,45 +489,76 @@
             // Показываем загрузку
             setLoading(true);
             hideError();
+            hideSuccess();
             
             try {
-                const response = await fetch(`${API_BASE}/api/operator/login`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        username,
-                        password
-                    })
-                });
+                // Имитация задержки сети
+                await new Promise(resolve => setTimeout(resolve, 800));
                 
-                const data = await response.json();
+                // Проверяем учетные данные
+                const isValid = validateCredentials(username, password);
                 
-                if (data.success && data.token) {
-                    // Сохраняем токен и данные оператора
-                    localStorage.setItem('operatorToken', data.token);
-                    localStorage.setItem('operatorData', JSON.stringify(data.operator));
+                if (isValid) {
+                    // Получаем данные оператора
+                    const operatorData = DEMO_OPERATORS[username] || Object.values(DEMO_OPERATORS).find(op => 
+                        op.email === username || op.username === username
+                    );
                     
-                    // Показываем успешное сообщение
-                    showSuccess('Вход выполнен успешно!');
-                    
-                    // Перенаправляем на дашборд
-                    setTimeout(() => {
-                        window.location.href = 'operator-dashboard.html';
-                    }, 1000);
+                    if (operatorData) {
+                        // Генерируем демо-токен (в реальном приложении это должен быть JWT с сервера)
+                        const demoToken = generateDemoToken(operatorData.id);
+                        
+                        // Сохраняем токен и данные оператора
+                        localStorage.setItem('operatorToken', demoToken);
+                        localStorage.setItem('operatorData', JSON.stringify(operatorData));
+                        
+                        // Показываем успешное сообщение
+                        showSuccess(`Вход выполнен успешно! Добро пожаловать, ${operatorData.fullName}`);
+                        
+                        // Перенаправляем на дашборд
+                        setTimeout(() => {
+                            window.location.href = 'operator-dashboard.html';
+                        }, 1500);
+                        
+                    } else {
+                        showError('Ошибка данных оператора');
+                    }
                     
                 } else {
-                    showError(data.error || 'Неверные учетные данные оператора');
+                    showError('Неверные учетные данные оператора');
                 }
                 
             } catch (error) {
                 console.error('Login error:', error);
-                showError('Ошибка соединения с сервером');
+                showError('Ошибка при входе в систему');
             } finally {
                 setLoading(false);
             }
         });
+
+        // Валидация учетных данных
+        function validateCredentials(username, password) {
+            // Проверяем по username
+            if (DEMO_OPERATORS[username]) {
+                return DEMO_OPERATORS[username].password === password;
+            }
+            
+            // Проверяем по email
+            for (const operator of Object.values(DEMO_OPERATORS)) {
+                if (operator.email === username && operator.password === password) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
+        // Генерация демо-токена
+        function generateDemoToken(operatorId) {
+            const timestamp = Date.now();
+            const random = Math.random().toString(36).substring(2);
+            return btoa(`demo_${operatorId}_${timestamp}_${random}`).replace(/=/g, '');
+        }
 
         // Вспомогательные функции
         function setLoading(isLoading) {
@@ -424,8 +588,12 @@
         }
 
         function showSuccess(message) {
-            // Можно добавить уведомление об успехе
-            console.log('Success:', message);
+            successText.textContent = message;
+            successMessage.classList.add('show');
+        }
+
+        function hideSuccess() {
+            successMessage.classList.remove('show');
         }
 
         // Проверяем, есть ли уже токен
@@ -439,18 +607,13 @@
 
         async function verifyToken(token) {
             try {
-                const response = await fetch(`${API_BASE}/api/operator/verify`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+                // Имитация проверки токена
+                await new Promise(resolve => setTimeout(resolve, 300));
                 
-                const data = await response.json();
-                if (data.success) {
-                    // Токен валиден, перенаправляем на дашборд
+                // Демо-проверка: токен должен содержать "demo_"
+                if (token && atob(token).includes('demo_')) {
                     window.location.href = 'operator-dashboard.html';
                 } else {
-                    // Токен невалиден, удаляем
                     localStorage.removeItem('operatorToken');
                     localStorage.removeItem('operatorData');
                 }
@@ -460,6 +623,23 @@
                 localStorage.removeItem('operatorData');
             }
         }
+
+        // Автозаполнение демо-данных по клику
+        document.querySelectorAll('.demo-accounts .account').forEach(accountEl => {
+            accountEl.addEventListener('click', function() {
+                const username = this.querySelector('.username').textContent;
+                const password = this.querySelector('.password').textContent;
+                
+                usernameInput.value = username;
+                passwordInput.value = password;
+                
+                // Подсвечиваем выбранный аккаунт
+                document.querySelectorAll('.demo-accounts .account').forEach(el => {
+                    el.style.backgroundColor = '';
+                });
+                this.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+            });
+        });
 
         // При загрузке страницы проверяем токен
         document.addEventListener('DOMContentLoaded', function() {
