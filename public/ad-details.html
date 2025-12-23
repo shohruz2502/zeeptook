@@ -474,14 +474,29 @@
     </div>
 
     <script>
+        // Функция для безопасного вывода текста
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
         // Получаем ID объявления из URL параметров
         const urlParams = new URLSearchParams(window.location.search);
         const adId = urlParams.get('id');
         const source = urlParams.get('source');
         
         // API базовый URL
-        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
-        let token = localStorage.getItem('token');
+        const API_BASE = '/api';
+        
+        // Безопасное получение токена
+        let token = null;
+        try {
+            token = localStorage.getItem('token');
+        } catch (error) {
+            console.error('Error reading token:', error);
+        }
         
         // Функция для загрузки деталей объявления
         async function loadAdDetails() {
@@ -548,8 +563,8 @@
                 galleryHtml = `
                     <div class="image-gallery" id="image-gallery">
                         ${ad.imageUrls.map((url, index) => `
-                            <img src="${url}" alt="Изображение ${index + 1}" class="gallery-thumb ${index === 0 ? 'active' : ''}" 
-                                 onclick="changeMainImage('${url}', this)">
+                            <img src="${escapeHtml(url)}" alt="Изображение ${index + 1}" class="gallery-thumb ${index === 0 ? 'active' : ''}" 
+                                 onclick="changeMainImage('${escapeHtml(url)}', this)">
                         `).join('')}
                     </div>
                 `;
@@ -558,7 +573,7 @@
             // Основное изображение
             const mainImageUrl = ad.imageUrls && ad.imageUrls.length > 0 ? ad.imageUrls[0] : '';
             const mainImageHtml = mainImageUrl ? 
-                `<img src="${mainImageUrl}" alt="${ad.title}" class="ad-image">` :
+                `<img src="${escapeHtml(mainImageUrl)}" alt="${escapeHtml(ad.title)}" class="ad-image">` :
                 `<div class="ad-image"><i class="fa fa-gamepad" style="font-size: 48px; opacity: 0.8;"></i></div>`;
             
             // Отображаем детали объявления
@@ -571,13 +586,13 @@
                 ${galleryHtml}
                 
                 <div class="ad-content">
-                    <div class="ad-price">${priceFormatted}</div>
-                    <h1 class="ad-title">${ad.title}</h1>
+                    <div class="ad-price">${escapeHtml(priceFormatted)}</div>
+                    <h1 class="ad-title">${escapeHtml(ad.title)}</h1>
                     
                     <div class="ad-meta">
                         <div class="meta-item">
                             <i class="fa fa-map-marker"></i>
-                            <span>${ad.location || 'Не указано'}</span>
+                            <span>${escapeHtml(ad.location || 'Не указано')}</span>
                         </div>
                         <div class="meta-item">
                             <i class="fa fa-eye"></i>
@@ -585,12 +600,12 @@
                         </div>
                         <div class="meta-item">
                             <i class="fa fa-clock-o"></i>
-                            <span>${ad.time || 'Недавно'}</span>
+                            <span>${escapeHtml(ad.time || 'Недавно')}</span>
                         </div>
                     </div>
                     
                     <div class="ad-description">
-                        ${ad.description || 'Описание отсутствует'}
+                        ${escapeHtml(ad.description || 'Описание отсутствует')}
                     </div>
                     
                     <div class="ad-stats">
@@ -603,7 +618,7 @@
                             <div class="stat-label">Срочно</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-value">${ad.category || 'Не указана'}</div>
+                            <div class="stat-value">${escapeHtml(ad.category || 'Не указана')}</div>
                             <div class="stat-label">Категория</div>
                         </div>
                     </div>
@@ -613,15 +628,15 @@
                         <div class="seller-details">
                             <div class="seller-avatar">
                                 ${ad.seller && ad.seller.avatar_url ? 
-                                    `<img src="${ad.seller.avatar_url}" alt="${ad.seller.name}">` : 
+                                    `<img src="${escapeHtml(ad.seller.avatar_url)}" alt="${escapeHtml(ad.seller.name)}">` : 
                                     `<i class="fa fa-user"></i>`
                                 }
                             </div>
                             <div>
-                                <div class="seller-name">${ad.seller ? ad.seller.name : 'Неизвестно'}</div>
+                                <div class="seller-name">${escapeHtml(ad.seller ? ad.seller.name : 'Неизвестно')}</div>
                                 <div class="seller-rating">
-                                    ⭐ ${ad.seller ? ad.seller.rating || '5.0' : '5.0'} 
-                                    ${ad.seller && ad.seller.since ? `• на сайте ${ad.seller.since}` : ''}
+                                    ⭐ ${escapeHtml(ad.seller ? ad.seller.rating || '5.0' : '5.0')} 
+                                    ${ad.seller && ad.seller.since ? `• на сайте ${escapeHtml(ad.seller.since)}` : ''}
                                 </div>
                             </div>
                         </div>
@@ -735,13 +750,13 @@
                 return;
             }
             
-            if (!sellerId) {
+            if (!sellerId || sellerId === 'null') {
                 showNotification('Не удалось определить продавца', 'error');
                 return;
             }
             
             // Переходим к чатам с предварительно выбранным продавцом
-            window.location.href = `messages.html?seller=${sellerId}&ad=${adId}`;
+            window.location.href = `messages.html?seller=${encodeURIComponent(sellerId)}&ad=${encodeURIComponent(adId)}`;
         }
         
         // Функция для возврата назад
