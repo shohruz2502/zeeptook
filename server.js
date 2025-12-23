@@ -1601,6 +1601,7 @@ app.get('/api/profile/ads', authenticateToken, async (req, res) => {
     }
 });
 
+
 // ============================================
 // === SIMPLE OPERATOR AUTH & ROUTES ===
 // ============================================
@@ -1631,7 +1632,7 @@ app.post('/api/operator/simple-login', async (req, res) => {
 
         const operator = result.rows[0];
         
-        // Создаем простой токен (без JWT)
+        // Создаем простой токен (base64)
         const simpleToken = Buffer.from(`${operator.id}:${Date.now()}`).toString('base64');
         
         console.log(`✅ Operator logged in: ${operator.username} (id: ${operator.id})`);
@@ -1684,6 +1685,113 @@ app.post('/api/operator/simple-verify', async (req, res) => {
     } catch (error) {
         console.error('❌ Simple verify error:', error);
         res.json({ success: false, error: 'Database error' });
+    }
+});
+
+// ============================================
+// === ДЛЯ ОБРАТНОЙ СОВМЕСТИМОСТИ СО СТАРЫМ HTML ===
+// ============================================
+
+// Старый эндпоинт входа (для совместимости с существующим HTML)
+app.post('/api/operator/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        console.log('🔐 Legacy operator login attempt:', username);
+
+        if (!username || !password) {
+            return res.status(400).json({ error: 'Username and password are required' });
+        }
+
+        // Проверяем в таблице users_operator
+        const result = await pool.query(
+            `SELECT id, username, email, full_name, role 
+             FROM users_operator 
+             WHERE username = $1 AND password = $2 AND is_active = TRUE`,
+            [username, password]
+        );
+
+        if (result.rows.length === 0) {
+            console.log('❌ Invalid operator credentials for:', username);
+            return res.status(401).json({ error: 'Invalid operator credentials' });
+        }
+
+        const operator = result.rows[0];
+        
+        // Используем тот же простой токен (base64)
+        const simpleToken = Buffer.from(`${operator.id}:${Date.now()}`).toString('base64');
+        
+        console.log(`✅ Operator logged in (legacy endpoint): ${operator.username}`);
+
+        res.json({
+            success: true,
+            message: 'Login successful',
+            token: simpleToken, // Отправляем простой токен
+            operator: {
+                id: operator.id,
+                username: operator.username,
+                email: operator.email,
+                full_name: operator.full_name,
+                role: operator.role
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Legacy operator login error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Старый эндпоинт проверки (для совместимости с существующим HTML)
+app.get('/api/operator/verify', async (req, res) => {
+    try {
+        const authHeader = req.headers['authorization'];
+        
+        if (!authHeader) {
+            return res.status(401).json({ error: 'Token required' });
+        }
+
+        // Извлекаем токен из заголовка
+        const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
+        
+        if (!token) {
+            return res.status(401).json({ error: 'Token required' });
+        }
+
+        // Простой токен в формате base64(id:timestamp)
+        try {
+            const decoded = Buffer.from(token, 'base64').toString();
+            const [operatorId] = decoded.split(':');
+            
+            if (!operatorId) {
+                return res.status(403).json({ error: 'Invalid token format' });
+            }
+
+            // Проверяем существование оператора
+            const result = await pool.query(
+                `SELECT id, username, email, full_name, role 
+                 FROM users_operator 
+                 WHERE id = $1 AND is_active = TRUE`,
+                [operatorId]
+            );
+
+            if (result.rows.length === 0) {
+                return res.status(403).json({ error: 'Operator not found' });
+            }
+
+            res.json({
+                success: true,
+                operator: result.rows[0]
+            });
+
+        } catch (decodeError) {
+            console.error('❌ Token decode error:', decodeError);
+            return res.status(403).json({ error: 'Invalid token' });
+        }
+
+    } catch (error) {
+        console.error('❌ Legacy verify error:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 
@@ -1789,6 +1897,50 @@ app.get('/api/operator/simple-dashboard', async (req, res) => {
 
     } catch (error) {
         console.error('❌ Simple dashboard error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Старый эндпоинт дашборда (для совместимости)
+app.get('/api/operator/dashboard', async (req, res) => {
+    try {
+        const authHeader = req.headers['authorization'];
+        
+        if (!authHeader) {
+            return res.status(401).json({ error: 'Token required' });
+        }
+
+        const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
+        
+        if (!token) {
+            return res.status(401).json({ error: 'Token required' });
+        }
+
+        // Декодируем токен
+        try {
+            const decoded = Buffer.from(token, 'base64').toString();
+            const [operatorId] = decoded.split(':');
+            
+            if (!operatorId) {
+                return res.status(403).json({ error: 'Invalid token' });
+            }
+
+            // Перенаправляем на simple-dashboard
+            const response = await fetch(`http://localhost:${PORT}/api/operator/simple-dashboard?operatorId=${operatorId}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            const data = await response.json();
+            res.json(data);
+
+        } catch (decodeError) {
+            console.error('❌ Token decode error:', decodeError);
+            return res.status(403).json({ error: 'Invalid token' });
+        }
+
+    } catch (error) {
+        console.error('❌ Legacy dashboard error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -1899,7 +2051,7 @@ app.get('/api/operator/simple-deals', async (req, res) => {
                 },
                 created_at: deal.created_at,
                 time_ago: formatTimeAgo(deal.created_at),
-                unread_count: 0 // Можно добавить логику подсчета непрочитанных сообщений
+                unread_count: 0
             })),
             total: parseInt(result.rows[0]?.total_count || 0),
             page: pageInt,
@@ -1907,12 +2059,57 @@ app.get('/api/operator/simple-deals', async (req, res) => {
             status_stats: statusStats,
             stats: {
                 active: statusStats.active || 0,
-                unread: 0 // Можно добавить логику подсчета непрочитанных сообщений
+                unread: 0
             }
         });
 
     } catch (error) {
         console.error('❌ Simple deals error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Старый эндпоинт списка сделок (для совместимости)
+app.get('/api/operator/deals', async (req, res) => {
+    try {
+        const authHeader = req.headers['authorization'];
+        
+        if (!authHeader) {
+            return res.status(401).json({ error: 'Token required' });
+        }
+
+        const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
+        
+        if (!token) {
+            return res.status(401).json({ error: 'Token required' });
+        }
+
+        // Декодируем токен
+        try {
+            const decoded = Buffer.from(token, 'base64').toString();
+            const [operatorId] = decoded.split(':');
+            
+            if (!operatorId) {
+                return res.status(403).json({ error: 'Invalid token' });
+            }
+
+            // Перенаправляем на simple-deals
+            const { status = 'all', page = 1, search = '' } = req.query;
+            const response = await fetch(`http://localhost:${PORT}/api/operator/simple-deals?operatorId=${operatorId}&status=${status}&page=${page}&search=${encodeURIComponent(search)}`, {
+                method: 'GET',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            const data = await response.json();
+            res.json(data);
+
+        } catch (decodeError) {
+            console.error('❌ Token decode error:', decodeError);
+            return res.status(403).json({ error: 'Invalid token' });
+        }
+
+    } catch (error) {
+        console.error('❌ Legacy deals error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
