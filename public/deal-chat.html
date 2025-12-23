@@ -1,0 +1,1005 @@
+[file name]: deal-chat.html
+[file content begin]
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Чат сделки - Zeeptook</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        :root {
+            --primary: #00f2fe;
+            --primary-dark: #4facfe;
+            --secondary: #0f172a;
+            --accent: #ff6b6b;
+            --operator: #ff9a00;
+            --success: #00b09b;
+            --dark: #1e293b;
+            --darker: #0f172a;
+            --light: #f8fafc;
+            --gray: #64748b;
+            --white: #ffffff;
+            --gradient: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            --operator-gradient: linear-gradient(135deg, var(--operator) 0%, #ff6a00 100%);
+            --shadow: 0 8px 32px rgba(0, 242, 254, 0.15);
+            --radius: 16px;
+            --radius-sm: 12px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        body {
+            background: var(--darker);
+            color: var(--white);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .app-container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        /* Шапка сделки */
+        .deal-header {
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(0, 242, 254, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .deal-header-top {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .back-btn {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 18px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            background: rgba(0, 242, 254, 0.1);
+        }
+        
+        .deal-title {
+            flex: 1;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .deal-code {
+            background: var(--gradient);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+        
+        /* Инфо о сделке */
+        .deal-info {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: var(--radius-sm);
+            padding: 15px;
+            margin: 15px 20px;
+            border: 1px solid rgba(0, 242, 254, 0.1);
+        }
+        
+        .deal-info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-label {
+            font-size: 12px;
+            color: var(--gray);
+            margin-bottom: 4px;
+        }
+        
+        .info-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--white);
+        }
+        
+        .info-value.price {
+            color: var(--primary);
+            font-size: 16px;
+        }
+        
+        .deal-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .status-pending { background: rgba(255, 154, 0, 0.2); color: var(--operator); }
+        .status-active { background: rgba(0, 242, 254, 0.2); color: var(--primary); }
+        .status-completed { background: rgba(0, 176, 155, 0.2); color: var(--success); }
+        
+        /* Участники сделки */
+        .participants {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(0, 242, 254, 0.1);
+        }
+        
+        .participant {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .participant-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            position: relative;
+        }
+        
+        .participant-avatar.operator {
+            background: var(--operator-gradient);
+        }
+        
+        .participant-avatar.online::after {
+            content: '';
+            position: absolute;
+            bottom: 2px;
+            right: 2px;
+            width: 10px;
+            height: 10px;
+            background: var(--accent);
+            border: 2px solid var(--dark);
+            border-radius: 50%;
+        }
+        
+        .participant-name {
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .participant-role {
+            font-size: 12px;
+            color: var(--gray);
+        }
+        
+        /* Чат сделки */
+        .deal-chat-container {
+            padding: 20px;
+            padding-bottom: 80px;
+        }
+        
+        .messages-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            position: relative;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .message.incoming {
+            background: rgba(30, 41, 59, 0.7);
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+        
+        .message.outgoing {
+            background: var(--gradient);
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .message.operator {
+            background: var(--operator-gradient);
+            align-self: center;
+            max-width: 90%;
+            border-radius: var(--radius-sm);
+        }
+        
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+        
+        .message-sender {
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .message-sender.operator {
+            color: #ffd700;
+        }
+        
+        .message-text {
+            line-height: 1.5;
+            word-break: break-word;
+        }
+        
+        .message-time {
+            font-size: 11px;
+            opacity: 0.8;
+            text-align: right;
+            margin-top: 5px;
+        }
+        
+        /* Системные сообщения */
+        .system-message {
+            text-align: center;
+            padding: 10px;
+            margin: 10px 0;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            color: var(--gray-light);
+            border-left: 3px solid var(--primary);
+        }
+        
+        /* Панель ввода */
+        .input-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(30, 41, 59, 0.98);
+            backdrop-filter: blur(20px);
+            padding: 15px 20px;
+            border-top: 1px solid rgba(0, 242, 254, 0.1);
+            z-index: 1000;
+        }
+        
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+        
+        .message-input {
+            flex: 1;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(0, 242, 254, 0.1);
+            border-radius: 20px;
+            padding: 12px 20px;
+            font-size: 14px;
+            color: var(--white);
+            resize: none;
+            max-height: 120px;
+            outline: none;
+            transition: border 0.3s ease;
+        }
+        
+        .message-input:focus {
+            border-color: var(--primary);
+        }
+        
+        .send-btn {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .send-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+        
+        /* Действия оператора */
+        .operator-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .action-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .action-btn.primary {
+            background: var(--gradient);
+            color: white;
+        }
+        
+        .action-btn.secondary {
+            background: rgba(255, 154, 0, 0.2);
+            color: var(--operator);
+            border: 2px solid var(--operator);
+        }
+        
+        .action-btn.success {
+            background: rgba(0, 176, 155, 0.2);
+            color: var(--success);
+            border: 2px solid var(--success);
+        }
+        
+        .action-btn.danger {
+            background: rgba(255, 107, 107, 0.2);
+            color: var(--accent);
+            border: 2px solid var(--accent);
+        }
+        
+        /* Анимации */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        /* Загрузка */
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--gray);
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(0, 242, 254, 0.2);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .deal-info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .message {
+                max-width: 90%;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .deal-header, .deal-info, .participants, .deal-chat-container {
+                padding: 12px 15px;
+            }
+            
+            .participant-avatar {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+            
+            .operator-actions {
+                flex-direction: column;
+            }
+            
+            .action-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Шапка сделки -->
+        <div class="deal-header" id="deal-header">
+            <div class="deal-header-top">
+                <a href="messages.html" class="back-btn">
+                    <i class="fa fa-arrow-left"></i>
+                </a>
+                <div class="deal-title">Чат сделки</div>
+                <div class="deal-code" id="deal-code">Загрузка...</div>
+            </div>
+            
+            <div class="deal-info">
+                <div class="deal-info-grid" id="deal-info-grid">
+                    <!-- Информация о сделке будет загружена динамически -->
+                </div>
+                <div class="deal-status" id="deal-status">Загрузка...</div>
+            </div>
+        </div>
+        
+        <!-- Участники сделки -->
+        <div class="participants" id="participants">
+            <!-- Участники будут загружены динамически -->
+        </div>
+        
+        <!-- Чат сделки -->
+        <div class="deal-chat-container">
+            <div class="messages-container" id="messages-container">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>Загрузка сообщений...</div>
+                </div>
+            </div>
+            
+            <!-- Действия оператора (только для оператора) -->
+            <div class="operator-actions" id="operator-actions" style="display: none;">
+                <!-- Кнопки действий оператора -->
+            </div>
+        </div>
+        
+        <!-- Панель ввода -->
+        <div class="input-container" id="input-container">
+            <div class="input-wrapper">
+                <textarea class="message-input" id="message-input" 
+                          placeholder="Введите сообщение..." rows="1"></textarea>
+                <button class="send-btn" id="send-btn">
+                    <i class="fa fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
+    const urlParams = new URLSearchParams(window.location.search);
+    const dealId = urlParams.get('dealId');
+    let deal = null;
+    let userId = null;
+    let isOperator = false;
+    let socket = null;
+
+    // Получение ID пользователя
+    function getUserId() {
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.userId;
+            } catch (e) {
+                console.error('Error parsing token:', e);
+            }
+        }
+        return null;
+    }
+
+    // Проверка, является ли пользователь оператором
+    function checkIfOperator() {
+        const operatorToken = localStorage.getItem('operatorToken');
+        const operatorData = localStorage.getItem('operatorData');
+        return !!(operatorToken && operatorData);
+    }
+
+    // Инициализация WebSocket
+    function initWebSocket() {
+        userId = getUserId();
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsBase = window.location.hostname === 'localhost' ? 'ws://localhost:3000' : 'wss://' + window.location.host;
+        
+        socket = new WebSocket(`${wsBase}/ws/deal?dealId=${dealId}&userId=${userId}`);
+        
+        socket.onopen = () => console.log('WebSocket connected to deal');
+        socket.onerror = (error) => console.error('WebSocket error:', error);
+        socket.onclose = () => {
+            console.log('WebSocket disconnected, reconnecting...');
+            setTimeout(initWebSocket, 3000);
+        };
+        
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            handleWebSocketMessage(data);
+        };
+    }
+
+    // Обработка сообщений WebSocket
+    function handleWebSocketMessage(data) {
+        switch (data.type) {
+            case 'message':
+                addMessageToUI(data.message);
+                break;
+                
+            case 'deal_updated':
+                loadDealInfo();
+                break;
+                
+            case 'status_changed':
+                updateDealStatus(data.status);
+                break;
+        }
+    }
+
+    // Загрузка информации о сделке
+    async function loadDealInfo() {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE}/deals/${dealId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to load deal');
+            
+            deal = await response.json();
+            displayDealInfo();
+            loadParticipants();
+            
+        } catch (error) {
+            console.error('Error loading deal:', error);
+            showError('Не удалось загрузить информацию о сделке');
+        }
+    }
+
+    // Отображение информации о сделке
+    function displayDealInfo() {
+        if (!deal) return;
+        
+        document.getElementById('deal-code').textContent = deal.deal_code;
+        document.getElementById('deal-status').textContent = getStatusText(deal.status);
+        document.getElementById('deal-status').className = `deal-status status-${deal.status}`;
+        
+        const infoGrid = document.getElementById('deal-info-grid');
+        infoGrid.innerHTML = `
+            <div class="info-item">
+                <span class="info-label">Товар:</span>
+                <span class="info-value">${deal.title}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Цена:</span>
+                <span class="info-value price">${formatPrice(deal.price)} ₽</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Создана:</span>
+                <span class="info-value">${formatDate(deal.created_at)}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">Обновлена:</span>
+                <span class="info-value">${formatDate(deal.updated_at)}</span>
+            </div>
+        `;
+        
+        // Показываем действия оператора если пользователь - оператор
+        if (isOperator) {
+            showOperatorActions();
+        }
+    }
+
+    // Загрузка участников сделки
+    async function loadParticipants() {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE}/deals/${dealId}/participants`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to load participants');
+            
+            const participants = await response.json();
+            displayParticipants(participants);
+            
+        } catch (error) {
+            console.error('Error loading participants:', error);
+        }
+    }
+
+    // Отображение участников
+    function displayParticipants(participants) {
+        const container = document.getElementById('participants');
+        container.innerHTML = '';
+        
+        participants.forEach(participant => {
+            const participantEl = document.createElement('div');
+            participantEl.className = 'participant';
+            
+            participantEl.innerHTML = `
+                <div class="participant-avatar ${participant.role} ${participant.is_online ? 'online' : ''}">
+                    ${participant.avatar_url ? 
+                        `<img src="${participant.avatar_url}" alt="${participant.name}" 
+                              style="width:100%;height:100%;border-radius:50%;object-fit:cover;">` :
+                        `<i class="fa fa-user"></i>`
+                    }
+                </div>
+                <div class="participant-name">${participant.name}</div>
+                <div class="participant-role">${getRoleText(participant.role)}</div>
+            `;
+            
+            container.appendChild(participantEl);
+        });
+    }
+
+    // Загрузка сообщений
+    async function loadMessages() {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE}/deals/${dealId}/messages`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to load messages');
+            
+            const messages = await response.json();
+            displayMessages(messages);
+            
+        } catch (error) {
+            console.error('Error loading messages:', error);
+        }
+    }
+
+    // Отображение сообщений
+    function displayMessages(messages) {
+        const container = document.getElementById('messages-container');
+        container.innerHTML = '';
+        
+        if (messages.length === 0) {
+            container.innerHTML = `
+                <div class="system-message">
+                    <i class="fa fa-comments"></i>
+                    <p>Начните общение в чате сделки</p>
+                </div>
+            `;
+            return;
+        }
+        
+        messages.forEach(msg => {
+            container.appendChild(createMessageElement(msg));
+        });
+        
+        scrollToBottom();
+    }
+
+    // Создание элемента сообщения
+    function createMessageElement(msg) {
+        const isOutgoing = msg.sender_id === userId;
+        const isSystem = msg.sender_type === 'system';
+        const isOperatorMsg = msg.sender_role === 'operator';
+        
+        const messageEl = document.createElement('div');
+        
+        if (isSystem) {
+            messageEl.className = 'system-message';
+            messageEl.innerHTML = `<p>${msg.content}</p>`;
+            return messageEl;
+        }
+        
+        messageEl.className = `message ${isOperatorMsg ? 'operator' : isOutgoing ? 'outgoing' : 'incoming'}`;
+        
+        let senderName = msg.sender_name || 'Пользователь';
+        if (isOperatorMsg) senderName = '👮 Оператор';
+        
+        messageEl.innerHTML = `
+            <div class="message-header">
+                <span class="message-sender ${isOperatorMsg ? 'operator' : ''}">
+                    ${senderName}
+                </span>
+            </div>
+            <div class="message-text">${msg.content}</div>
+            <div class="message-time">${formatTime(msg.created_at)}</div>
+        `;
+        
+        return messageEl;
+    }
+
+    // Добавление сообщения в UI
+    function addMessageToUI(msg) {
+        const container = document.getElementById('messages-container');
+        const messageEl = createMessageElement(msg);
+        container.appendChild(messageEl);
+        scrollToBottom();
+    }
+
+    // Отправка сообщения
+    async function sendMessage() {
+        const input = document.getElementById('message-input');
+        const text = input.value.trim();
+        
+        if (!text || !deal) return;
+        
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE}/deals/${dealId}/messages`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    content: text
+                })
+            });
+
+            if (!response.ok) throw new Error('Failed to send message');
+            
+            // Отправляем через WebSocket
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    type: 'message',
+                    content: text,
+                    dealId: dealId,
+                    senderId: userId
+                }));
+            }
+            
+            input.value = '';
+            input.style.height = 'auto';
+            
+        } catch (error) {
+            console.error('Error sending message:', error);
+            showError('Ошибка отправки сообщения');
+        }
+    }
+
+    // Показать действия оператора
+    function showOperatorActions() {
+        const actionsContainer = document.getElementById('operator-actions');
+        actionsContainer.style.display = 'flex';
+        
+        actionsContainer.innerHTML = `
+            <button class="action-btn secondary" onclick="changeDealStatus('active')">
+                <i class="fa fa-play"></i> Начать сделку
+            </button>
+            <button class="action-btn success" onclick="changeDealStatus('payment')">
+                <i class="fa fa-money"></i> Ожидание оплаты
+            </button>
+            <button class="action-btn primary" onclick="changeDealStatus('transfer')">
+                <i class="fa fa-exchange"></i> Передача товара
+            </button>
+            <button class="action-btn success" onclick="changeDealStatus('completed')">
+                <i class="fa fa-check"></i> Завершить
+            </button>
+            <button class="action-btn danger" onclick="changeDealStatus('disputed')">
+                <i class="fa fa-exclamation-triangle"></i> Спор
+            </button>
+        `;
+    }
+
+    // Изменение статуса сделки (только для оператора)
+    async function changeDealStatus(newStatus) {
+        if (!isOperator) return;
+        
+        try {
+            const token = localStorage.getItem('operatorToken');
+            const response = await fetch(`${API_BASE}/operator/deals/${dealId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    status: newStatus
+                })
+            });
+
+            if (!response.ok) throw new Error('Failed to change status');
+            
+            showSuccess('Статус сделки изменен');
+            loadDealInfo();
+            
+        } catch (error) {
+            console.error('Error changing status:', error);
+            showError('Ошибка изменения статуса');
+        }
+    }
+
+    // Обновление статуса сделки
+    function updateDealStatus(status) {
+        if (!deal) return;
+        
+        deal.status = status;
+        document.getElementById('deal-status').textContent = getStatusText(status);
+        document.getElementById('deal-status').className = `deal-status status-${status}`;
+        
+        // Добавляем системное сообщение
+        const systemMsg = {
+            sender_type: 'system',
+            content: `Статус сделки изменен на: ${getStatusText(status)}`,
+            created_at: new Date().toISOString()
+        };
+        
+        addMessageToUI(systemMsg);
+    }
+
+    // Вспомогательные функции
+    function getStatusText(status) {
+        const statuses = {
+            pending: 'Ожидание',
+            active: 'Активна',
+            payment: 'Ожидание оплаты',
+            transfer: 'Передача',
+            completed: 'Завершена',
+            disputed: 'Спор'
+        };
+        return statuses[status] || status;
+    }
+    
+    function getRoleText(role) {
+        const roles = {
+            buyer: 'Покупатель',
+            seller: 'Продавец',
+            operator: 'Оператор'
+        };
+        return roles[role] || role;
+    }
+    
+    function formatPrice(price) {
+        return new Intl.NumberFormat('ru-RU').format(price);
+    }
+    
+    function formatDate(date) {
+        return new Date(date).toLocaleDateString('ru-RU');
+    }
+    
+    function formatTime(date) {
+        return new Date(date).toLocaleTimeString('ru-RU', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+        });
+    }
+    
+    function scrollToBottom() {
+        const container = document.getElementById('messages-container');
+        setTimeout(() => {
+            container.scrollTop = container.scrollHeight;
+        }, 100);
+    }
+    
+    function showError(message) {
+        const errorEl = document.createElement('div');
+        errorEl.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            z-index: 10000;
+        `;
+        errorEl.textContent = message;
+        document.body.appendChild(errorEl);
+        setTimeout(() => errorEl.remove(), 3000);
+    }
+    
+    function showSuccess(message) {
+        const successEl = document.createElement('div');
+        successEl.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--success);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            z-index: 10000;
+        `;
+        successEl.textContent = message;
+        document.body.appendChild(successEl);
+        setTimeout(() => successEl.remove(), 3000);
+    }
+
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', function() {
+        if (!dealId) {
+            window.location.href = 'messages.html';
+            return;
+        }
+        
+        userId = getUserId();
+        isOperator = checkIfOperator();
+        
+        if (!userId && !isOperator) {
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        initWebSocket();
+        loadDealInfo();
+        loadMessages();
+        
+        // Настройка обработчиков
+        document.getElementById('send-btn').addEventListener('click', sendMessage);
+        
+        document.getElementById('message-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Автоизменение высоты textarea
+        const textarea = document.getElementById('message-input');
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+        
+        // Автообновление
+        setInterval(() => {
+            loadDealInfo();
+            loadMessages();
+        }, 60000);
+    });
+    </script>
+</body>
+</html>
