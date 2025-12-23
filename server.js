@@ -5,9 +5,11 @@ const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
+const WebSocket = require('ws');
 
 const app = express();
 
+const wss = new WebSocket.Server({ noServer: true });
 // Configuration from .env
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-for-development';
@@ -44,6 +46,87 @@ if (process.env.DATABASE_URL) {
 
 // PostgreSQL connection
 const pool = new Pool(poolConfig);
+
+// Хранилище WebSocket соединений
+const connections = new Map();
+const dealConnections = new Map();
+
+// WebSocket сервер
+wss.on('connection', (ws, request) => {
+    const url = new URL(request.url, `http://${request.headers.host}`);
+    const userId = url.searchParams.get('userId');
+    const dealId = url.searchParams.get('dealId');
+    
+    if (dealId) {
+        // Соединение для чата сделки
+        if (!dealConnections.has(dealId)) {
+            dealConnections.set(dealId, new Map());
+        }
+        dealConnections.get(dealId).set(userId, ws);
+        
+        ws.on('close', () => {
+            if (dealConnections.has(dealId)) {
+                dealConnections.get(dealId).delete(userId);
+            }
+        });
+    } else {
+        // Обычное соединение для чатов
+        connections.set(userId, ws);
+        
+        ws.on('close', () => {
+            connections.delete(userId);
+        });
+    }
+    
+    ws.on('message', (message) => {
+        try {
+            const data = JSON.parse(message);
+            handleWebSocketMessage(data, userId, dealId);
+        } catch (error) {
+            console.error('WebSocket message error:', error);
+        }
+    });
+});
+
+// Обработка WebSocket сообщений
+function handleWebSocketMessage(data, userId, dealId) {
+    switch (data.type) {
+        case 'message':
+            broadcastMessage(data, userId, dealId);
+            break;
+        case 'status_change':
+            broadcastStatusChange(data, dealId);
+            break;
+    }
+}
+
+// Рассылка сообщений
+function broadcastMessage(data, senderId, dealId) {
+    const message = {
+        type: 'message',
+        chatId: data.chatId,
+        message: data.message
+    };
+    
+    if (dealId) {
+        // Для чата сделки
+        const dealWs = dealConnections.get(dealId);
+        if (dealWs) {
+            dealWs.forEach((ws, userId) => {
+                if (userId !== senderId && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify(message));
+                }
+            });
+        }
+    } else {
+        // Для обычного чата
+        connections.forEach((ws, userId) => {
+            if (userId !== senderId && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(message));
+            }
+        });
+    }
+}
 
 // Middleware
 app.use(cors({
@@ -1600,7 +1683,597 @@ app.get('/api/profile/ads', authenticateToken, async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+ 
 
+// ============================================
+// === WEB SOCKET CHAT & DEAL ROUTES ===
+// ============================================
+
+// 1. Получение списка чатов пользователя
+app.get('/api/chats', authenticateToken, async (req, res) => {
+    try {
+        const user_id = req.user.userId;
+        
+        const result = await pool.query(`
+            SELECT DISTINCT ON (c.id)
+                c.id,
+                CASE 
+                    WHEN c.user1_id = $1 THEN u2.full_name
+                    ELSE u1.full_name
+                END as name,
+                CASE 
+                    WHEN c.user1_id = $1 THEN u2.id
+                    ELSE u1.id
+                END as other_user_id,
+                COALESCE(m.content, 'Нет сообщений') as last_message,
+                COALESCE(m.created_at, c.created_at) as last_message_time,
+                (SELECT COUNT(*) FROM messages m2 
+                 WHERE m2.chat_id = c.id 
+                 AND m2.sender_id != $1 
+                 AND NOT m2.is_read) as unread_count,
+                c.has_deal,
+                c.deal_id,
+                CASE WHEN c.deal_id IS NOT NULL THEN 'deal' ELSE 'regular' END as type
+            FROM chats c
+            LEFT JOIN users u1 ON c.user1_id = u1.id
+            LEFT JOIN users u2 ON c.user2_id = u2.id
+            LEFT JOIN messages m ON c.last_message_id = m.id
+            WHERE c.user1_id = $1 OR c.user2_id = $1
+            ORDER BY c.id, last_message_time DESC
+        `, [user_id]);
+        
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Get chats error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// 2. Создание нового чата
+app.post('/api/chats/create', authenticateToken, async (req, res) => {
+    try {
+        const user_id = req.user.userId;
+        const { other_user_id, ad_id } = req.body;
+        
+        // Проверяем существование чата
+        const existingChat = await pool.query(`
+            SELECT id FROM chats 
+            WHERE (user1_id = $1 AND user2_id = $2)
+               OR (user1_id = $2 AND user2_id = $1)
+        `, [user_id, other_user_id]);
+        
+        if (existingChat.rows.length > 0) {
+            return res.json({ chatId: existingChat.rows[0].id, existed: true });
+        }
+        
+        // Создаем новый чат
+        const result = await pool.query(`
+            INSERT INTO chats (user1_id, user2_id, ad_id)
+            VALUES ($1, $2, $3)
+            RETURNING id
+        `, [user_id, other_user_id, ad_id]);
+        
+        res.json({ chatId: result.rows[0].id, existed: false });
+    } catch (error) {
+        console.error('Create chat error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// 3. Получение сообщений чата
+app.get('/api/messages/:chatId', authenticateToken, async (req, res) => {
+    try {
+        const { chatId } = req.params;
+        const user_id = req.user.userId;
+        
+        // Проверяем доступ к чату
+        const chatCheck = await pool.query(`
+            SELECT id FROM chats 
+            WHERE id = $1 AND (user1_id = $2 OR user2_id = $2)
+        `, [chatId, user_id]);
+        
+        if (chatCheck.rows.length === 0) {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+        
+        // Получаем сообщения
+        const result = await pool.query(`
+            SELECT m.*, u.full_name as sender_name
+            FROM messages m
+            LEFT JOIN users u ON m.sender_id = u.id
+            WHERE m.chat_id = $1
+            ORDER BY m.created_at ASC
+        `, [chatId]);
+        
+        // Помечаем как прочитанные
+        await pool.query(`
+            UPDATE messages 
+            SET is_read = TRUE
+            WHERE chat_id = $1 AND sender_id != $2 AND NOT is_read
+        `, [chatId, user_id]);
+        
+        res.json(result.rows);
+    } catch (error) {
+        console.error('Get messages error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// 4. Отправка сообщения
+app.post('/api/messages/send', authenticateToken, async (req, res) => {
+    try {
+        const user_id = req.user.userId;
+        const { chatId, content, receiverId } = req.body;
+        
+        if (!chatId || !content) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+        
+        // Проверяем доступ к чату
+        const chatCheck = await pool.query(`
+            SELECT id, user1_id, user2_id FROM chats 
+            WHERE id = $1 AND (user1_id = $2 OR user2_id = $2)
+        `, [chatId, user_id]);
+        
+        if (chatCheck.rows.length === 0) {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+        
+        // Сохраняем сообщение
+        const result = await pool.query(`
+            INSERT INTO messages (chat_id, sender_id, receiver_id, content)
+            VALUES ($1, $2, $3, $4)
+            RETURNING *, (SELECT full_name FROM users WHERE id = $2) as sender_name
+        `, [chatId, user_id, receiverId, content]);
+        
+        // Обновляем последнее сообщение в чате
+        await pool.query(`
+            UPDATE chats 
+            SET last_message_id = $1, updated_at = NOW()
+            WHERE id = $2
+        `, [result.rows[0].id, chatId]);
+        
+        res.json(result.rows[0]);
+        
+    } catch (error) {
+        console.error('Send message error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// 5. Запрос оператора
+app.post('/api/chats/:chatId/request-operator', authenticateToken, async (req, res) => {
+    try {
+        const { chatId } = req.params;
+        const user_id = req.user.userId;
+        
+        // Проверяем доступ к чату
+        const chat = await pool.query(`
+            SELECT * FROM chats 
+            WHERE id = $1 AND (user1_id = $2 OR user2_id = $2)
+        `, [chatId, user_id]);
+        
+        if (chat.rows.length === 0) {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+        
+        // Создаем запрос на оператора
+        await pool.query(`
+            INSERT INTO operator_requests (chat_id, requester_id, status)
+            VALUES ($1, $2, 'pending')
+            ON CONFLICT (chat_id) DO UPDATE 
+            SET status = 'pending', updated_at = NOW()
+        `, [chatId, user_id]);
+        
+        // Добавляем согласие текущего пользователя
+        await pool.query(`
+            INSERT INTO operator_agreements (chat_id, user_id, agreed)
+            VALUES ($1, $2, TRUE)
+            ON CONFLICT (chat_id, user_id) DO UPDATE
+            SET agreed = TRUE, agreed_at = NOW()
+        `, [chatId, user_id]);
+        
+        res.json({ success: true });
+        
+    } catch (error) {
+        console.error('Request operator error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// 6. Получение статуса согласия
+app.get('/api/chats/:chatId/agreement-status', authenticateToken, async (req, res) => {
+    try {
+        const { chatId } = req.params;
+        const user_id = req.user.userId;
+        
+        const result = await pool.query(`
+            SELECT 
+                oa.user_id,
+                oa.agreed,
+                c.user1_id,
+                c.user2_id
+            FROM operator_agreements oa
+            JOIN chats c ON oa.chat_id = c.id
+            WHERE oa.chat_id = $1
+        `, [chatId]);
+        
+        const agreements = {};
+        result.rows.forEach(row => {
+            agreements[row.user_id] = row.agreed;
+        });
+        
+        const otherUserId = result.rows[0]?.user1_id === user_id ? 
+            result.rows[0]?.user2_id : result.rows[0]?.user1_id;
+        
+        res.json({
+            agreements,
+            other_party_agreed: agreements[otherUserId] || false
+        });
+        
+    } catch (error) {
+        console.error('Get agreement status error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// 7. Согласие на оператора
+app.post('/api/chats/:chatId/agree-operator', authenticateToken, async (req, res) => {
+    try {
+        const { chatId } = req.params;
+        const user_id = req.user.userId;
+        
+        await pool.query(`
+            INSERT INTO operator_agreements (chat_id, user_id, agreed)
+            VALUES ($1, $2, TRUE)
+            ON CONFLICT (chat_id, user_id) DO UPDATE
+            SET agreed = TRUE, agreed_at = NOW()
+        `, [chatId, user_id]);
+        
+        // Проверяем, согласны ли оба пользователя
+        const agreements = await pool.query(`
+            SELECT COUNT(*) as agreed_count
+            FROM operator_agreements 
+            WHERE chat_id = $1 AND agreed = TRUE
+        `, [chatId]);
+        
+        if (agreements.rows[0].agreed_count === 2) {
+            // Оба согласны - создаем сделку
+            await createDealForChat(chatId);
+        }
+        
+        res.json({ success: true });
+        
+    } catch (error) {
+        console.error('Agree operator error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// 8. Функция создания сделки
+async function createDealForChat(chatId) {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        
+        // Получаем информацию о чате
+        const chat = await client.query(`
+            SELECT c.*, a.title, a.price, a.id as ad_id
+            FROM chats c
+            LEFT JOIN ads a ON c.ad_id = a.id
+            WHERE c.id = $1
+        `, [chatId]);
+        
+        if (chat.rows.length === 0) throw new Error('Chat not found');
+        
+        const chatData = chat.rows[0];
+        const dealCode = generateDealCode();
+        
+        // Создаем сделку
+        const deal = await client.query(`
+            INSERT INTO deals (
+                deal_code, title, price, ad_id, 
+                buyer_id, seller_id, chat_id, status
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending')
+            RETURNING *
+        `, [
+            dealCode,
+            chatData.title || 'Сделка',
+            chatData.price || 0,
+            chatData.ad_id,
+            chatData.user1_id,
+            chatData.user2_id,
+            chatId
+        ]);
+        
+        // Обновляем чат
+        await client.query(`
+            UPDATE chats 
+            SET has_deal = TRUE, deal_id = $1
+            WHERE id = $2
+        `, [deal.rows[0].id, chatId]);
+        
+        // Назначаем оператора
+        const operator = await client.query(`
+            SELECT id FROM users_operator 
+            WHERE is_active = TRUE 
+            ORDER BY RANDOM() 
+            LIMIT 1
+        `);
+        
+        if (operator.rows.length > 0) {
+            await client.query(`
+                UPDATE deals 
+                SET operator_id = $1, status = 'active'
+                WHERE id = $2
+            `, [operator.rows[0].id, deal.rows[0].id]);
+        }
+        
+        await client.query('COMMIT');
+        
+        // Отправляем уведомление через WebSocket
+        broadcastDealCreated(chatId, deal.rows[0]);
+        
+        return deal.rows[0];
+        
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+
+// 9. Получение информации о сделке
+app.get('/api/deals/:dealId', authenticateToken, async (req, res) => {
+    try {
+        const { dealId } = req.params;
+        const user_id = req.user.userId;
+        
+        const result = await pool.query(`
+            SELECT 
+                d.*,
+                u1.full_name as buyer_name,
+                u2.full_name as seller_name,
+                op.full_name as operator_name,
+                a.title as ad_title
+            FROM deals d
+            LEFT JOIN users u1 ON d.buyer_id = u1.id
+            LEFT JOIN users u2 ON d.seller_id = u2.id
+            LEFT JOIN users_operator op ON d.operator_id = op.id
+            LEFT JOIN ads a ON d.ad_id = a.id
+            WHERE d.id = $1 AND (d.buyer_id = $2 OR d.seller_id = $2 OR d.operator_id = $2)
+        `, [dealId, user_id]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Deal not found' });
+        }
+        
+        res.json(result.rows[0]);
+        
+    } catch (error) {
+        console.error('Get deal error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// 10. Получение сообщений сделки
+app.get('/api/deals/:dealId/messages', authenticateToken, async (req, res) => {
+    try {
+        const { dealId } = req.params;
+        const user_id = req.user.userId;
+        
+        // Проверяем доступ к сделке
+        const dealCheck = await pool.query(`
+            SELECT id FROM deals 
+            WHERE id = $1 AND (buyer_id = $2 OR seller_id = $2 OR operator_id = $2)
+        `, [dealId, user_id]);
+        
+        if (dealCheck.rows.length === 0) {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+        
+        const result = await pool.query(`
+            SELECT 
+                dm.*,
+                CASE 
+                    WHEN dm.sender_type = 'user' THEN u.full_name
+                    WHEN dm.sender_type = 'operator' THEN op.full_name
+                    ELSE 'Система'
+                END as sender_name,
+                CASE 
+                    WHEN dm.sender_type = 'operator' THEN 'operator'
+                    ELSE 'user'
+                END as sender_role
+            FROM deal_messages dm
+            LEFT JOIN users u ON dm.sender_id = u.id AND dm.sender_type = 'user'
+            LEFT JOIN users_operator op ON dm.sender_id = op.id AND dm.sender_type = 'operator'
+            WHERE dm.deal_id = $1
+            ORDER BY dm.created_at ASC
+        `, [dealId]);
+        
+        res.json(result.rows);
+        
+    } catch (error) {
+        console.error('Get deal messages error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// 11. Отправка сообщения в сделку
+app.post('/api/deals/:dealId/messages', authenticateToken, async (req, res) => {
+    try {
+        const { dealId } = req.params;
+        const user_id = req.user.userId;
+        const { content } = req.body;
+        
+        // Проверяем доступ и определяем тип отправителя
+        const deal = await pool.query(`
+            SELECT 
+                d.*,
+                CASE 
+                    WHEN d.buyer_id = $2 THEN 'buyer'
+                    WHEN d.seller_id = $2 THEN 'seller'
+                    WHEN d.operator_id = $2 THEN 'operator'
+                    ELSE NULL
+                END as user_role
+            FROM deals d
+            WHERE d.id = $1 AND (d.buyer_id = $2 OR d.seller_id = $2 OR d.operator_id = $2)
+        `, [dealId, user_id]);
+        
+        if (deal.rows.length === 0) {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+        
+        const dealData = deal.rows[0];
+        const senderType = dealData.user_role === 'operator' ? 'operator' : 'user';
+        
+        // Сохраняем сообщение
+        const result = await pool.query(`
+            INSERT INTO deal_messages (deal_id, sender_id, sender_type, content)
+            VALUES ($1, $2, $3, $4)
+            RETURNING *, $5 as sender_name
+        `, [dealId, user_id, senderType, content, req.user.username]);
+        
+        res.json(result.rows[0]);
+        
+    } catch (error) {
+        console.error('Send deal message error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// 12. Получение участников сделки
+app.get('/api/deals/:dealId/participants', authenticateToken, async (req, res) => {
+    try {
+        const { dealId } = req.params;
+        
+        const result = await pool.query(`
+            SELECT 
+                u.id,
+                u.full_name as name,
+                u.avatar_url,
+                'buyer' as role,
+                EXISTS (
+                    SELECT 1 FROM connections c 
+                    WHERE c.user_id = u.id AND c.last_seen > NOW() - INTERVAL '5 minutes'
+                ) as is_online
+            FROM deals d
+            JOIN users u ON d.buyer_id = u.id
+            WHERE d.id = $1
+            
+            UNION ALL
+            
+            SELECT 
+                u.id,
+                u.full_name as name,
+                u.avatar_url,
+                'seller' as role,
+                EXISTS (
+                    SELECT 1 FROM connections c 
+                    WHERE c.user_id = u.id AND c.last_seen > NOW() - INTERVAL '5 minutes'
+                ) as is_online
+            FROM deals d
+            JOIN users u ON d.seller_id = u.id
+            WHERE d.id = $1
+            
+            UNION ALL
+            
+            SELECT 
+                op.id,
+                op.full_name as name,
+                NULL as avatar_url,
+                'operator' as role,
+                TRUE as is_online
+            FROM deals d
+            JOIN users_operator op ON d.operator_id = op.id
+            WHERE d.id = $1 AND d.operator_id IS NOT NULL
+        `, [dealId]);
+        
+        res.json(result.rows);
+        
+    } catch (error) {
+        console.error('Get participants error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// 13. Изменение статуса сделки (для оператора)
+app.put('/api/operator/deals/:dealId/status', async (req, res) => {
+    try {
+        const { dealId } = req.params;
+        const { status } = req.body;
+        const authHeader = req.headers['authorization'];
+        
+        if (!authHeader) {
+            return res.status(401).json({ error: 'Token required' });
+        }
+        
+        // Проверяем оператора
+        const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
+        const decoded = Buffer.from(token, 'base64').toString();
+        const [operatorId] = decoded.split(':');
+        
+        const operatorCheck = await pool.query(`
+            SELECT id FROM users_operator WHERE id = $1 AND is_active = TRUE
+        `, [operatorId]);
+        
+        if (operatorCheck.rows.length === 0) {
+            return res.status(403).json({ error: 'Operator not found' });
+        }
+        
+        // Обновляем статус
+        await pool.query(`
+            UPDATE deals 
+            SET status = $1, updated_at = NOW()
+            WHERE id = $2 AND operator_id = $3
+            RETURNING *
+        `, [status, dealId, operatorId]);
+        
+        // Добавляем системное сообщение
+        await pool.query(`
+            INSERT INTO deal_messages (deal_id, sender_type, content)
+            VALUES ($1, 'system', 'Статус сделки изменен на: ' || $2)
+        `, [dealId, status]);
+        
+        res.json({ success: true });
+        
+    } catch (error) {
+        console.error('Update deal status error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Функция для трансляции созданной сделки
+function broadcastDealCreated(chatId, deal) {
+    connections.forEach((ws, userId) => {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({
+                type: 'operator_joined',
+                chatId: chatId,
+                deal: deal
+            }));
+        }
+    });
+}
+
+// Функция для рассылки изменения статуса
+function broadcastStatusChange(data, dealId) {
+    const message = {
+        type: 'status_change',
+        dealId: dealId,
+        status: data.status
+    };
+    
+    const dealWs = dealConnections.get(dealId);
+    if (dealWs) {
+        dealWs.forEach((ws, userId) => {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(message));
+            }
+        });
+    }
+}
 
 // ============================================
 // === SIMPLE OPERATOR AUTH & ROUTES ===
@@ -2379,13 +3052,14 @@ if (process.env.NODE_ENV !== 'production') {
             console.log('💡 Tip: Make sure all tables are created in your Neon database');
         }
         
-        app.listen(PORT, () => {
+        const server = app.listen(PORT, () => {
             console.log('');
             console.log('🎉 Server started successfully!');
             console.log('📍 Running on http://localhost:' + PORT);
             console.log('');
             console.log('📱 Support chat is ENABLED with Telegram integration');
             console.log('👮 Simple Operator system is ENABLED');
+            console.log('💬 WebSocket chat system is ENABLED');
             console.log('');
             console.log('🚀 Available operator pages:');
             console.log('   👉 http://localhost:' + PORT + '/operator-login');
@@ -2402,6 +3076,23 @@ if (process.env.NODE_ENV !== 'production') {
             console.log('   GET    /api/operator/simple-deals');
             console.log('   GET    /api/operator/simple-deals/:dealId');
             console.log('');
+            console.log('💬 WebSocket API endpoints:');
+            console.log('   GET    /api/chats');
+            console.log('   POST   /api/chats/create');
+            console.log('   GET    /api/messages/:chatId');
+            console.log('   POST   /api/messages/send');
+            console.log('   GET    /api/deals/:dealId');
+            console.log('   GET    /api/deals/:dealId/messages');
+            console.log('   POST   /api/deals/:dealId/messages');
+            console.log('');
+            console.log('🌐 WebSocket available on ws://localhost:' + PORT);
+        });
+
+        // Поднимаем WebSocket сервер
+        server.on('upgrade', (request, socket, head) => {
+            wss.handleUpgrade(request, socket, head, (ws) => {
+                wss.emit('connection', ws, request);
+            });
         });
     }
 
@@ -2409,7 +3100,17 @@ if (process.env.NODE_ENV !== 'production') {
         console.error('❌ Failed to start server:', error);
         process.exit(1);
     });
+} else {
+    // Для Vercel - создаем сервер и экспортируем
+    const server = require('http').createServer(app);
+    
+    server.on('upgrade', (request, socket, head) => {
+        wss.handleUpgrade(request, socket, head, (ws) => {
+            wss.emit('connection', ws, request);
+        });
+    });
+    
+    module.exports = (req, res) => {
+        app(req, res);
+    };
 }
-
-// Export for Vercel
-module.exports = app;
