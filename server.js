@@ -2154,6 +2154,89 @@ app.post('/api/operator/deals', requireOperator, async (req, res) => {
     }
 });
 
+// Простой логин оператора (без хеширования)
+app.post('/api/operator/simple-login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        if (!username || !password) {
+            return res.status(400).json({ error: 'Username and password are required' });
+        }
+
+        // Проверяем в таблице users_operator
+        const result = await pool.query(
+            `SELECT id, username, email, full_name, role 
+             FROM users_operator 
+             WHERE username = $1 AND password = $2 AND is_active = TRUE`,
+            [username, password]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(401).json({ error: 'Invalid operator credentials' });
+        }
+
+        const operator = result.rows[0];
+        
+        // Создаем JWT токен
+        const token = jwt.sign({ 
+            userId: operator.id, 
+            username: operator.username,
+            role: operator.role,
+            isOperator: true 
+        }, JWT_SECRET, { expiresIn: '8h' });
+
+        console.log(`🔐 Operator logged in (simple): ${operator.username}`);
+
+        res.json({
+            success: true,
+            message: 'Operator login successful',
+            token,
+            operator: {
+                id: operator.id,
+                username: operator.username,
+                email: operator.email,
+                full_name: operator.full_name,
+                role: operator.role
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ Simple operator login error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Простая проверка оператора (для прямого запроса)
+app.post('/api/operator-check', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        // Проверяем в таблице users_operator
+        const result = await pool.query(
+            `SELECT id, username, email, full_name, role 
+             FROM users_operator 
+             WHERE username = $1 AND password = $2`,
+            [username, password]
+        );
+
+        if (result.rows.length === 0) {
+            return res.json({ success: false, error: 'Invalid credentials' });
+        }
+
+        const operator = result.rows[0];
+        
+        res.json({
+            success: true,
+            operator: operator
+        });
+
+    } catch (error) {
+        console.error('❌ Operator check error:', error);
+        res.json({ success: false, error: 'Database error' });
+    }
+});
+
+
 // ============================================
 // === ADDED CODE END: OPERATOR ROUTES ===
 // ============================================
