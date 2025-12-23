@@ -358,7 +358,7 @@
             hideError();
             
             try {
-                const response = await fetch(`${API_BASE}/api/operator/login`, {
+                const response = await fetch(`${API_BASE}/api/operator/simple-login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
