@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сделки оператора — Zeeptook</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        :root {
+            --operator: #10b981;
+            --operator-dark: #059669;
+            --accent: #ff6b6b;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --purple: #8b5cf6;
+            --dark: #1e293b;
+            --white: #ffffff;
+            --gray: #64748b;
+            --light-bg: rgba(30, 41, 59, 0.9);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: var(--white);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+        
+        .container {
+            max-width: 100%;
+            padding: 20px 15px;
+        }
+        
+        /* Шапка */
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        
+        .back-btn {
+            background: none;
+            border: none;
+            color: var(--operator);
+            font-size: 20px;
+            margin-right: 15px;
+            cursor: pointer;
+        }
+        
+        .header-title {
+            flex: 1;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .refresh-btn {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: var(--operator);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        /* Фильтры */
+        .filters {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 15px 0;
+            margin-bottom: 15px;
+        }
+        
+        .filter-btn {
+            flex: 0 0 auto;
+            padding: 8px 16px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 20px;
+            color: var(--gray);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+        
+        .filter-btn:hover {
+            border-color: var(--operator);
+        }
+        
+        .filter-btn.active {
+            background: linear-gradient(135deg, var(--operator), var(--operator-dark));
+            color: white;
+            border-color: transparent;
+        }
+        
+        .filter-count {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin-left: 5px;
+        }
+        
+        /* Поиск */
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 12px 15px 12px 45px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 25px;
+            color: var(--white);
+            font-size: 14px;
+            outline: none;
+        }
+        
+        .search-box input:focus {
+            border-color: var(--operator);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--operator);
+        }
+        
+        /* Список сделок */
+        .deals-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .deal-card {
+            background: var(--light-bg);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .deal-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--operator);
+            box-shadow: 0 5px 20px rgba(16, 185, 129, 0.1);
+        }
+        
+        .deal-card.pending {
+            border-left: 5px solid var(--warning);
+        }
+        
+        .deal-card.active {
+            border-left: 5px solid var(--operator);
+        }
+        
+        .deal-card.payment {
+            border-left: 5px solid var(--info);
+        }
+        
+        .deal-card.completed {
+            border-left: 5px solid var(--operator);
+            opacity: 0.8;
+        }
+        
+        .deal-card.disputed {
+            border-left: 5px solid var(--accent);
+        }
+        
+        .deal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+        
+        .deal-id {
+            font-size: 12px;
+            color: var(--gray);
+            background: rgba(16, 185, 129, 0.1);
+            padding: 3px 10px;
+            border-radius: 10px;
+        }
+        
+        .deal-status {
+            font-size: 11px;
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+        
+        .status-pending {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+        
+        .status-active {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--operator);
+        }
+        
+        .status-payment {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--info);
+        }
+        
+        .status-completed {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--operator);
+        }
+        
+        .status-disputed {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+        
+        .deal-title {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+        
+        .deal-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .detail-label {
+            font-size: 11px;
+            color: var(--gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .detail-value {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--white);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .deal-price {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--operator);
+            margin-bottom: 10px;
+        }
+        
+        .deal-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(16, 185, 129, 0.1);
+        }
+        
+        .deal-time {
+            font-size: 12px;
+            color: var(--gray);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .deal-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            font-size: 11px;
+            border-radius: 12px;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--operator);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .action-btn:hover {
+            background: rgba(16, 185, 129, 0.2);
+        }
+        
+        .action-btn.chat {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--info);
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+        
+        .action-btn.chat:hover {
+            background: rgba(59, 130, 246, 0.2);
+        }
+        
+        .badges {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .badge {
+            font-size: 10px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        
+        .badge.urgent {
+            background: rgba(255, 107, 107, 0.2);
+            color: var(--accent);
+        }
+        
+        .badge.unread {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--info);
+        }
+        
+        /* Состояния */
+        .loading {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--gray);
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(16, 185, 129, 0.2);
+            border-top: 3px solid var(--operator);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray);
+        }
+        
+        .empty-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        
+        .empty-state h3 {
+            font-size: 18px;
+            color: var(--white);
+            margin-bottom: 10px;
+        }
+        
+        .retry-btn {
+            background: linear-gradient(135deg, var(--operator), var(--operator-dark));
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        
+        .error-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--accent);
+        }
+        
+        .error-state i {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        /* Навигация */
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            padding: 15px 0;
+            border-top: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--gray);
+            text-decoration: none;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .nav-item:hover {
+            color: var(--operator);
+        }
+        
+        .nav-item.active {
+            color: var(--operator);
+        }
+        
+        .nav-item i {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        
+        /* Анимации */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Адаптив */
+        @media (min-width: 768px) {
+            .container {
+                max-width: 750px;
+                margin: 0 auto;
+            }
+            
+            .deals-list {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+            }
+            
+            .deal-details {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .container {
+                max-width: 900px;
+            }
+            
+            .deals-list {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Шапка -->
+        <div class="header">
+            <button class="back-btn" onclick="goBack()">
+                <i class="fa fa-arrow-left"></i>
+            </button>
+            <div class="header-title">Сделки оператора</div>
+            <button class="refresh-btn" onclick="loadDeals()" title="Обновить">
+                <i class="fa fa-refresh"></i>
+            </button>
+        </div>
+        
+        <!-- Фильтры -->
+        <div class="filters" id="filters">
+            <!-- Фильтры загружаются динамически -->
+            <div class="loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
+        
+        <!-- Поиск -->
+        <div class="search-box">
+            <i class="fa fa-search search-icon"></i>
+            <input type="text" id="search-input" placeholder="Поиск по ID, названию или имени...">
+        </div>
+        
+        <!-- Список сделок -->
+        <div class="deals-list" id="deals-list">
+            <div class="loading">
+                <div class="spinner"></div>
+                <div>Загрузка сделок...</div>
+            </div>
+        </div>
+        
+        <!-- Нет сделок -->
+        <div class="empty-state" id="empty-state" style="display: none;">
+            <i class="fa fa-inbox"></i>
+            <h3>Сделок не найдено</h3>
+            <p>Попробуйте изменить фильтр или поисковый запрос</p>
+            <button class="retry-btn" onclick="resetFilters()">Сбросить фильтры</button>
+        </div>
+        
+        <!-- Ошибка -->
+        <div class="error-state" id="error-state" style="display: none;">
+            <i class="fa fa-exclamation-triangle"></i>
+            <h3>Ошибка загрузки</h3>
+            <p id="error-message">Не удалось загрузить сделки</p>
+            <button class="retry-btn" onclick="loadDeals()">Повторить попытку</button>
+        </div>
+    </div>
+    
+    <!-- Навигация -->
+    <div class="nav-bar">
+        <div class="nav-item" onclick="goToDashboard()">
+            <i class="fa fa-dashboard"></i>
+            <span>Дашборд</span>
+        </div>
+        <div class="nav-item active" onclick="goToDeals()">
+            <i class="fa fa-handshake-o"></i>
+            <span>Сделки</span>
+        </div>
+        <div class="nav-item" onclick="goToChats()">
+            <i class="fa fa-comment"></i>
+            <span>Чаты</span>
+        </div>
+        <div class="nav-item" onclick="logout()">
+            <i class="fa fa-sign-out"></i>
+            <span>Выйти</span>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let operatorData = null;
+        let dealsData = [];
+        let currentFilter = 'all';
+        let currentSearch = '';
+        let filterStats = {};
+        let searchTimeout = null;
+
+        // Проверка авторизации
+        function checkAuth() {
+            const savedData = localStorage.getItem('operatorData');
+            if (!savedData) {
+                window.location.href = 'operator-login.html';
+                return false;
+            }
+            
+            try {
+                operatorData = JSON.parse(savedData);
+                return true;
+            } catch (e) {
+                window.location.href = 'operator-login.html';
+                return false;
+            }
+        }
+
+        // Загрузка сделок
+        async function loadDeals() {
+            if (!checkAuth()) return;
+            
+            try {
+                showLoading();
+                
+                const params = new URLSearchParams({
+                    operatorId: operatorData.id,
+                    status: currentFilter
+                });
+                
+                if (currentSearch) {
+                    params.append('search', currentSearch);
+                }
+                
+                const response = await fetch(`${API_BASE}/api/operator/simple-deals?${params}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Ошибка сервера: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    dealsData = data.deals || [];
+                    filterStats = data.status_stats || {};
+                    
+                    renderDeals();
+                    updateFilters();
+                } else {
+                    throw new Error(data.error || 'Ошибка загрузки');
+                }
+                
+            } catch (error) {
+                console.error('Deals error:', error);
+                showError(error.message);
+            }
+        }
+
+        // Отображение сделок
+        function renderDeals() {
+            const container = document.getElementById('deals-list');
+            
+            if (!dealsData || dealsData.length === 0) {
+                showEmptyState();
+                return;
+            }
+            
+            let html = '';
+            
+            dealsData.forEach(deal => {
+                const statusClass = getStatusClass(deal.status);
+                const statusText = getStatusText(deal.status);
+                const price = deal.price ? `${deal.price.toLocaleString('ru-RU')} ₽` : 'Цена не указана';
+                const timeAgo = deal.time_ago || 'Недавно';
+                
+                // Бейджи
+                let badges = '';
+                if (deal.is_urgent) badges += '<span class="badge urgent">СРОЧНО</span>';
+                if (deal.unread_count > 0) badges += `<span class="badge unread">${deal.unread_count} непроч.</span>`;
+                
+                html += `
+                    <div class="deal-card ${deal.status}" onclick="openDealDetail(${deal.id})">
+                        <div class="deal-header">
+                            <div class="deal-id">${deal.deal_code || 'ID-' + deal.id}</div>
+                            <div class="deal-status ${statusClass}">
+                                ${statusText}
+                            </div>
+                        </div>
+                        
+                        ${badges ? `<div class="badges">${badges}</div>` : ''}
+                        
+                        <div class="deal-title">${deal.title}</div>
+                        
+                        <div class="deal-details">
+                            <div class="detail-item">
+                                <div class="detail-label">Покупатель</div>
+                                <div class="detail-value">
+                                    <i class="fa fa-user" style="color: #3b82f6;"></i>
+                                    ${deal.buyer?.name || deal.buyer?.username || 'Неизвестно'}
+                                </div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Продавец</div>
+                                <div class="detail-value">
+                                    <i class="fa fa-user" style="color: #8b5cf6;"></i>
+                                    ${deal.seller?.name || deal.seller?.username || 'Неизвестно'}
+                                </div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Игра</div>
+                                <div class="detail-value">
+                                    <i class="fa fa-gamepad" style="color: var(--operator);"></i>
+                                    ${deal.game || 'Не указана'}
+                                </div>
+                            </div>
+                            <div class="detail-item">
+                                <div class="detail-label">Оплата</div>
+                                <div class="detail-value">
+                                    <i class="fa fa-credit-card" style="color: #f59e0b;"></i>
+                                    ${deal.payment_method || 'Не указан'}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="deal-price">${price}</div>
+                        
+                        <div class="deal-footer">
+                            <div class="deal-time">
+                                <i class="fa fa-clock-o"></i>
+                                <span>${timeAgo}</span>
+                            </div>
+                            <div class="deal-actions">
+                                <button class="action-btn chat" onclick="openDealChat(${deal.id}, event)">
+                                    <i class="fa fa-comment"></i> Чат
+                                </button>
+                                <button class="action-btn" onclick="openDealDetail(${deal.id}, event)">
+                                    <i class="fa fa-info-circle"></i> Подробно
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            hideEmptyState();
+            hideError();
+        }
+
+        // Загрузка фильтров
+        function loadFilters() {
+            const savedFilter = localStorage.getItem('dealsFilter');
+            if (savedFilter) {
+                currentFilter = savedFilter;
+                localStorage.removeItem('dealsFilter');
+            }
+            
+            updateFilters();
+        }
+
+        // Обновление фильтров
+        function updateFilters() {
+            const filters = [
+                { id: 'all', label: 'Все', icon: 'fa-list' },
+                { id: 'pending', label: 'Ожидают', icon: 'fa-clock-o' },
+                { id: 'active', label: 'В работе', icon: 'fa-play-circle' },
+                { id: 'payment', label: 'Оплата', icon: 'fa-credit-card' },
+                { id: 'completed', label: 'Завершены', icon: 'fa-check-circle' },
+                { id: 'disputed', label: 'Споры', icon: 'fa-exclamation-triangle' }
+            ];
+            
+            const container = document.getElementById('filters');
+            let html = '';
+            
+            filters.forEach(filter => {
+                const count = filterStats[filter.id] || 0;
+                const isActive = currentFilter === filter.id;
+                
+                html += `
+                    <button class="filter-btn ${isActive ? 'active' : ''}" 
+                            onclick="setFilter('${filter.id}')"
+                            title="${filter.label}">
+                        <i class="fa ${filter.icon}"></i>
+                        ${filter.label}
+                        <span class="filter-count">${count}</span>
+                    </button>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Установка фильтра
+        function setFilter(filter) {
+            currentFilter = filter;
+            loadDeals();
+        }
+
+        // Настройка поиска
+        function setupSearch() {
+            const searchInput = document.getElementById('search-input');
+            
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchTimeout);
+                
+                searchTimeout = setTimeout(() => {
+                    currentSearch = searchInput.value.trim();
+                    loadDeals();
+                }, 500);
+            });
+            
+            // Очистка поиска
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    searchInput.value = '';
+                    currentSearch = '';
+                    loadDeals();
+                }
+            });
+        }
+
+        // Получить класс статуса
+        function getStatusClass(status) {
+            switch(status) {
+                case 'pending': return 'status-pending';
+                case 'active': return 'status-active';
+                case 'payment': return 'status-payment';
+                case 'completed': return 'status-completed';
+                case 'disputed': return 'status-disputed';
+                default: return 'status-active';
+            }
+        }
+
+        // Получить текст статуса
+        function getStatusText(status) {
+            switch(status) {
+                case 'pending': return 'Ожидание';
+                case 'active': return 'В работе';
+                case 'payment': return 'Оплата';
+                case 'completed': return 'Завершено';
+                case 'disputed': return 'Спор';
+                default: return status;
+            }
+        }
+
+        // Открыть детали сделки
+        function openDealDetail(dealId, event) {
+            if (event) event.stopPropagation();
+            alert(`Открываем детали сделки #${dealId}`);
+            // window.location.href = `deal-detail.html?id=${dealId}`;
+        }
+
+        // Открыть чат сделки
+        function openDealChat(dealId, event) {
+            if (event) event.stopPropagation();
+            alert(`Открываем чат сделки #${dealId}`);
+            // window.location.href = `operator-chat.html?dealId=${dealId}`;
+        }
+
+        // Назад
+        function goBack() {
+            window.history.back();
+        }
+
+        // Навигация
+        function goToDashboard() {
+            window.location.href = 'operator-dashboard-simple.html';
+        }
+
+        function goToDeals() {
+            window.location.href = 'operator-deals-simple.html';
+        }
+
+        function goToChats() {
+            alert('Чаты в разработке');
+        }
+
+        // Выход
+        function logout() {
+            if (confirm('Вы уверены, что хотите выйти?')) {
+                localStorage.removeItem('operatorData');
+                window.location.href = 'operator-login.html';
+            }
+        }
+
+        // Сброс фильтров
+        function resetFilters() {
+            currentFilter = 'all';
+            currentSearch = '';
+            document.getElementById('search-input').value = '';
+            loadDeals();
+        }
+
+        // Состояния
+        function showLoading() {
+            document.getElementById('deals-list').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <div>Загрузка сделок...</div>
+                </div>
+            `;
+            hideEmptyState();
+            hideError();
+        }
+
+        function showEmptyState() {
+            document.getElementById('deals-list').innerHTML = '';
+            document.getElementById('empty-state').style.display = 'block';
+            hideError();
+        }
+
+        function hideEmptyState() {
+            document.getElementById('empty-state').style.display = 'none';
+        }
+
+        function showError(message) {
+            document.getElementById('error-message').textContent = message;
+            document.getElementById('error-state').style.display = 'block';
+            document.getElementById('deals-list').innerHTML = '';
+            hideEmptyState();
+        }
+
+        function hideError() {
+            document.getElementById('error-state').style.display = 'none';
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📋 Deals page loaded');
+            
+            if (checkAuth()) {
+                loadFilters();
+                setupSearch();
+                loadDeals();
+                
+                // Автообновление
+                setInterval(() => {
+                    if (document.visibilityState === 'visible') {
+                        loadDeals();
+                    }
+                }, 30000);
+            }
+        });
+
+        // Горячие клавиши
+        document.addEventListener('keydown', function(e) {
+            // F5 - обновить
+            if (e.key === 'F5') {
+                e.preventDefault();
+                loadDeals();
+            }
+            // Ctrl+F - поиск
+            if (e.ctrlKey && e.key === 'f') {
+                e.preventDefault();
+                document.getElementById('search-input').focus();
+            }
+            // Escape - назад/очистка
+            if (e.key === 'Escape') {
+                const searchInput = document.getElementById('search-input');
+                if (searchInput === document.activeElement) {
+                    searchInput.value = '';
+                    currentSearch = '';
+                    loadDeals();
+                } else {
+                    goBack();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

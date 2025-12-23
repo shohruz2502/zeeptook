@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Дашборд оператора — Zeeptook</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        :root {
+            --operator: #10b981;
+            --operator-dark: #059669;
+            --accent: #ff6b6b;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --purple: #8b5cf6;
+            --dark: #1e293b;
+            --white: #ffffff;
+            --gray: #64748b;
+            --light-bg: rgba(30, 41, 59, 0.9);
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: var(--white);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+        
+        .container {
+            max-width: 100%;
+            padding: 20px 15px;
+        }
+        
+        /* Шапка */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        
+        .logo i {
+            color: var(--operator);
+        }
+        
+        .operator-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(30, 41, 59, 0.8);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--operator);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        /* Статистика */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: var(--light-bg);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--operator);
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--operator);
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 13px;
+            color: var(--gray);
+        }
+        
+        /* Быстрые действия */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .action-btn {
+            background: var(--light-bg);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 15px;
+            padding: 20px 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-3px);
+            border-color: var(--operator);
+        }
+        
+        .action-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--operator), var(--operator-dark));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 22px;
+        }
+        
+        .action-icon.warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        
+        .action-icon.info {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        }
+        
+        .action-info h3 {
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .action-info p {
+            font-size: 12px;
+            color: var(--gray);
+        }
+        
+        /* Последние сделки */
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .view-all {
+            font-size: 14px;
+            color: var(--operator);
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .deals-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .deal-item {
+            background: var(--light-bg);
+            border-radius: 12px;
+            padding: 15px;
+            border-left: 4px solid var(--operator);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .deal-item:hover {
+            transform: translateX(5px);
+        }
+        
+        .deal-item.pending {
+            border-left-color: var(--warning);
+        }
+        
+        .deal-item.payment {
+            border-left-color: var(--info);
+        }
+        
+        .deal-item.disputed {
+            border-left-color: var(--accent);
+        }
+        
+        .deal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .deal-id {
+            font-size: 12px;
+            color: var(--gray);
+            background: rgba(16, 185, 129, 0.1);
+            padding: 3px 8px;
+            border-radius: 10px;
+        }
+        
+        .deal-status {
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+        
+        .status-pending {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+        }
+        
+        .status-active {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--operator);
+        }
+        
+        .status-payment {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--info);
+        }
+        
+        .status-disputed {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+        
+        .deal-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .deal-price {
+            color: var(--operator);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .deal-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--gray);
+        }
+        
+        .badge {
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(255, 107, 107, 0.2);
+            color: var(--accent);
+            margin-right: 5px;
+        }
+        
+        /* Навигация */
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-around;
+            padding: 15px 0;
+            border-top: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--gray);
+            text-decoration: none;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .nav-item:hover {
+            color: var(--operator);
+        }
+        
+        .nav-item.active {
+            color: var(--operator);
+        }
+        
+        .nav-item i {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+        
+        /* Состояния */
+        .loading {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--gray);
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(16, 185, 129, 0.2);
+            border-top: 3px solid var(--operator);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--accent);
+        }
+        
+        .error i {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        /* Анимации */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        /* Адаптив */
+        @media (min-width: 768px) {
+            .container {
+                max-width: 750px;
+                margin: 0 auto;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            
+            .quick-actions {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Шапка -->
+        <div class="header">
+            <div class="logo">
+                <i class="fa fa-shield"></i>
+                <span>Оператор Zeeptook</span>
+            </div>
+            <div class="operator-info" onclick="logout()">
+                <div class="status-dot"></div>
+                <span id="operator-name">Загрузка...</span>
+            </div>
+        </div>
+        
+        <!-- Статистика -->
+        <div class="stats-grid" id="stats-grid">
+            <div class="loading">
+                <div class="spinner"></div>
+                <div>Загрузка статистики...</div>
+            </div>
+        </div>
+        
+        <!-- Быстрые действия -->
+        <div class="quick-actions">
+            <div class="action-btn" onclick="openDeals('active')">
+                <div class="action-icon">
+                    <i class="fa fa-handshake-o"></i>
+                </div>
+                <div class="action-info">
+                    <h3>Активные сделки</h3>
+                    <p id="active-count">0 сделок</p>
+                </div>
+            </div>
+            <div class="action-btn" onclick="openDeals('pending')">
+                <div class="action-icon warning">
+                    <i class="fa fa-bell"></i>
+                </div>
+                <div class="action-info">
+                    <h3>Новые заявки</h3>
+                    <p id="pending-count">0 заявок</p>
+                </div>
+            </div>
+            <div class="action-btn" onclick="openChats()">
+                <div class="action-icon info">
+                    <i class="fa fa-comments"></i>
+                </div>
+                <div class="action-info">
+                    <h3>Чаты</h3>
+                    <p id="unread-count">0 непрочитанных</p>
+                </div>
+            </div>
+            <div class="action-btn" onclick="openDeals('completed')">
+                <div class="action-icon">
+                    <i class="fa fa-history"></i>
+                </div>
+                <div class="action-info">
+                    <h3>История</h3>
+                    <p>Завершённые сделки</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Последние сделки -->
+        <div class="section-title">
+            <span>Последние сделки</span>
+            <a class="view-all" onclick="openDeals('all')">Все сделки →</a>
+        </div>
+        
+        <div class="deals-list" id="deals-list">
+            <div class="loading">
+                <div class="spinner"></div>
+                <div>Загрузка сделок...</div>
+            </div>
+        </div>
+        
+        <!-- Нет сделок -->
+        <div class="error" id="error-state" style="display: none;">
+            <i class="fa fa-exclamation-triangle"></i>
+            <div>Ошибка загрузки</div>
+            <button onclick="loadDashboard()" style="background: var(--operator); color: white; border: none; padding: 10px 20px; border-radius: 20px; margin-top: 15px; cursor: pointer;">
+                Повторить
+            </button>
+        </div>
+    </div>
+    
+    <!-- Навигация -->
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="goToDashboard()">
+            <i class="fa fa-dashboard"></i>
+            <span>Дашборд</span>
+        </div>
+        <div class="nav-item" onclick="goToDeals()">
+            <i class="fa fa-handshake-o"></i>
+            <span>Сделки</span>
+        </div>
+        <div class="nav-item" onclick="goToChats()">
+            <i class="fa fa-comment"></i>
+            <span>Чаты</span>
+        </div>
+        <div class="nav-item" onclick="logout()">
+            <i class="fa fa-sign-out"></i>
+            <span>Выйти</span>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin;
+        let operatorData = null;
+        let dashboardData = null;
+
+        // Проверка авторизации
+        function checkAuth() {
+            const savedData = localStorage.getItem('operatorData');
+            if (!savedData) {
+                window.location.href = 'operator-login.html';
+                return false;
+            }
+            
+            try {
+                operatorData = JSON.parse(savedData);
+                document.getElementById('operator-name').textContent = operatorData.username || 'Оператор';
+                return true;
+            } catch (e) {
+                console.error('Error parsing operator data:', e);
+                window.location.href = 'operator-login.html';
+                return false;
+            }
+        }
+
+        // Загрузка дашборда
+        async function loadDashboard() {
+            if (!checkAuth()) return;
+            
+            try {
+                showLoading();
+                
+                const response = await fetch(`${API_BASE}/api/operator/simple-dashboard?operatorId=${operatorData.id}`);
+                
+                if (!response.ok) {
+                    throw new Error(`Ошибка сервера: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    dashboardData = data;
+                    updateDashboard(data);
+                } else {
+                    throw new Error(data.error || 'Ошибка загрузки');
+                }
+                
+            } catch (error) {
+                console.error('Dashboard error:', error);
+                showError('Не удалось загрузить данные. Проверьте подключение к интернету.');
+            }
+        }
+
+        // Обновление дашборда
+        function updateDashboard(data) {
+            const stats = data.stats;
+            
+            // Обновляем статистику
+            document.getElementById('stats-grid').innerHTML = `
+                <div class="stat-card" onclick="openDeals('all')">
+                    <div class="stat-value">${stats.total_deals || 0}</div>
+                    <div class="stat-label">Всего сделок</div>
+                </div>
+                <div class="stat-card" onclick="openDeals('active')">
+                    <div class="stat-value">${stats.active_deals || 0}</div>
+                    <div class="stat-label">В работе</div>
+                </div>
+                <div class="stat-card" onclick="openDeals('pending')">
+                    <div class="stat-value">${stats.pending_deals || 0}</div>
+                    <div class="stat-label">Ожидают</div>
+                </div>
+                <div class="stat-card" onclick="openDeals('completed')">
+                    <div class="stat-value">${stats.completed_today || 0}</div>
+                    <div class="stat-label">Сегодня</div>
+                </div>
+            `;
+            
+            // Обновляем быстрые действия
+            document.getElementById('active-count').textContent = `${stats.active_deals || 0} сделок`;
+            document.getElementById('pending-count').textContent = `${stats.pending_deals || 0} заявок`;
+            document.getElementById('unread-count').textContent = `${stats.unread || 0} непрочитанных`;
+            
+            // Обновляем список сделок
+            updateDealsList(data.recent_deals || []);
+        }
+
+        // Обновление списка сделок
+        function updateDealsList(deals) {
+            const container = document.getElementById('deals-list');
+            
+            if (!deals || deals.length === 0) {
+                container.innerHTML = `
+                    <div class="error">
+                        <i class="fa fa-inbox"></i>
+                        <div>Нет активных сделок</div>
+                        <div style="font-size: 14px; margin-top: 10px; color: var(--gray);">
+                            Новые сделки появятся здесь
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            deals.forEach(deal => {
+                const statusClass = getStatusClass(deal.status);
+                const statusText = getStatusText(deal.status);
+                const price = deal.price ? `${deal.price.toLocaleString('ru-RU')} ₽` : 'Цена не указана';
+                
+                html += `
+                    <div class="deal-item ${deal.status}" onclick="openDeal(${deal.id})">
+                        <div class="deal-header">
+                            <div class="deal-id">${deal.deal_code || 'ID-' + deal.id}</div>
+                            <div class="deal-status ${statusClass}">
+                                ${statusText}
+                            </div>
+                        </div>
+                        <div class="deal-title">${deal.title}</div>
+                        <div class="deal-price">${price}</div>
+                        <div class="deal-meta">
+                            <span>${deal.buyer || 'Покупатель'}</span>
+                            <span>${deal.time_ago || 'Недавно'}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Получить класс статуса
+        function getStatusClass(status) {
+            switch(status) {
+                case 'pending': return 'status-pending';
+                case 'active': return 'status-active';
+                case 'payment': return 'status-payment';
+                case 'disputed': return 'status-disputed';
+                default: return 'status-active';
+            }
+        }
+
+        // Получить текст статуса
+        function getStatusText(status) {
+            switch(status) {
+                case 'pending': return 'Ожидание';
+                case 'active': return 'В работе';
+                case 'payment': return 'Оплата';
+                case 'completed': return 'Завершено';
+                case 'disputed': return 'Спор';
+                default: return status;
+            }
+        }
+
+        // Открыть сделку
+        function openDeal(dealId) {
+            alert(`Открываем сделку #${dealId}`);
+            // Здесь можно открыть страницу сделки
+        }
+
+        // Открыть список сделок
+        function openDeals(status) {
+            localStorage.setItem('dealsFilter', status);
+            window.location.href = 'operator-deals-simple.html';
+        }
+
+        // Открыть чаты
+        function openChats() {
+            alert('Страница чатов в разработке');
+        }
+
+        // Навигация
+        function goToDashboard() {
+            window.location.href = 'operator-dashboard-simple.html';
+        }
+
+        function goToDeals() {
+            window.location.href = 'operator-deals-simple.html';
+        }
+
+        function goToChats() {
+            alert('Чаты в разработке');
+        }
+
+        // Выход
+        function logout() {
+            if (confirm('Вы уверены, что хотите выйти?')) {
+                localStorage.removeItem('operatorData');
+                window.location.href = 'operator-login.html';
+            }
+        }
+
+        // Состояния загрузки
+        function showLoading() {
+            document.getElementById('error-state').style.display = 'none';
+        }
+
+        function showError(message) {
+            document.getElementById('deals-list').style.display = 'none';
+            document.getElementById('error-state').style.display = 'block';
+            document.getElementById('error-state').innerHTML = `
+                <i class="fa fa-exclamation-triangle"></i>
+                <div>${message}</div>
+                <button onclick="loadDashboard()" style="background: var(--operator); color: white; border: none; padding: 10px 20px; border-radius: 20px; margin-top: 15px; cursor: pointer;">
+                    Повторить
+                </button>
+            `;
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📊 Dashboard loaded');
+            
+            if (checkAuth()) {
+                loadDashboard();
+                
+                // Автообновление каждые 30 секунд
+                setInterval(() => {
+                    if (document.visibilityState === 'visible') {
+                        loadDashboard();
+                    }
+                }, 30000);
+            }
+        });
+
+        // Горячие клавиши
+        document.addEventListener('keydown', function(e) {
+            // F5 - обновить
+            if (e.key === 'F5') {
+                e.preventDefault();
+                loadDashboard();
+            }
+            // Ctrl+D - дашборд
+            if (e.ctrlKey && e.key === 'd') {
+                e.preventDefault();
+                goToDashboard();
+            }
+            // Ctrl+S - сделки
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                goToDeals();
+            }
+            // Escape - назад
+            if (e.key === 'Escape') {
+                window.history.back();
+            }
+        });
+    </script>
+</body>
+</html>
