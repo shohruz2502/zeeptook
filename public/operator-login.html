@@ -37,7 +37,7 @@
         
         .login-container {
             width: 100%;
-            max-width: 400px;
+            max-width: 450px;
             background: rgba(30, 41, 59, 0.95);
             backdrop-filter: blur(20px);
             border-radius: 20px;
@@ -176,9 +176,28 @@
             display: none;
             align-items: center;
             gap: 10px;
+            margin-bottom: 15px;
         }
         
         .error-message.show {
+            display: flex;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .success-message {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .success-message.show {
             display: flex;
             animation: slideIn 0.3s ease-out;
         }
@@ -202,6 +221,62 @@
             border-top: 3px solid var(--operator);
             border-radius: 50%;
             animation: spin 1s linear infinite;
+        }
+        
+        .test-accounts {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.1);
+        }
+        
+        .test-accounts h3 {
+            color: var(--operator);
+            font-size: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .test-accounts table {
+            width: 100%;
+            font-size: 12px;
+            color: var(--gray);
+            border-collapse: collapse;
+        }
+        
+        .test-accounts th {
+            text-align: left;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+            font-weight: 600;
+            color: var(--white);
+        }
+        
+        .test-accounts td {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(16, 185, 129, 0.05);
+        }
+        
+        .test-accounts tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .copy-btn {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: var(--operator);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            margin-left: 5px;
+        }
+        
+        .copy-btn:hover {
+            background: rgba(16, 185, 129, 0.2);
         }
         
         .footer-links {
@@ -256,6 +331,10 @@
             .logo h1 {
                 font-size: 24px;
             }
+            
+            .test-accounts {
+                padding: 10px;
+            }
         }
     </style>
 </head>
@@ -274,7 +353,7 @@
             <span id="error-text">Неверные учетные данные</span>
         </div>
         
-        <div class="success-message" id="success-message" style="display: none; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.2); color: var(--success); padding: 12px; border-radius: 10px; font-size: 14px; align-items: center; gap: 10px;">
+        <div class="success-message" id="success-message">
             <i class="fa fa-check-circle"></i>
             <span id="success-text">Вход выполнен успешно!</span>
         </div>
@@ -283,15 +362,14 @@
             <div class="form-group">
                 <label for="username">
                     <i class="fa fa-user"></i>
-                    <span>Логин или Email</span>
+                    <span>Логин</span>
                 </label>
                 <input type="text" 
                        id="username" 
                        class="form-control" 
-                       placeholder="Введите логин или email"
+                       placeholder="Введите логин"
                        required
-                       autocomplete="username"
-                       value="operator1">
+                       autocomplete="username">
             </div>
             
             <div class="form-group password-toggle">
@@ -304,8 +382,7 @@
                        class="form-control" 
                        placeholder="Введите пароль"
                        required
-                       autocomplete="current-password"
-                       value="operator123">
+                       autocomplete="current-password">
                 <button type="button" class="toggle-btn" id="toggle-password">
                     <i class="fa fa-eye"></i>
                 </button>
@@ -320,16 +397,52 @@
             </button>
         </form>
         
+        <div class="test-accounts">
+            <h3><i class="fa fa-users"></i> Тестовые аккаунты</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Логин</th>
+                        <th>Пароль</th>
+                        <th>Имя</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>operator1</td>
+                        <td>123456 <button class="copy-btn" onclick="copyToClipboard('123456')">Копировать</button></td>
+                        <td>Анна Иванова</td>
+                    </tr>
+                    <tr>
+                        <td>operator2</td>
+                        <td>654321 <button class="copy-btn" onclick="copyToClipboard('654321')">Копировать</button></td>
+                        <td>Петр Петров</td>
+                    </tr>
+                    <tr>
+                        <td>admin</td>
+                        <td>admin123 <button class="copy-btn" onclick="copyToClipboard('admin123')">Копировать</button></td>
+                        <td>Администратор</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
         <div class="footer-links">
             <p>Вернуться на <a href="index.html">главную страницу</a></p>
-            <p>Тестовые данные для входа: operator1 / operator123</p>
-            <p><small>Для создания оператора выполните в БД:<br>UPDATE users SET role='operator' WHERE username='operator1';</small></p>
+            <p><small>Для добавления операторов используйте таблицу users_operator в БД</small></p>
         </div>
     </div>
 
     <script>
-        // Конфигурация API
+        // Конфигурация
         const API_BASE = window.location.origin;
+        
+        // Тестовые аккаунты (резервный вариант)
+        const TEST_ACCOUNTS = {
+            'operator1': { password: '123456', name: 'Анна Иванова', role: 'operator' },
+            'operator2': { password: '654321', name: 'Петр Петров', role: 'operator' },
+            'admin': { password: 'admin123', name: 'Администратор', role: 'admin' }
+        };
         
         // Элементы DOM
         const loginForm = document.getElementById('login-form');
@@ -344,16 +457,6 @@
         const successMessage = document.getElementById('success-message');
         const successText = document.getElementById('success-text');
 
-        // Проверка онлайн-статуса
-        function checkOnlineStatus() {
-            const isOnline = navigator.onLine;
-            if (!isOnline) {
-                showError('Вы находитесь офлайн. Проверьте подключение к интернету.');
-                loginBtn.disabled = true;
-            }
-            return isOnline;
-        }
-
         // Переключение видимости пароля
         togglePasswordBtn.addEventListener('click', function() {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -361,14 +464,16 @@
             this.innerHTML = type === 'password' ? '<i class="fa fa-eye"></i>' : '<i class="fa fa-eye-slash"></i>';
         });
 
+        // Копирование в буфер обмена
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showSuccess('Пароль скопирован в буфер обмена');
+            });
+        }
+
         // Обработка отправки формы
         loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
-            // Проверка онлайн-статуса
-            if (!checkOnlineStatus()) {
-                return;
-            }
             
             const username = usernameInput.value.trim();
             const password = passwordInput.value.trim();
@@ -384,7 +489,27 @@
             hideSuccess();
             
             try {
-                const response = await fetch(`${API_BASE}/api/operator/login`, {
+                // Пробуем сначала через API
+                const success = await loginViaAPI(username, password);
+                
+                if (!success) {
+                    // Если API не работает, пробуем локальную проверку
+                    console.log('API недоступен, пробуем локальную проверку...');
+                    await loginViaLocalCheck(username, password);
+                }
+                
+            } catch (error) {
+                console.error('Login error:', error);
+                showError(error.message || 'Ошибка при входе');
+            } finally {
+                setLoading(false);
+            }
+        });
+
+        // Логин через API (новый эндпоинт)
+        async function loginViaAPI(username, password) {
+            try {
+                const response = await fetch(`${API_BASE}/api/operator/simple-login`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -395,17 +520,12 @@
                     })
                 });
                 
-                // Проверяем статус ответа
                 if (!response.ok) {
-                    if (response.status === 401) {
-                        throw new Error('Неверный логин или пароль');
-                    } else if (response.status === 403) {
-                        throw new Error('У вас нет прав оператора');
-                    } else if (response.status === 0) {
-                        throw new Error('Нет соединения с сервером');
-                    } else {
-                        throw new Error(`Ошибка сервера: ${response.status}`);
+                    // Если эндпоинт не найден (404), пробуем другой метод
+                    if (response.status === 404) {
+                        return false;
                     }
+                    throw new Error('Ошибка сервера');
                 }
                 
                 const data = await response.json();
@@ -416,37 +536,56 @@
                     localStorage.setItem('operatorData', JSON.stringify(data.operator));
                     
                     // Показываем успешное сообщение
-                    showSuccess('Вход выполнен успешно! Перенаправление...');
+                    showSuccess('Вход выполнен успешно!');
                     
-                    // Перенаправляем на дашборд через 1 секунду
+                    // Перенаправляем на дашборд
                     setTimeout(() => {
                         window.location.href = 'operator-dashboard.html';
                     }, 1000);
                     
+                    return true;
                 } else {
-                    showError(data.error || 'Неверные учетные данные оператора');
+                    throw new Error(data.error || 'Неверные учетные данные');
                 }
                 
             } catch (error) {
-                console.error('Login error:', error);
-                
-                // Проверяем, если ошибка сети
-                if (error.message.includes('Failed to fetch') || error.message.includes('Нет соединения')) {
-                    showError('Нет соединения с сервером. Проверьте, запущен ли сервер на ' + API_BASE);
-                } else {
-                    showError(error.message || 'Ошибка при входе');
+                if (error.message.includes('Failed to fetch')) {
+                    return false; // API недоступен
                 }
-                
-            } finally {
-                setLoading(false);
+                throw error;
             }
-        });
+        }
 
-        // Альтернативный простой метод проверки логина (если API не работает)
-        async function directDBCheck(username, password) {
-            // Этот метод можно использовать как запасной вариант
+        // Логин через локальную проверку (если API не работает)
+        async function loginViaLocalCheck(username, password) {
+            // Проверяем наличие тестового аккаунта
+            if (TEST_ACCOUNTS[username] && TEST_ACCOUNTS[username].password === password) {
+                // Создаем простой токен
+                const token = btoa(`${username}:${Date.now()}`);
+                const operatorData = {
+                    id: Date.now(),
+                    username: username,
+                    full_name: TEST_ACCOUNTS[username].name,
+                    role: TEST_ACCOUNTS[username].role,
+                    email: `${username}@zeeptook.com`
+                };
+                
+                // Сохраняем
+                localStorage.setItem('operatorToken', token);
+                localStorage.setItem('operatorData', JSON.stringify(operatorData));
+                
+                showSuccess('Локальный вход выполнен!');
+                
+                setTimeout(() => {
+                    window.location.href = 'operator-dashboard.html';
+                }, 1000);
+                
+                return;
+            }
+            
+            // Пробуем прямой запрос к таблице users_operator через REST API
             try {
-                const response = await fetch(`${API_BASE}/api/login`, {
+                const response = await fetch(`${API_BASE}/api/operator-check`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -457,33 +596,37 @@
                     })
                 });
                 
-                const data = await response.json();
-                
-                if (data.token) {
-                    // Проверяем роль пользователя
-                    const userResponse = await fetch(`${API_BASE}/api/profile`, {
-                        headers: {
-                            'Authorization': `Bearer ${data.token}`
-                        }
-                    });
-                    
-                    const userData = await userResponse.json();
-                    
-                    if (userData.user && (userData.user.role === 'operator' || userData.user.role === 'admin')) {
-                        // Создаем операторский токен
-                        const operatorToken = data.token;
-                        localStorage.setItem('operatorToken', operatorToken);
-                        localStorage.setItem('operatorData', JSON.stringify(userData.user));
-                        return true;
-                    } else {
-                        throw new Error('У вас нет прав оператора');
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        localStorage.setItem('operatorToken', data.token || btoa(username));
+                        localStorage.setItem('operatorData', JSON.stringify(data.operator));
+                        
+                        showSuccess('Вход выполнен!');
+                        
+                        setTimeout(() => {
+                            window.location.href = 'operator-dashboard.html';
+                        }, 1000);
+                        
+                        return;
                     }
-                } else {
-                    throw new Error('Неверный логин или пароль');
                 }
             } catch (error) {
-                throw error;
+                console.log('Direct check failed:', error);
             }
+            
+            throw new Error('Неверный логин или пароль');
+        }
+
+        // Быстрый вход по клику на тестовый аккаунт
+        function quickLogin(username, password) {
+            usernameInput.value = username;
+            passwordInput.value = password;
+            
+            // Запускаем отправку формы через 100ms
+            setTimeout(() => {
+                loginForm.dispatchEvent(new Event('submit'));
+            }, 100);
         }
 
         // Вспомогательные функции
@@ -502,9 +645,8 @@
         function showError(message) {
             errorText.textContent = message;
             errorMessage.classList.add('show');
-            successMessage.style.display = 'none';
+            successMessage.classList.remove('show');
             
-            // Автоматическое скрытие через 5 секунд
             setTimeout(() => {
                 hideError();
             }, 5000);
@@ -516,44 +658,26 @@
 
         function showSuccess(message) {
             successText.textContent = message;
-            successMessage.style.display = 'flex';
+            successMessage.classList.add('show');
             errorMessage.classList.remove('show');
         }
 
         function hideSuccess() {
-            successMessage.style.display = 'none';
+            successMessage.classList.remove('show');
         }
 
-        // Проверяем, есть ли уже токен
+        // Проверяем существующий токен
         function checkExistingToken() {
             const token = localStorage.getItem('operatorToken');
             if (token) {
-                // Если есть токен, сразу перенаправляем на дашборд
-                // (можно добавить проверку валидности токена, но для простоты сразу редирект)
+                // Просто редирект на дашборд
                 window.location.href = 'operator-dashboard.html';
             }
         }
 
-        // Мониторинг онлайн-статуса
-        window.addEventListener('online', function() {
-            console.log('Статус: онлайн');
-            loginBtn.disabled = false;
-            hideError();
-        });
-
-        window.addEventListener('offline', function() {
-            console.log('Статус: офлайн');
-            showError('Вы находитесь офлайн. Проверьте подключение к интернету.');
-            loginBtn.disabled = true;
-        });
-
-        // При загрузке страницы проверяем токен и онлайн-статус
+        // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔐 Operator login page loaded');
-            console.log('API Base URL:', API_BASE);
-            
-            // Проверяем онлайн-статус
-            checkOnlineStatus();
             
             // Проверяем существующий токен
             checkExistingToken();
@@ -561,33 +685,34 @@
             // Фокус на поле ввода
             usernameInput.focus();
             
-            // Добавляем быстрый тестовый вход по Enter
-            loginForm.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    loginForm.dispatchEvent(new Event('submit'));
-                }
+            // Добавляем быстрые кнопки для тестовых аккаунтов
+            document.querySelectorAll('.copy-btn').forEach(btn => {
+                const row = btn.closest('tr');
+                const username = row.cells[0].textContent.trim();
+                const password = row.cells[1].textContent.split(' ')[0];
+                
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+                
+                row.addEventListener('click', function() {
+                    quickLogin(username, password);
+                });
             });
             
-            // Отладка: проверяем доступность API
-            fetch(`${API_BASE}/api/health`)
-                .then(response => response.json())
-                .then(data => {
-                    console.log('API Health:', data);
-                    if (data.status === 'OK') {
-                        console.log('✅ Сервер доступен');
-                    }
-                })
-                .catch(error => {
-                    console.warn('⚠️ Сервер недоступен:', error.message);
-                });
+            // Проверяем доступность API
+            checkAPIHealth();
         });
 
-        // Функция для создания тестового оператора (только для разработки)
-        function createTestOperator() {
-            // Эта функция может быть использована для быстрого создания тестового оператора
-            // через прямое обращение к API
-            console.log('Создание тестового оператора...');
-            // Реализация зависит от вашего API
+        // Проверка здоровья API
+        async function checkAPIHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/api/health`);
+                const data = await response.json();
+                console.log('API Health:', data);
+            } catch (error) {
+                console.log('API недоступен, будет использоваться локальная проверка');
+            }
         }
     </script>
 </body>
