@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
+    "build": "echo 'No build step required'",
     "vercel-build": "echo 'No build step required'",
-    "test": "echo \"No tests specified\" && exit 0",
-    "dev:watch": "nodemon server.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -16,22 +16,18 @@
     "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "ws": "^8.14.0"
+    "dotenv": "^16.3.1"
   },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
-  },
+  "devDependencies": {},
   "engines": {
     "node": ">=18.x",
     "npm": ">=9.x"
   },
   "keywords": [
-    "gaming",
     "marketplace",
+    "gaming",
     "trading",
-    "chat",
-    "websocket"
+    "chat"
   ],
   "author": "Zeeptook Team",
   "license": "MIT"
