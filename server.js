@@ -3001,11 +3001,13 @@ app.use((req, res) => {
     res.status(404).send('Page not found');
 });
 
-// Start server
-if (process.env.NODE_ENV !== 'production') {
+// Start server - универсальное решение для локальной разработки и Vercel
+if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
+    // Локальная разработка или не на Vercel
     async function startServer() {
-        console.log('🚀 Starting Zeeptook server in development mode...');
+        console.log('🚀 Starting Zeeptook server...');
         console.log('📁 Environment:', process.env.NODE_ENV || 'development');
+        console.log('🏠 Platform:', process.env.VERCEL ? 'Vercel (local development)' : 'Local');
         
         // Проверка конфигурации Telegram
         console.log('🤖 Telegram Bot Configuration:');
@@ -3052,6 +3054,7 @@ if (process.env.NODE_ENV !== 'production') {
             console.log('💡 Tip: Make sure all tables are created in your Neon database');
         }
         
+        const PORT = process.env.PORT || 3000;
         const server = app.listen(PORT, () => {
             console.log('');
             console.log('🎉 Server started successfully!');
@@ -3059,7 +3062,14 @@ if (process.env.NODE_ENV !== 'production') {
             console.log('');
             console.log('📱 Support chat is ENABLED with Telegram integration');
             console.log('👮 Simple Operator system is ENABLED');
-            console.log('💬 WebSocket chat system is ENABLED');
+            
+            // Сообщение о WebSocket
+            if (process.env.VERCEL) {
+                console.log('💬 Chat system: Polling (WebSocket disabled on Vercel)');
+            } else {
+                console.log('💬 WebSocket chat system is ENABLED');
+            }
+            
             console.log('');
             console.log('🚀 Available operator pages:');
             console.log('   👉 http://localhost:' + PORT + '/operator-login');
@@ -3076,7 +3086,7 @@ if (process.env.NODE_ENV !== 'production') {
             console.log('   GET    /api/operator/simple-deals');
             console.log('   GET    /api/operator/simple-deals/:dealId');
             console.log('');
-            console.log('💬 WebSocket API endpoints:');
+            console.log('💬 Chat API endpoints (using polling):');
             console.log('   GET    /api/chats');
             console.log('   POST   /api/chats/create');
             console.log('   GET    /api/messages/:chatId');
@@ -3085,15 +3095,79 @@ if (process.env.NODE_ENV !== 'production') {
             console.log('   GET    /api/deals/:dealId/messages');
             console.log('   POST   /api/deals/:dealId/messages');
             console.log('');
-            console.log('🌐 WebSocket available on ws://localhost:' + PORT);
+            
+            if (!process.env.VERCEL) {
+                console.log('🌐 WebSocket available on ws://localhost:' + PORT);
+            } else {
+                console.log('📡 Using API polling for real-time updates');
+            }
         });
 
-        // Поднимаем WebSocket сервер
-        server.on('upgrade', (request, socket, head) => {
-            wss.handleUpgrade(request, socket, head, (ws) => {
-                wss.emit('connection', ws, request);
-            });
-        });
+        // WebSocket только для локальной разработки (не на Vercel)
+        if (!process.env.VERCEL) {
+            try {
+                const WebSocket = require('ws');
+                const wss = new WebSocket.Server({ noServer: true });
+                
+                wss.on('connection', (ws, request) => {
+                    const url = new URL(request.url, `http://${request.headers.host}`);
+                    const userId = url.searchParams.get('userId');
+                    
+                    console.log(`🔗 WebSocket connected: user ${userId}`);
+                    
+                    ws.on('message', async (message) => {
+                        try {
+                            const data = JSON.parse(message);
+                            console.log('📨 WebSocket message:', data);
+                            
+                            // Обработка сообщений
+                            if (data.type === 'message') {
+                                // Сохраняем в БД
+                                const result = await pool.query(`
+                                    INSERT INTO messages (sender_id, receiver_id, content, chat_id)
+                                    VALUES ($1, $2, $3, $4)
+                                    RETURNING id, created_at
+                                `, [data.senderId, data.receiverId, data.content, data.chatId]);
+                                
+                                // Отправляем получателю если подключен
+                                wss.clients.forEach(client => {
+                                    if (client !== ws && client.readyState === require('ws').WebSocket.OPEN) {
+                                        client.send(JSON.stringify({
+                                            type: 'new_message',
+                                            message: {
+                                                id: result.rows[0].id,
+                                                sender_id: data.senderId,
+                                                content: data.content,
+                                                created_at: result.rows[0].created_at
+                                            },
+                                            chatId: data.chatId
+                                        }));
+                                    }
+                                });
+                            }
+                        } catch (error) {
+                            console.error('WebSocket error:', error);
+                        }
+                    });
+                    
+                    ws.on('close', () => {
+                        console.log(`🔗 WebSocket disconnected: user ${userId}`);
+                    });
+                });
+                
+                server.on('upgrade', (request, socket, head) => {
+                    wss.handleUpgrade(request, socket, head, (ws) => {
+                        wss.emit('connection', ws, request);
+                    });
+                });
+                
+                console.log('✅ WebSocket server enabled');
+            } catch (error) {
+                console.log('⚠️ WebSocket not available:', error.message);
+            }
+        } else {
+            console.log('⚠️ WebSocket disabled (Vercel deployment)');
+        }
     }
 
     startServer().catch(error => {
@@ -3101,16 +3175,10 @@ if (process.env.NODE_ENV !== 'production') {
         process.exit(1);
     });
 } else {
-    // Для Vercel - создаем сервер и экспортируем
-    const server = require('http').createServer(app);
+    // Для Vercel продакшена - просто экспортируем app
+    console.log('🚀 Vercel production deployment detected');
+    console.log('📡 WebSocket disabled, using API polling');
+    console.log('✅ Server ready for Vercel Serverless Functions');
     
-    server.on('upgrade', (request, socket, head) => {
-        wss.handleUpgrade(request, socket, head, (ws) => {
-            wss.emit('connection', ws, request);
-        });
-    });
-    
-    module.exports = (req, res) => {
-        app(req, res);
-    };
+    module.exports = app;
 }
