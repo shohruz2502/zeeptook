@@ -1062,87 +1062,80 @@
     </div>
 
     <script>
-    const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
-    let chats = [];
-    let currentChat = null;
-    let currentDeal = null;
-    let socket = null;
-    let userId = null;
+const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
+let chats = [];
+let currentChat = null;
+let currentDeal = null;
+let socket = null;
+let currentUserId = null;
+let currentChatId = null;
+let currentReceiverId = null;
 
-    // Получение ID пользователя из токена
-    function getUserId() {
-        const token = localStorage.getItem('token');
-        if (token) {
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                return payload.userId;
-            } catch (e) {
-                console.error('Error parsing token:', e);
-            }
+// Получение ID пользователя из токена
+function getUserId() {
+    const token = localStorage.getItem('token');
+    if (token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.userId;
+        } catch (e) {
+            console.error('Error parsing token:', e);
         }
-        return null;
     }
+    return null;
+}
 
-    let pollingInterval = null;
-let chatPollingInterval = null;
-
+// Инициализация WebSocket
 function initWebSocket() {
-    console.log('📡 Using polling for messages (WebSocket disabled)');
-    initPolling();
-}
-
-function initPolling() {
-    console.log('📡 Starting message polling...');
+    currentUserId = getUserId();
     
-    // Очищаем старые интервалы
-    if (pollingInterval) {
-        clearInterval(pollingInterval);
-        pollingInterval = null;
-    }
-    if (chatPollingInterval) {
-        clearInterval(chatPollingInterval);
-        chatPollingInterval = null;
+    if (!currentUserId) {
+        console.log('❌ No user ID, WebSocket disabled');
+        initPolling();
+        return;
     }
     
-    // Загружаем сообщения сразу, если есть активный чат
-    if (currentChatId) {
-        loadMessages(currentChatId);
-    }
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = window.location.hostname === 'localhost' 
+        ? `${protocol}//localhost:3000?userId=${currentUserId}`
+        : `${protocol}//${window.location.host}?userId=${currentUserId}`;
     
-    // Polling для сообщений каждые 3 секунды
-    pollingInterval = setInterval(() => {
-        if (currentChatId) {
-            loadMessages(currentChatId, false); // false = не показывать loading
+    console.log('🔗 Connecting to WebSocket:', wsUrl);
+    
+    socket = new WebSocket(wsUrl);
+    
+    socket.onopen = function() {
+        console.log('✅ WebSocket connected');
+    };
+    
+    socket.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            console.log('📨 WebSocket message received:', data);
+            handleWebSocketMessage(data);
+        } catch (error) {
+            console.error('WebSocket message parse error:', error);
         }
-    }, 3000);
+    };
     
-    // Polling для списка чатов каждые 10 секунды
-    chatPollingInterval = setInterval(() => {
-        loadChats(false);
-    }, 10000);
+    socket.onclose = function() {
+        console.log('🔌 WebSocket disconnected, using polling');
+        initPolling();
+    };
     
-    console.log('✅ Polling initialized');
+    socket.onerror = function(error) {
+        console.error('❌ WebSocket error:', error);
+        initPolling();
+    };
 }
 
-// Очистка при уходе со страницы
-window.addEventListener('beforeunload', () => {
-    if (pollingInterval) {
-        clearInterval(pollingInterval);
-        console.log('🧹 Polling interval cleared');
-    }
-    if (chatPollingInterval) {
-        clearInterval(chatPollingInterval);
-        console.log('🧹 Chat polling interval cleared');
-    }
-});
-
-    // Обработка сообщений WebSocket
-    function handleWebSocketMessage(data) {
+function handleWebSocketMessage(data) {
+    console.log('📨 WebSocket message:', data);
+    
     switch (data.type) {
         case 'new_message':
-            // Новое сообщение
             if (data.chatId === currentChatId) {
-                // Добавляем сообщение в чат
+                console.log('✅ Message for current chat:', data.message);
                 appendMessage({
                     id: data.message.id,
                     sender_id: data.message.sender_id,
@@ -1150,275 +1143,311 @@ window.addEventListener('beforeunload', () => {
                     created_at: data.message.created_at,
                     sender_name: data.message.sender_name || 'Пользователь'
                 });
-                
-                // Прокручиваем вниз
                 scrollToBottom();
-                
-                // Обновляем список чатов
-                if (isChatsLoaded) {
-                    loadChats(false);
+                loadChats(false);
+            }
+            break;
+            
+        case 'message':
+            if (data.chatId === currentChatId) {
+                console.log('✅ Direct message for current chat:', data.message);
+                const isIncoming = data.message.sender_id !== currentUserId;
+                addMessageToUI(data.message.content, !isIncoming);
+                scrollToBottom();
+                loadChats(false);
+            }
+            break;
+            
+        case 'operator_joined':
+            if (data.chatId === currentChatId) {
+                showNotification('Оператор подключен к сделке!');
+                if (data.deal) {
+                    showDealCreatedBanner(data.deal);
                 }
             }
             break;
             
-        case 'typing':
-            // Кто-то печатает
-            if (data.chatId === currentChatId && data.senderId !== currentUserId) {
-                showTypingIndicator(data.senderId, data.senderName);
+        case 'status_change':
+            if (data.dealId === currentDeal?.id) {
+                showNotification(`Статус сделки изменен: ${data.status}`);
             }
-            break;
-            
-        case 'messages_list':
-            // Список сообщений
-            if (data.chatId === currentChatId) {
-                displayMessages(data.messages);
-            }
-            break;
-            
-        case 'error':
-            console.error('WebSocket error:', data.message);
-            showNotification(data.message, 'error');
             break;
     }
 }
 
-    // Обновление списка чатов
-    function updateChatList(chatId, message) {
-        const chat = chats.find(c => c.id === chatId);
-        if (chat) {
-            chat.last_message = message.content;
-            chat.last_message_time = new Date();
-            chat.unread_count = (chat.unread_count || 0) + 1;
-            displayChats();
-        }
+let pollingInterval = null;
+
+function initPolling() {
+    if (pollingInterval) clearInterval(pollingInterval);
+    
+    // Загружаем сразу
+    if (currentChatId) {
+        loadMessages(currentChatId);
     }
-
-    // Загрузка чатов
-    async function loadChats() {
-        try {
-            const token = localStorage.getItem('token');
-            if (!token) {
-                showEmptyState('Для просмотра чатов необходимо авторизоваться');
-                return;
-            }
-
-            const response = await fetch(`${API_BASE}/chats`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (!response.ok) throw new Error('Failed to load chats');
-
-            chats = await response.json();
-            displayChats();
-            
-        } catch (error) {
-            console.error('Error loading chats:', error);
-            showEmptyState('Не удалось загрузить чаты');
+    
+    // Polling каждые 3 секунды
+    pollingInterval = setInterval(() => {
+        if (currentChatId) {
+            loadMessages(currentChatId, false);
         }
-    }
+    }, 3000);
+    
+    console.log('📡 Polling initialized');
+}
 
-    // Отображение чатов
-    function displayChats() {
-        const container = document.getElementById('chats-container');
-        container.innerHTML = '';
-        
-        if (chats.length === 0) {
-            showEmptyState('У вас пока нет чатов', 'Начните общение с продавцом из объявления');
+// Загрузка чатов
+async function loadChats(showLoading = true) {
+    try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            showEmptyState('Для просмотра чатов необходимо авторизоваться');
             return;
         }
-        
-        chats.sort((a, b) => new Date(b.last_message_time) - new Date(a.last_message_time));
-        
-        chats.forEach(chat => {
-            container.appendChild(createChatElement(chat));
-        });
-    }
 
-    // Создание элемента чата
-    function createChatElement(chat) {
-        const element = document.createElement('div');
-        element.className = 'chat-item';
+        const response = await fetch(`${API_BASE}/chats`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to load chats');
+
+        chats = await response.json();
+        displayChats();
         
-        const time = formatTime(chat.last_message_time);
-        const unread = chat.unread_count > 0 ? 
-            `<div class="chat-unread">${chat.unread_count}</div>` : '';
-        
-        element.innerHTML = `
-            <div class="chat-header">
-                <div class="chat-avatar ${chat.has_deal ? 'online' : ''}">
-                    <i class="fa ${chat.type === 'deal' ? 'fa-handshake-o' : 'fa-user'}"></i>
-                </div>
-                <div class="chat-info">
-                    <div class="chat-name">${chat.name}</div>
-                    <div class="chat-status">
-                        ${chat.type === 'deal' ? 'Сделка' : 'Продавец'}
-                        ${chat.has_deal ? ' • С оператором' : ''}
-                    </div>
+    } catch (error) {
+        console.error('Error loading chats:', error);
+        showEmptyState('Не удалось загрузить чаты');
+    }
+}
+
+// Отображение чатов
+function displayChats() {
+    const container = document.getElementById('chats-container');
+    container.innerHTML = '';
+    
+    if (chats.length === 0) {
+        showEmptyState('У вас пока нет чатов', 'Начните общение с продавцом из объявления');
+        return;
+    }
+    
+    chats.sort((a, b) => new Date(b.last_message_time) - new Date(a.last_message_time));
+    
+    chats.forEach(chat => {
+        container.appendChild(createChatElement(chat));
+    });
+}
+
+// Создание элемента чата
+function createChatElement(chat) {
+    const element = document.createElement('div');
+    element.className = 'chat-item';
+    
+    const time = formatTime(chat.last_message_time);
+    const unread = chat.unread_count > 0 ? 
+        `<div class="chat-unread">${chat.unread_count}</div>` : '';
+    
+    element.innerHTML = `
+        <div class="chat-header">
+            <div class="chat-avatar ${chat.is_online ? 'online' : ''}">
+                ${chat.type === 'support' ? 
+                    '<i class="fa fa-headphones"></i>' : 
+                    chat.type === 'deal' ? 
+                    '<i class="fa fa-handshake-o"></i>' : 
+                    '<i class="fa fa-user"></i>'}
+            </div>
+            <div class="chat-info">
+                <div class="chat-name">${chat.name}</div>
+                <div class="chat-status">
+                    ${chat.type === 'support' ? 'Поддержка' : 
+                     chat.type === 'deal' ? 'Сделка' : 'Продавец'}
+                    ${chat.is_online ? ' • онлайн' : ' • офлайн'}
                 </div>
             </div>
-            <div class="chat-preview">
-                <div class="chat-message">${chat.last_message || 'Нет сообщений'}</div>
-                <div class="chat-meta">
-                    <div class="chat-time">${time}</div>
-                    ${unread}
-                </div>
+        </div>
+        <div class="chat-preview">
+            <div class="chat-message">${chat.last_message || 'Нет сообщений'}</div>
+            <div class="chat-meta">
+                <div class="chat-time">${time}</div>
+                ${unread}
+            </div>
+        </div>
+    `;
+    
+    element.addEventListener('click', () => openChat(chat));
+    return element;
+}
+
+// Открытие чата
+async function openChat(chat) {
+    currentChat = chat;
+    currentChatId = chat.id;
+    currentReceiverId = chat.contact_id || chat.other_user_id;
+    
+    const window = document.getElementById('chat-window');
+    const name = document.getElementById('chat-contact-name');
+    const status = document.getElementById('chat-contact-status');
+    
+    name.textContent = chat.name;
+    status.textContent = chat.is_online ? 'онлайн' : 'офлайн';
+    
+    await loadMessages(chat.id);
+    
+    window.classList.add('active');
+    scrollToBottom();
+}
+
+// Загрузка сообщений
+async function loadMessages(chatId, showLoading = true) {
+    try {
+        const token = localStorage.getItem('token');
+        const endpoint = chatId === 'support' ? 
+            `${API_BASE}/messages/chat/support` : 
+            `${API_BASE}/messages/chat/${chatId}`;
+        
+        const response = await fetch(endpoint, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) throw new Error('Failed to load messages');
+
+        const messages = await response.json();
+        displayMessages(messages);
+        
+    } catch (error) {
+        console.error('Error loading messages:', error);
+        showNotification('Ошибка загрузки сообщений', 'error');
+    }
+}
+
+// Отображение сообщений
+function displayMessages(messages) {
+    const container = document.getElementById('messages-container');
+    container.innerHTML = '';
+    
+    messages.forEach(msg => {
+        const messageElement = createMessageElement(msg);
+        container.appendChild(messageElement);
+    });
+    
+    if (messages.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state" style="padding: 40px 20px;">
+                <i class="fa fa-comment" style="font-size: 48px;"></i>
+                <p>Нет сообщений. Начните общение!</p>
             </div>
         `;
-        
-        element.addEventListener('click', () => openChat(chat));
-        return element;
     }
+}
 
-    // Открытие чата
-    async function openChat(chat) {
-        currentChat = chat;
-        const window = document.getElementById('chat-window');
-        const name = document.getElementById('chat-contact-name');
-        const status = document.getElementById('chat-contact-status');
-        
-        name.textContent = chat.name;
-        status.textContent = chat.type === 'deal' ? 'Сделка • с оператором' : 'Продавец • онлайн';
-        
-        await loadMessages(chat.id);
-        await loadDealInfo(chat.id);
-        
-        window.classList.add('active');
-        scrollToBottom();
-    }
+// Создание элемента сообщения
+function createMessageElement(msg) {
+    const element = document.createElement('div');
+    const isOutgoing = msg.sender_id === currentUserId;
+    
+    element.className = `message ${isOutgoing ? 'outgoing' : 'incoming'}`;
+    element.innerHTML = `
+        <div class="message-text">${msg.content}</div>
+        <div class="message-time">${formatMessageTime(msg.created_at)}</div>
+    `;
+    
+    return element;
+}
 
-    // Загрузка сообщений
-    async function loadMessages(chatId) {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_BASE}/messages/${chatId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (!response.ok) throw new Error('Failed to load messages');
-
-            const messages = await response.json();
-            displayMessages(messages);
-            
-        } catch (error) {
-            console.error('Error loading messages:', error);
-            showNotification('Ошибка загрузки сообщений', 'error');
-        }
-    }
-
-    // Отображение сообщений
-    function displayMessages(messages) {
-        const container = document.getElementById('messages-container');
+// Добавление сообщения
+function appendMessage(msg) {
+    const container = document.getElementById('messages-container');
+    
+    // Проверяем, не пустой ли контейнер
+    if (container.querySelector('.empty-state')) {
         container.innerHTML = '';
-        
-        messages.forEach(msg => {
-            container.appendChild(createMessageElement(msg));
-        });
-        
-        if (messages.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state" style="padding: 40px 20px;">
-                    <i class="fa fa-comment" style="font-size: 48px;"></i>
-                    <p>Нет сообщений. Начните общение!</p>
-                </div>
-            `;
-        }
     }
+    
+    const isOutgoing = msg.sender_id === currentUserId;
+    const messageElement = createMessageElement(msg);
+    container.appendChild(messageElement);
+    scrollToBottom();
+}
 
-    // Создание элемента сообщения
-    function createMessageElement(msg) {
-        const element = document.createElement('div');
-        const isOutgoing = msg.sender_id === userId;
-        
-        element.className = `message ${isOutgoing ? 'outgoing' : 'incoming'}`;
-        element.innerHTML = `
-            <div class="message-text">${msg.content}</div>
-            <div class="message-time">${formatMessageTime(msg.created_at)}</div>
-        `;
-        
-        return element;
+// Добавление сообщения в UI (для outgoing)
+function addMessageToUI(text, isOutgoing = true) {
+    const container = document.getElementById('messages-container');
+    
+    // Проверяем, не пустой ли контейнер
+    if (container.querySelector('.empty-state')) {
+        container.innerHTML = '';
     }
+    
+    const element = document.createElement('div');
+    
+    element.className = `message ${isOutgoing ? 'outgoing' : 'incoming'}`;
+    element.innerHTML = `
+        <div class="message-text">${text}</div>
+        <div class="message-time">${formatMessageTime(new Date())}</div>
+    `;
+    
+    container.appendChild(element);
+    scrollToBottom();
+}
 
-    // Добавление сообщения в UI
-    function addMessageToUI(text, isOutgoing = true) {
-        const container = document.getElementById('messages-container');
-        const element = document.createElement('div');
-        
-        element.className = `message ${isOutgoing ? 'outgoing' : 'incoming'}`;
-        element.innerHTML = `
-            <div class="message-text">${text}</div>
-            <div class="message-time">${formatMessageTime(new Date())}</div>
-        `;
-        
-        container.appendChild(element);
-        scrollToBottom();
-    }
-
-    // Отправка сообщения
-    async function sendMessage() {
+// Отправка сообщения
+async function sendMessage() {
     const messageInput = document.getElementById('message-input');
     const message = messageInput.value.trim();
     
-    if (!message || !currentChatId || !currentReceiverId) return;
+    if (!message || !currentChatId) return;
     
-    // Если WebSocket подключен, отправляем через него
-    if (isSocketConnected && socket) {
-        try {
-            const messageData = {
-                type: 'message',
-                chatId: currentChatId,
-                receiverId: currentReceiverId,
-                content: message
-            };
-            
-            socket.send(JSON.stringify(messageData));
-            
-            // Добавляем сообщение локально сразу (для быстрого отображения)
-            appendMessage({
-                id: 'temp_' + Date.now(),
-                sender_id: currentUserId,
+    if (socket && socket.readyState === WebSocket.OPEN) {
+        // Отправка через WebSocket
+        const messageData = {
+            type: 'message',
+            chatId: currentChatId,
+            message: {
                 content: message,
-                created_at: new Date().toISOString(),
-                sender_name: 'Вы',
-                is_temp: true
-            });
-            
-            messageInput.value = '';
-            scrollToBottom();
-            
-        } catch (error) {
-            console.error('WebSocket send error:', error);
-            // Fallback к API
-            sendMessageViaAPI(message);
-        }
+                sender_id: currentUserId
+                // receiver_id убираем - сервер сам определит получателя
+            }
+        };
+        
+        console.log('📤 Sending WebSocket message:', messageData);
+        socket.send(JSON.stringify(messageData));
+        
+        // Добавляем сообщение локально
+        addMessageToUI(message, true);
+        messageInput.value = '';
+        scrollToBottom();
+        
     } else {
-        // Используем API если WebSocket не работает
+        // Fallback через API
         sendMessageViaAPI(message);
     }
 }
 
-// Функция отправки через API
+// Отправка через API
 async function sendMessageViaAPI(message) {
     try {
-        const response = await fetch(`${API_BASE}/messages/send`, {
+        const token = localStorage.getItem('token');
+        const endpoint = currentChatId === 'support' ? 
+            `${API_BASE}/messages/support` : 
+            `${API_BASE}/messages`;
+        
+        const body = currentChatId === 'support' ? 
+            { content: message, chatId: currentChatId } :
+            { chat_id: currentChatId, content: message, receiver_id: currentReceiverId };
+        
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                chatId: currentChatId,
-                content: message,
-                receiverId: currentReceiverId
-            })
+            body: JSON.stringify(body)
         });
         
         if (response.ok) {
             messageInput.value = '';
-            // Обновляем сообщения
             loadMessages(currentChatId);
         } else {
             throw new Error('Failed to send message');
@@ -1429,282 +1458,99 @@ async function sendMessageViaAPI(message) {
     }
 }
 
-    // Загрузка информации о сделке
-    async function loadDealInfo(chatId) {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_BASE}/chats/${chatId}/deal-info`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+// Вспомогательные функции
+function formatTime(date) {
+    if (!date) return '';
+    const d = new Date(date);
+    const now = new Date();
+    const diff = now - d;
+    
+    if (diff < 60000) return 'только что';
+    if (diff < 3600000) return `${Math.floor(diff/60000)} мин назад`;
+    if (diff < 86400000) return d.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+    return d.toLocaleDateString('ru-RU');
+}
 
-            if (!response.ok) return;
-            
-            const data = await response.json();
-            
-            if (data.has_deal) {
-                currentDeal = data.deal;
-                showDealCreatedBanner(data.deal);
-                document.getElementById('agreement-section').style.display = 'none';
-            } else if (data.has_operator_request) {
-                loadAgreementStatus(chatId);
-            } else if (data.is_other_party_online) {
-                showOperatorRequestButton();
-            }
-            
-        } catch (error) {
-            console.error('Error loading deal info:', error);
-        }
-    }
+function formatMessageTime(date) {
+    return new Date(date).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+}
 
-    // Показать кнопку запроса оператора
-    function showOperatorRequestButton() {
-        const container = document.getElementById('agreement-section');
-        container.innerHTML = `
-            <div style="text-align: center;">
-                <h4 style="margin-bottom: 10px; color: var(--primary);">
-                    <i class="fa fa-handshake-o"></i> Создать сделку с оператором
-                </h4>
-                <p style="font-size: 14px; color: var(--gray-light); margin-bottom: 15px;">
-                    Подключите оператора для безопасного проведения сделки
-                </p>
-                <button class="operator-request-btn" onclick="requestOperator()">
-                    <i class="fa fa-user-plus"></i> Подключить оператора
-                </button>
-            </div>
-        `;
-        container.style.display = 'block';
-    }
+function scrollToBottom() {
+    const container = document.getElementById('messages-container');
+    setTimeout(() => {
+        container.scrollTop = container.scrollHeight;
+    }, 100);
+}
 
-    // Запрос оператора
-    async function requestOperator() {
-        if (!currentChat) return;
-        
-        try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_BASE}/chats/${currentChat.id}/request-operator`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+function showNotification(message, type = 'success') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: ${type === 'error' ? '#ff6b6b' : '#00f2fe'};
+        color: white;
+        padding: 12px 24px;
+        border-radius: 25px;
+        z-index: 10000;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    `;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
 
-            if (!response.ok) throw new Error('Failed to request operator');
+function showEmptyState(title, message = '') {
+    const container = document.getElementById('chats-container');
+    container.innerHTML = `
+        <div class="empty-state">
+            <i class="fa fa-comment" style="font-size: 64px;"></i>
+            <h3>${title}</h3>
+            ${message ? `<p>${message}</p>` : ''}
+        </div>
+    `;
+}
 
-            showNotification('Запрос оператора отправлен');
-            loadAgreementStatus(currentChat.id);
-            
-        } catch (error) {
-            console.error('Error requesting operator:', error);
-            showNotification('Ошибка запроса оператора', 'error');
-        }
-    }
+// Функции для сделок (дополнительные)
+function showDealCreatedBanner(deal) {
+    const messagesContainer = document.getElementById('messages-container');
+    const banner = document.createElement('div');
+    banner.className = 'deal-created-banner';
+    banner.innerHTML = `
+        <h4>🎉 Сделка создана!</h4>
+        <p>Код сделки: ${deal.deal_code}</p>
+        <p>Оператор подключен к чату</p>
+        <a href="/deal-page?id=${deal.id}">Перейти к сделке</a>
+    `;
+    messagesContainer.appendChild(banner);
+}
 
-    // Загрузка статуса согласия
-    async function loadAgreementStatus(chatId) {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_BASE}/chats/${chatId}/agreement-status`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            if (!response.ok) return;
-            
-            const data = await response.json();
-            displayAgreementStatus(data);
-            
-        } catch (error) {
-            console.error('Error loading agreement status:', error);
-        }
-    }
-
-    // Отображение статуса согласия
-    function displayAgreementStatus(data) {
-        const container = document.getElementById('agreement-section');
-        const currentUserAgreed = data.agreements[userId];
-        
-        let content = `
-            <h4 style="margin-bottom: 10px; color: var(--primary); text-align: center;">
-                <i class="fa fa-handshake-o"></i> Подключение оператора
-            </h4>
-            <p style="font-size: 14px; color: var(--gray-light); margin-bottom: 15px; text-align: center;">
-                Ожидание согласия второй стороны на подключение оператора
-            </p>
-            
-            <div class="agreement-status">
-                <div class="user-agreement">
-                    <i class="fa fa-user"></i>
-                    <span>Вы: ${currentUserAgreed ? 
-                        '<i class="fa fa-check-circle"></i> Согласен' : 
-                        '<i class="fa fa-clock-o"></i> Ожидание'}</span>
-                </div>
-                <div class="user-agreement">
-                    <i class="fa fa-user"></i>
-                    <span>Вторая сторона: ${data.other_party_agreed ? 
-                        '<i class="fa fa-check-circle"></i> Согласен' : 
-                        '<i class="fa fa-clock-o"></i> Ожидание'}</span>
-                </div>
-            </div>
-        `;
-        
-        if (!currentUserAgreed) {
-            content += `
-                <div class="agreement-buttons">
-                    <button class="agreement-btn yes" onclick="agreeToOperator()">
-                        <i class="fa fa-check"></i> Согласен
-                    </button>
-                    <button class="agreement-btn no" onclick="declineOperator()">
-                        <i class="fa fa-times"></i> Отказаться
-                    </button>
-                </div>
-            `;
-        }
-        
-        container.innerHTML = content;
-        container.style.display = 'block';
-    }
-
-    // Согласие на оператора
-    async function agreeToOperator() {
-        if (!currentChat) return;
-        
-        try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_BASE}/chats/${currentChat.id}/agree-operator`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) throw new Error('Failed to agree');
-
-            showNotification('Вы согласились на подключение оператора');
-            loadAgreementStatus(currentChat.id);
-            
-        } catch (error) {
-            console.error('Error agreeing to operator:', error);
-            showNotification('Ошибка', 'error');
-        }
-    }
-
-    // Отказ от оператора
-    async function declineOperator() {
-        if (!currentChat) return;
-        
-        try {
-            const token = localStorage.getItem('token');
-            await fetch(`${API_BASE}/chats/${currentChat.id}/decline-operator`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            document.getElementById('agreement-section').style.display = 'none';
-            showNotification('Вы отказались от оператора');
-            
-        } catch (error) {
-            console.error('Error declining operator:', error);
-        }
-    }
-
-    // Показать баннер созданной сделки
-    function showDealCreatedBanner(deal) {
-        const container = document.getElementById('messages-container');
-        const banner = document.createElement('div');
-        
-        banner.className = 'deal-created-banner';
-        banner.innerHTML = `
-            <i class="fa fa-check-circle" style="font-size: 24px; margin-bottom: 10px;"></i>
-            <h4>Сделка создана!</h4>
-            <p>Оператор подключен. Номер сделки: <strong>${deal.deal_code}</strong></p>
-            <a href="/deal-chat.html?dealId=${deal.id}" onclick="event.stopPropagation();">
-                <i class="fa fa-external-link"></i> Перейти к сделке
-            </a>
-        `;
-        
-        // Добавляем баннер в начало сообщений
-        if (container.firstChild) {
-            container.insertBefore(banner, container.firstChild);
-        } else {
-            container.appendChild(banner);
-        }
-    }
-
-    // Вспомогательные функции
-    function formatTime(date) {
-        if (!date) return '';
-        const d = new Date(date);
-        const now = new Date();
-        const diff = now - d;
-        
-        if (diff < 60000) return 'только что';
-        if (diff < 3600000) return `${Math.floor(diff/60000)} мин назад`;
-        if (diff < 86400000) return d.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
-        return d.toLocaleDateString('ru-RU');
-    }
-
-    function formatMessageTime(date) {
-        return new Date(date).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
-    }
-
-    function scrollToBottom() {
-        const container = document.getElementById('messages-container');
-        setTimeout(() => {
-            container.scrollTop = container.scrollHeight;
-        }, 100);
-    }
-
-    function showNotification(message, type = 'success') {
-        const notification = document.createElement('div');
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: ${type === 'error' ? '#ff6b6b' : '#00f2fe'};
-            color: white;
-            padding: 12px 24px;
-            border-radius: 25px;
-            z-index: 10000;
-            font-weight: 500;
-        `;
-        notification.textContent = message;
-        
-        document.body.appendChild(notification);
-        setTimeout(() => notification.remove(), 3000);
-    }
-
-    // Инициализация
-    document.addEventListener('DOMContentLoaded', function() {
-        userId = getUserId();
-        initWebSocket();
-        loadChats();
-        
-        // Настройка обработчиков
-        document.getElementById('close-chat').addEventListener('click', () => {
-            document.getElementById('chat-window').classList.remove('active');
-        });
-        
-        document.getElementById('send-message').addEventListener('click', sendMessage);
-        
-        document.getElementById('message-input').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
-        });
-        
-        // Автообновление
-        setInterval(loadChats, 30000);
+// Инициализация
+document.addEventListener('DOMContentLoaded', function() {
+    initWebSocket();
+    loadChats();
+    
+    // Настройка обработчиков
+    document.getElementById('close-chat').addEventListener('click', () => {
+        document.getElementById('chat-window').classList.remove('active');
+        currentChatId = null;
     });
-    </script>
+    
+    document.getElementById('send-message').addEventListener('click', sendMessage);
+    
+    document.getElementById('message-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    
+    // Автообновление чатов каждые 30 секунд
+    setInterval(() => loadChats(false), 30000);
+});
+</script>
 </body>
 </html>
