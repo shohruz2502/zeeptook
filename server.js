@@ -92,15 +92,85 @@ wss.on('connection', (ws, request) => {
 function handleWebSocketMessage(data, userId, dealId) {
     switch (data.type) {
         case 'message':
-            broadcastMessage(data, userId, dealId);
+            // Обработка обычных сообщений
+            handleChatMessage(data, userId, dealId);
             break;
         case 'status_change':
             broadcastStatusChange(data, dealId);
             break;
+        default:
+            console.log('Unknown message type:', data.type);
     }
 }
 
-// Рассылка сообщений
+// Новая функция для обработки сообщений чата
+async function handleChatMessage(data, senderId, dealId) {
+    try {
+        const { chatId, message } = data;
+        
+        console.log(`📨 WebSocket message from ${senderId} to chat ${chatId}`);
+        
+        // Определяем тип чата и получателя
+        let receiverId = null;
+        let chatType = 'regular';
+        
+        if (chatId === 'support' || chatId.startsWith('support_')) {
+            // Для чата поддержки
+            chatType = 'support';
+            receiverId = 1; // ID администратора/поддержки
+        } else {
+            // Для обычного чата - получаем информацию о чате
+            const chatResult = await pool.query(`
+                SELECT user1_id, user2_id FROM chats WHERE id = $1
+            `, [chatId]);
+            
+            if (chatResult.rows.length === 0) {
+                console.error(`❌ Chat ${chatId} not found`);
+                return;
+            }
+            
+            const chat = chatResult.rows[0];
+            
+            // Проверяем, что отправитель является участником чата
+            if (chat.user1_id !== parseInt(senderId) && chat.user2_id !== parseInt(senderId)) {
+                console.error(`❌ User ${senderId} is not a member of chat ${chatId}`);
+                return;
+            }
+            
+            // Определяем получателя
+            receiverId = chat.user1_id === parseInt(senderId) ? chat.user2_id : chat.user1_id;
+        }
+        
+        // Сохраняем сообщение в БД
+        const result = await pool.query(`
+            INSERT INTO messages (sender_id, receiver_id, content, chat_id, chat_type)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id, created_at
+        `, [senderId, receiverId, message.content, chatId, chatType]);
+        
+        // Формируем данные для трансляции
+        const broadcastData = {
+            chatId: chatId,
+            message: {
+                id: result.rows[0].id,
+                sender_id: senderId,
+                content: message.content,
+                created_at: result.rows[0].created_at,
+                receiver_id: receiverId
+            }
+        };
+        
+        // Отправляем через WebSocket
+        broadcastMessage(broadcastData, senderId, dealId);
+        
+        console.log(`✅ Message saved to DB and broadcasted for chat ${chatId}`);
+        
+    } catch (error) {
+        console.error('❌ Error handling chat message:', error);
+    }
+}
+
+// Рассылка сообщений - ОСТАВЬ ЭТУ ФУНКЦИЮ
 function broadcastMessage(data, senderId, dealId) {
     const message = {
         type: 'message',
