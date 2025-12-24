@@ -3,110 +3,28 @@
   "builds": [
     {
       "src": "server.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxLambdaSize": "15mb",
-        "supportsResponseStreaming": true
-      }
-    },
-    {
-      "src": "public/**/*",
-      "use": "@vercel/static"
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/server.js",
-      "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-      "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
-        "Access-Control-Allow-Headers": "Authorization, Content-Type",
-        "Access-Control-Allow-Credentials": "true"
-      }
+      "dest": "/server.js"
     },
     {
-      "src": "/(.*\\.(html|css|js|png|jpg|jpeg|gif|ico|svg|json|txt))",
-      "dest": "/public/$1",
+      "src": "/(.*\\.(html|css|js|png|jpg|jpeg|gif|ico|svg|json|txt|woff|woff2|ttf|eot))",
       "headers": {
         "Cache-Control": "public, max-age=3600"
-      }
+      },
+      "continue": true
     },
     {
       "src": "/",
-      "dest": "/public/index.html"
-    },
-    {
-      "src": "/favorites",
-      "dest": "/public/favorites.html"
-    },
-    {
-      "src": "/ad-details",
-      "dest": "/public/ad-details.html"
-    },
-    {
-      "src": "/add-ad",
-      "dest": "/public/add-ad.html"
-    },
-    {
-      "src": "/messages",
-      "dest": "/public/messages.html"
-    },
-    {
-      "src": "/profile",
-      "dest": "/public/profile.html"
-    },
-    {
-      "src": "/register",
-      "dest": "/public/register.html"
-    },
-    {
-      "src": "/login",
-      "dest": "/public/login.html"
-    },
-    {
-      "src": "/operator-login",
-      "dest": "/public/operator-login.html"
-    },
-    {
-      "src": "/operator-dashboard",
-      "dest": "/public/operator-dashboard.html"
-    },
-    {
-      "src": "/operator-deals",
-      "dest": "/public/operator-deals.html"
-    },
-    {
-      "src": "/operator-chat",
-      "dest": "/public/operator-chat.html"
-    },
-    {
-      "src": "/deal-page",
-      "dest": "/public/deal-page.html"
-    },
-    {
-      "src": "/operator-profile",
-      "dest": "/public/operator-profile.html"
+      "dest": "/server.js"
     },
     {
       "src": "/(.*)",
       "dest": "/server.js"
-    }
-  ],
-  "env": {
-    "NODE_ENV": "production"
-  },
-  "functions": {
-    "server.js": {
-      "maxDuration": 30,
-      "memory": 1024
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/server.js"
     }
   ]
 }
