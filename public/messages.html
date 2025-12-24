@@ -1083,82 +1083,58 @@
         return null;
     }
 
-    function initWebSocket() {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-    
-    const decodedToken = JSON.parse(atob(token.split('.')[1]));
-    const userId = decodedToken.userId;
-    
-    try {
-        // Определяем URL WebSocket сервера
-        let wsServerUrl;
-        
-        // Для локальной разработки
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            wsServerUrl = 'ws://localhost:8081';  // Порт из websocket-server.js
-        } 
-        // Для продакшена (укажите реальный URL вашего WebSocket сервера)
-        else if (window.location.hostname.includes('vercel.app')) {
-            wsServerUrl = 'wss://your-websocket-server.herokuapp.com'; // Пример для Heroku
-            // Или wss://your-websocket-server.onrender.com
-        }
-        // Fallback
-        else {
-            wsServerUrl = 'ws://localhost:8081';
-        }
-        
-        console.log(`🌐 Connecting to WebSocket: ${wsServerUrl}`);
-        socket = new WebSocket(`${wsServerUrl}/ws?userId=${userId}`);
-        
-        socket.onopen = () => {
-            console.log('✅ WebSocket connected');
-            isSocketConnected = true;
-            showNotification('Чат подключен', 'success');
-            
-            // Если есть активный чат, запрашиваем сообщения
-            if (currentChatId) {
-                socket.send(JSON.stringify({
-                    type: 'get_messages',
-                    chatId: currentChatId
-                }));
-            }
-        };
-        
-        socket.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                console.log('📨 WebSocket message:', data);
-                handleWebSocketMessage(data);
-            } catch (error) {
-                console.error('Error parsing WebSocket message:', error);
-            }
-        };
-        
-        socket.onerror = (error) => {
-            console.error('WebSocket error:', error);
-            isSocketConnected = false;
-            showNotification('Ошибка подключения чата', 'error');
-            
-            // Fallback to polling
-            setTimeout(initPolling, 1000);
-        };
-        
-        socket.onclose = (event) => {
-            console.log(`🔌 WebSocket disconnected (code: ${event.code}, reason: ${event.reason})`);
-            isSocketConnected = false;
-            
-            // Пытаемся переподключиться через 3 секунды
-            if (!event.wasClean) {
-                setTimeout(initWebSocket, 3000);
-            }
-        };
-        
-    } catch (error) {
-        console.error('WebSocket init error:', error);
-        initPolling();
-    }
+    let pollingInterval = null;
+let chatPollingInterval = null;
+
+function initWebSocket() {
+    console.log('📡 Using polling for messages (WebSocket disabled)');
+    initPolling();
 }
+
+function initPolling() {
+    console.log('📡 Starting message polling...');
+    
+    // Очищаем старые интервалы
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+    }
+    if (chatPollingInterval) {
+        clearInterval(chatPollingInterval);
+        chatPollingInterval = null;
+    }
+    
+    // Загружаем сообщения сразу, если есть активный чат
+    if (currentChatId) {
+        loadMessages(currentChatId);
+    }
+    
+    // Polling для сообщений каждые 3 секунды
+    pollingInterval = setInterval(() => {
+        if (currentChatId) {
+            loadMessages(currentChatId, false); // false = не показывать loading
+        }
+    }, 3000);
+    
+    // Polling для списка чатов каждые 10 секунды
+    chatPollingInterval = setInterval(() => {
+        loadChats(false);
+    }, 10000);
+    
+    console.log('✅ Polling initialized');
+}
+
+// Очистка при уходе со страницы
+window.addEventListener('beforeunload', () => {
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+        console.log('🧹 Polling interval cleared');
+    }
+    if (chatPollingInterval) {
+        clearInterval(chatPollingInterval);
+        console.log('🧹 Chat polling interval cleared');
+    }
+});
 
     // Обработка сообщений WebSocket
     function handleWebSocketMessage(data) {
