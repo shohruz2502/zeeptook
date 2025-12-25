@@ -741,7 +741,11 @@
         }
         
         // Функция для начала чата с продавцом
-function startChat(adId, sellerId) {
+async function startChat(adId, sellerId) {
+    console.log('💬 Starting chat:', { adId, sellerId });
+    
+    // Получаем токен
+    const token = localStorage.getItem('token');
     if (!token) {
         showNotification('Для отправки сообщений необходимо войти в систему', 'error');
         setTimeout(() => {
@@ -755,8 +759,44 @@ function startChat(adId, sellerId) {
         return;
     }
     
-    // Переходим к чатам с параметрами продавца и объявления
-    window.location.href = `messages.html?seller=${sellerId}&ad=${adId}`;
+    try {
+        // Создаем или получаем чат
+        const response = await fetch(`${API_BASE}/chats/create`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                other_user_id: sellerId,
+                ad_id: adId
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to create chat');
+        }
+        
+        const result = await response.json();
+        console.log('💬 Chat created/loaded:', result);
+        
+        // Переходим на страницу чатов с параметрами
+        if (result.chatId) {
+            showNotification('Чат открыт', 'success');
+            window.location.href = `messages.html?chat=${result.chatId}&seller=${sellerId}&ad=${adId}`;
+        } else {
+            throw new Error('Chat ID not received');
+        }
+        
+    } catch (error) {
+        console.error('❌ Start chat error:', error);
+        showNotification('Ошибка создания чата: ' + error.message, 'error');
+        
+        // Альтернативный вариант: открыть общие чаты
+        setTimeout(() => {
+            window.location.href = 'messages.html';
+        }, 3000);
+    }
 }
         
         // Функция для возврата назад
