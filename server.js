@@ -1846,7 +1846,20 @@ app.post('/api/chats/create', authenticateToken, async (req, res) => {
         const user_id = req.user.userId;
         const { other_user_id, ad_id } = req.body;
         
-        // Проверяем существование чата
+        console.log(`💬 Creating/loading chat: user=${user_id}, seller=${other_user_id}, ad=${ad_id}`);
+        
+        if (!other_user_id) {
+            return res.status(400).json({ error: 'Необходимо указать ID продавца' });
+        }
+        
+        if (user_id == other_user_id) {
+            return res.status(400).json({ error: 'Вы не можете создать чат с самим собой' });
+        }
+        
+        // Генерируем стабильный chat_id
+        const generatedChatId = `chat_${ad_id || 'no_ad'}_${Math.min(user_id, other_user_id)}_${Math.max(user_id, other_user_id)}`;
+        
+        // Проверяем существующий чат
         const existingChat = await pool.query(`
             SELECT id FROM chats 
             WHERE (user1_id = $1 AND user2_id = $2)
@@ -1854,59 +1867,68 @@ app.post('/api/chats/create', authenticateToken, async (req, res) => {
         `, [user_id, other_user_id]);
         
         if (existingChat.rows.length > 0) {
-            return res.json({ chatId: existingChat.rows[0].id, existed: true });
+            // Возвращаем существующий чат
+            const chat = existingChat.rows[0];
+            console.log(`✅ Found existing chat: ${chat.id}`);
+            return res.json({ 
+                chatId: chat.id, 
+                existed: true,
+                sellerId: other_user_id,
+                adId: ad_id 
+            });
         }
         
         // Создаем новый чат
         const result = await pool.query(`
-            INSERT INTO chats (user1_id, user2_id, ad_id)
-            VALUES ($1, $2, $3)
+            INSERT INTO chats (user1_id, user2_id, ad_id, created_at)
+            VALUES ($1, $2, $3, NOW())
             RETURNING id
         `, [user_id, other_user_id, ad_id]);
         
-        res.json({ chatId: result.rows[0].id, existed: false });
-    } catch (error) {
-        console.error('Create chat error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// 3. Получение сообщений чата
-app.get('/api/messages/:chatId', authenticateToken, async (req, res) => {
-    try {
-        const { chatId } = req.params;
-        const user_id = req.user.userId;
+        const newChatId = result.rows[0].id;
+        console.log(`✅ Created new chat: ${newChatId}`);
         
-        // Проверяем доступ к чату
-        const chatCheck = await pool.query(`
-            SELECT id FROM chats 
-            WHERE id = $1 AND (user1_id = $2 OR user2_id = $2)
-        `, [chatId, user_id]);
+        // Создаем приветственное сообщение (системное)
+        await pool.query(`
+            INSERT INTO messages (chat_id, sender_id, receiver_id, content, is_system, created_at)
+            VALUES ($1, $2, $3, $4, TRUE, NOW())
+        `, [newChatId, user_id, other_user_id, `👋 Пользователь заинтересовался вашим объявлением`]);
         
-        if (chatCheck.rows.length === 0) {
-            return res.status(403).json({ error: 'Access denied' });
+        // Отправляем уведомление в Telegram (если настроено)
+        try {
+            const sellerInfo = await pool.query(
+                'SELECT full_name, email FROM users WHERE id = $1',
+                [other_user_id]
+            );
+            const userInfo = await pool.query(
+                'SELECT full_name, email FROM users WHERE id = $1',
+                [user_id]
+            );
+            
+            if (sellerInfo.rows.length > 0 && TELEGRAM_BOT_TOKEN) {
+                await sendToTelegram(
+                    `💬 НОВЫЙ ЧАТ ПО ОБЪЯВЛЕНИЮ\n` +
+                    `👤 Покупатель: ${userInfo.rows[0]?.full_name || 'Неизвестно'}\n` +
+                    `📧 Email: ${userInfo.rows[0]?.email || 'Не указан'}\n` +
+                    `🆔 Chat ID: ${newChatId}`,
+                    sellerInfo.rows[0],
+                    'support'
+                );
+            }
+        } catch (telegramError) {
+            console.error('Telegram notification failed:', telegramError);
         }
         
-        // Получаем сообщения
-        const result = await pool.query(`
-            SELECT m.*, u.full_name as sender_name
-            FROM messages m
-            LEFT JOIN users u ON m.sender_id = u.id
-            WHERE m.chat_id = $1
-            ORDER BY m.created_at ASC
-        `, [chatId]);
+        res.json({ 
+            chatId: newChatId, 
+            existed: false,
+            sellerId: other_user_id,
+            adId: ad_id 
+        });
         
-        // Помечаем как прочитанные
-        await pool.query(`
-            UPDATE messages 
-            SET is_read = TRUE
-            WHERE chat_id = $1 AND sender_id != $2 AND NOT is_read
-        `, [chatId, user_id]);
-        
-        res.json(result.rows);
     } catch (error) {
-        console.error('Get messages error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('❌ Create chat error:', error);
+        res.status(500).json({ error: 'Internal server error: ' + error.message });
     }
 });
 
