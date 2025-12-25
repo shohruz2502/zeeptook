@@ -1780,12 +1780,14 @@ app.get('/api/profile/ads', authenticateToken, async (req, res) => {
 app.get('/api/chats', authenticateToken, async (req, res) => {
     try {
         const user_id = req.user.userId;
+        console.log(`💬 Loading chats for user: ${user_id}`);
         
         const result = await pool.query(`
             SELECT DISTINCT ON (c.id)
                 c.id,
                 CASE 
                     WHEN c.user1_id = $1 THEN u2.full_name
+                    WHEN u2.full_name IS NULL THEN 'Пользователь'
                     ELSE u1.full_name
                 END as name,
                 CASE 
@@ -1794,25 +1796,41 @@ app.get('/api/chats', authenticateToken, async (req, res) => {
                 END as other_user_id,
                 COALESCE(m.content, 'Нет сообщений') as last_message,
                 COALESCE(m.created_at, c.created_at) as last_message_time,
-                (SELECT COUNT(*) FROM messages m2 
-                 WHERE m2.chat_id = c.id 
-                 AND m2.sender_id != $1 
-                 AND NOT m2.is_read) as unread_count,
-                c.has_deal,
+                COALESCE((
+                    SELECT COUNT(*) 
+                    FROM messages m2 
+                    WHERE m2.chat_id = c.id 
+                    AND m2.sender_id != $1 
+                    AND m2.is_read = FALSE
+                ), 0) as unread_count,
+                COALESCE(c.has_deal, FALSE) as has_deal,
                 c.deal_id,
-                CASE WHEN c.deal_id IS NOT NULL THEN 'deal' ELSE 'regular' END as type
+                CASE 
+                    WHEN c.deal_id IS NOT NULL THEN 'deal' 
+                    ELSE 'regular' 
+                END as type,
+                CASE 
+                    WHEN c.user1_id = $1 THEN u2.id
+                    ELSE u1.id
+                END != $1 as is_online
             FROM chats c
             LEFT JOIN users u1 ON c.user1_id = u1.id
             LEFT JOIN users u2 ON c.user2_id = u2.id
             LEFT JOIN messages m ON c.last_message_id = m.id
             WHERE c.user1_id = $1 OR c.user2_id = $1
-            ORDER BY c.id, last_message_time DESC
+            ORDER BY c.id, last_message_time DESC NULLS LAST
         `, [user_id]);
         
+        console.log(`✅ Loaded ${result.rows.length} chats for user ${user_id}`);
         res.json(result.rows);
+        
     } catch (error) {
-        console.error('Get chats error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('❌ Get chats error:', error);
+        console.error('❌ Error details:', error.message);
+        res.status(500).json({ 
+            error: 'Internal server error',
+            details: error.message 
+        });
     }
 });
 
