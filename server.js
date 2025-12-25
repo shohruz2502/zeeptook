@@ -620,8 +620,7 @@ app.post('/api/auth/google/complete', async (req, res) => {
             email, 
             full_name, 
             username, 
-            password, 
-            birth_year, 
+            password,  
             avatar_url,
             auth_method = 'google' 
         } = req.body;
@@ -659,12 +658,12 @@ app.post('/api/auth/google/complete', async (req, res) => {
         const result = await pool.query(
             `INSERT INTO users (
                 username, email, password, full_name, 
-                avatar_url, google_id, auth_method, birth_year
+                avatar_url, google_id, auth_method
             ) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
              RETURNING id, username, email, full_name, avatar_url, rating, created_at`,
             [username, email, hashedPassword, full_name, 
-             avatar_url, google_id, auth_method, birth_year]
+             avatar_url, google_id, auth_method]
         );
 
         const user = result.rows[0];
@@ -701,7 +700,6 @@ app.post('/api/register', async (req, res) => {
         const { 
             username, email, password, full_name, 
             avatar_url, google_id, auth_method = 'email',
-            birth_year 
         } = req.body;
 
         console.log('🔐 Registration attempt:', { username, email, auth_method });
@@ -713,14 +711,6 @@ app.post('/api/register', async (req, res) => {
 
         if (!email || !full_name) {
             return res.status(400).json({ error: 'Email and full name are required' });
-        }
-
-        // Проверка года рождения
-        if (birth_year) {
-            const currentYear = new Date().getFullYear();
-            if (birth_year < 1900 || birth_year > currentYear) {
-                return res.status(400).json({ error: 'Укажите корректный год рождения' });
-            }
         }
 
         // Check if user exists
@@ -757,12 +747,12 @@ app.post('/api/register', async (req, res) => {
         const result = await pool.query(
             `INSERT INTO users (
                 username, email, password, full_name, 
-                avatar_url, google_id, auth_method, birth_year
+                avatar_url, google_id, auth_method
             ) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
              RETURNING id, username, email, full_name, avatar_url, rating, created_at`,
             [actualUsername, email, hashedPassword, full_name, 
-             avatar_url, google_id, auth_method, birth_year]
+             avatar_url, google_id, auth_method]
         );
 
         const user = result.rows[0];
@@ -1695,8 +1685,8 @@ app.put('/api/profile', authenticateToken, async (req, res) => {
             UPDATE users 
             SET full_name = $1, avatar_url = $2, birth_year = $3, updated_at = CURRENT_TIMESTAMP
             WHERE id = $4
-            RETURNING id, username, email, full_name, avatar_url, rating, birth_year
-        `, [full_name, avatar_url, birth_year, user_id]);
+            RETURNING id, username, email, full_name, avatar_url, rating
+        `, [full_name, avatar_url, user_id]);
 
         console.log(`✏️  Profile updated for user ${user_id}`);
 
