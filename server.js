@@ -621,11 +621,12 @@ app.post('/api/auth/google/complete', async (req, res) => {
             full_name, 
             username, 
             password,  
+            birth_year,  // ← ДОБАВЛЕНО
             avatar_url,
             auth_method = 'google' 
         } = req.body;
 
-        console.log('🔐 Google complete registration:', { email, username });
+        console.log('🔐 Google complete registration:', { email, username, birth_year });
 
         // Валидация
         if (!google_id || !email || !full_name || !username || !password || !birth_year) {
@@ -658,12 +659,12 @@ app.post('/api/auth/google/complete', async (req, res) => {
         const result = await pool.query(
             `INSERT INTO users (
                 username, email, password, full_name, 
-                avatar_url, google_id, auth_method
+                avatar_url, google_id, auth_method, birth_year  // ← ДОБАВЛЕНО В SQL
             ) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7) 
-             RETURNING id, username, email, full_name, avatar_url, rating, created_at`,
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)  // ← ДОБАВЛЕН $8
+             RETURNING id, username, email, full_name, avatar_url, rating, created_at, birth_year`,
             [username, email, hashedPassword, full_name, 
-             avatar_url, google_id, auth_method]
+             avatar_url, google_id, auth_method, birth_year]  // ← ДОБАВЛЕНО В ПАРАМЕТРЫ
         );
 
         const user = result.rows[0];
@@ -684,6 +685,7 @@ app.post('/api/auth/google/complete', async (req, res) => {
                 full_name: user.full_name,
                 avatar_url: user.avatar_url,
                 rating: user.rating,
+                birth_year: user.birth_year,  // ← ДОБАВЛЕНО
                 created_at: user.created_at
             }
         });
@@ -699,6 +701,7 @@ app.post('/api/register', async (req, res) => {
     try {
         const { 
             username, email, password, full_name, 
+            birth_year,  // ← ДОБАВЛЕНО
             avatar_url, google_id, auth_method = 'email',
         } = req.body;
 
@@ -711,6 +714,18 @@ app.post('/api/register', async (req, res) => {
 
         if (!email || !full_name) {
             return res.status(400).json({ error: 'Email and full name are required' });
+        }
+
+        // Валидация года рождения для email регистрации
+        if (auth_method === 'email' && !birth_year) {
+            return res.status(400).json({ error: 'Year of birth is required for email registration' });
+        }
+
+        if (birth_year) {
+            const currentYear = new Date().getFullYear();
+            if (birth_year < 1900 || birth_year > currentYear) {
+                return res.status(400).json({ error: 'Укажите корректный год рождения' });
+            }
         }
 
         // Check if user exists
@@ -747,12 +762,12 @@ app.post('/api/register', async (req, res) => {
         const result = await pool.query(
             `INSERT INTO users (
                 username, email, password, full_name, 
-                avatar_url, google_id, auth_method
+                avatar_url, google_id, auth_method, birth_year  // ← ДОБАВЛЕНО В SQL
             ) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7) 
-             RETURNING id, username, email, full_name, avatar_url, rating, created_at`,
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)  // ← ДОБАВЛЕН $8
+             RETURNING id, username, email, full_name, avatar_url, rating, created_at, birth_year`,
             [actualUsername, email, hashedPassword, full_name, 
-             avatar_url, google_id, auth_method]
+             avatar_url, google_id, auth_method, birth_year]  // ← ДОБАВЛЕНО В ПАРАМЕТРЫ
         );
 
         const user = result.rows[0];
@@ -770,6 +785,7 @@ app.post('/api/register', async (req, res) => {
                 full_name: user.full_name,
                 avatar_url: user.avatar_url,
                 rating: user.rating,
+                birth_year: user.birth_year,  // ← ДОБАВЛЕНО
                 created_at: user.created_at
             }
         });
