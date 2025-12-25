@@ -1648,6 +1648,88 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Загружаем чаты
     loadChats();
+
+    async function loadChats(showLoading = true) {
+    try {
+        if (!checkAuth()) return;
+        
+        const token = localStorage.getItem('token');
+        if (!token) {
+            showEmptyState('Для просмотра чатов необходимо авторизоваться');
+            return;
+        }
+
+        const container = document.getElementById('chats-container');
+        if (showLoading) {
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>Загрузка чатов...</div>
+                </div>
+            `;
+        }
+
+        const response = await fetch(`${API_BASE}/chats`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.status === 401) {
+            showEmptyState('Сессия истекла', 'Пожалуйста, войдите снова');
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        chats = await response.json();
+        
+        // ДОПОЛНИТЕЛЬНАЯ ФИЛЬТРАЦИЯ НА КЛИЕНТЕ
+        const currentUserId = getUserId();
+        chats = chats.filter(chat => {
+            // Проверяем, что чат содержит корректные ID
+            return chat.other_user_id && chat.other_user_id !== currentUserId;
+        });
+        
+        displayChats();
+        
+    } catch (error) {
+        console.error('❌ Error loading chats:', error);
+        showEmptyState('Не удалось загрузить чаты', 'Попробуйте обновить страницу');
+    }
+}
+
+// Функция для получения ID пользователя из токена
+function getUserId() {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    
+    try {
+        // Простой способ для вашего токена
+        if (token.includes('.')) {
+            // JWT токен
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.userId || payload.sub;
+        } else {
+            // Простой base64 токен
+            try {
+                const decoded = atob(token);
+                const parts = decoded.split(':');
+                return parts[0]; // Первая часть - ID
+            } catch (e) {
+                return null;
+            }
+        }
+    } catch (e) {
+        console.error('Error parsing token:', e);
+        return null;
+    }
+}
     
     // Настройка обработчиков
     document.getElementById('close-chat').addEventListener('click', () => {
