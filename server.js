@@ -615,21 +615,29 @@ app.post('/api/auth/google/token', async (req, res) => {
 // Завершение регистрации через Google
 app.post('/api/auth/google/complete', async (req, res) => {
     try {
+        console.log('🔐 Google complete registration REQUEST BODY:', JSON.stringify(req.body, null, 2));
+        
         const { 
             google_id, 
             email, 
             full_name, 
             username, 
             password,  
-            birth_year,  // ← ДОБАВЛЕНО
+            birth_year,
             avatar_url,
             auth_method = 'google' 
         } = req.body;
 
-        console.log('🔐 Google complete registration:', { email, username, birth_year });
+        console.log('🔐 Parsed data:', { 
+            google_id, email, full_name, username, 
+            password_len: password ? password.length : 0, 
+            birth_year, 
+            auth_method 
+        });
 
         // Валидация
         if (!google_id || !email || !full_name || !username || !password || !birth_year) {
+            console.error('❌ Missing fields:', { google_id, email, full_name, username, password: !!password, birth_year });
             return res.status(400).json({ error: 'Все обязательные поля должны быть заполнены' });
         }
 
@@ -639,7 +647,7 @@ app.post('/api/auth/google/complete', async (req, res) => {
 
         const currentYear = new Date().getFullYear();
         if (birth_year < 1900 || birth_year > currentYear) {
-            return res.status(400).json({ error: 'Укажите корректный год рождения' });
+            return res.status(400).json({ error: 'Укажите корректный год рождения (1900-' + currentYear + ')' });
         }
 
         // Проверка существования пользователя
@@ -656,15 +664,16 @@ app.post('/api/auth/google/complete', async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Создание пользователя
+        console.log('🔐 Creating user with birth_year:', birth_year);
         const result = await pool.query(
             `INSERT INTO users (
                 username, email, password, full_name, 
-                avatar_url, google_id, auth_method, birth_year  // ← ДОБАВЛЕНО В SQL
+                avatar_url, google_id, auth_method, birth_year
             ) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)  // ← ДОБАВЛЕН $8
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
              RETURNING id, username, email, full_name, avatar_url, rating, created_at, birth_year`,
             [username, email, hashedPassword, full_name, 
-             avatar_url, google_id, auth_method, birth_year]  // ← ДОБАВЛЕНО В ПАРАМЕТРЫ
+             avatar_url || null, google_id, auth_method, birth_year]
         );
 
         const user = result.rows[0];
@@ -685,16 +694,18 @@ app.post('/api/auth/google/complete', async (req, res) => {
                 full_name: user.full_name,
                 avatar_url: user.avatar_url,
                 rating: user.rating,
-                birth_year: user.birth_year,  // ← ДОБАВЛЕНО
+                birth_year: user.birth_year,
                 created_at: user.created_at
             }
         });
 
     } catch (error) {
-        console.error('❌ Google complete registration error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('❌ Google complete registration error DETAILS:', error);
+        console.error('❌ Error stack:', error.stack);
+        res.status(500).json({ error: 'Internal server error: ' + error.message });
     }
 });
+
 
 // Auth routes
 app.post('/api/register', async (req, res) => {
@@ -1077,7 +1088,7 @@ app.post('/api/ads', async (req, res) => {
             // Create ad
             const adResult = await client.query(`
                 INSERT INTO ads (title, description, price, category_id, user_id, location, is_urgent, seller_info)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                VVALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 RETURNING *
             `, [title, description, price, category_id, user_id, location, is_urgent || false, actual_seller_info]);
 
