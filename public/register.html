@@ -724,6 +724,11 @@
         const fullName = document.getElementById('reg-full_name').value.trim();
         const birthYear = parseInt(document.getElementById('reg-birth_year').value);
         const password = document.getElementById('reg-password').value;
+
+        if (isNaN(birthYear)) {
+    showError('Укажите корректный год рождения');
+    return;
+}
         
         // Валидация
         if (!username || !email || !fullName || !birthYear || !password) {
@@ -739,12 +744,6 @@
         
         if (password.length < 6) {
             showError('Пароль должен быть не менее 6 символов');
-            return;
-        }
-        
-        const currentYear = new Date().getFullYear();
-        if (birthYear < 1900 || birthYear > currentYear) {
-            showError('Укажите корректный год рождения');
             return;
         }
         
@@ -764,7 +763,6 @@
                     email: email,
                     password: password,
                     full_name: fullName,
-                    birth_year: birthYear,
                     auth_method: 'email'
                 })
             });
