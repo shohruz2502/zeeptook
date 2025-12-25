@@ -1158,15 +1158,28 @@ async function loadChats(showLoading = true) {
 function displayChats() {
     const container = document.getElementById('chats-container');
     
-    // Проверяем, есть ли параметры продавца и объявления в URL
+    // Проверяем параметры из URL ДО отображения списка
     const urlParams = new URLSearchParams(window.location.search);
     const sellerId = urlParams.get('seller');
     const adId = urlParams.get('ad');
+    const chatId = urlParams.get('chat');
     
-    // Если есть seller и ad, создаем/открываем чат
+    console.log('💬 URL parameters:', { sellerId, adId, chatId });
+    
+    // Если есть параметры для создания/открытия чата
     if (sellerId && adId && checkAuth()) {
         createOrOpenChat(sellerId, adId);
-        return;
+        return; // Не показываем список чатов пока открываем нужный
+    }
+    
+    // Если есть конкретный chatId - открываем его
+    if (chatId && checkAuth()) {
+        const chatToOpen = chats.find(c => c.id == chatId);
+        if (chatToOpen) {
+            openChat(chatToOpen);
+        } else {
+            console.log('Chat not found in list:', chatId);
+        }
     }
     
     container.innerHTML = '';
@@ -1250,6 +1263,7 @@ function createChatElement(chat) {
 }
 
 // Создание или открытие чата с продавцом
+// Функция для создания или открытия чата с продавцом
 async function createOrOpenChat(sellerId, adId) {
     try {
         if (!checkAuth()) return;
@@ -1264,6 +1278,7 @@ async function createOrOpenChat(sellerId, adId) {
         
         if (existingChat) {
             // Открываем существующий чат
+            console.log('💬 Opening existing chat:', existingChat.id);
             openChat(existingChat);
             return;
         }
@@ -1282,10 +1297,12 @@ async function createOrOpenChat(sellerId, adId) {
         });
         
         if (!response.ok) {
-            throw new Error('Failed to create chat');
+            const errorText = await response.text();
+            throw new Error(`Failed to create chat: ${response.status} ${errorText}`);
         }
         
         const result = await response.json();
+        console.log('💬 Chat created:', result);
         
         // Добавляем новый чат в список
         const newChat = {
@@ -1296,16 +1313,20 @@ async function createOrOpenChat(sellerId, adId) {
             last_message_time: new Date(),
             unread_count: 0,
             is_online: false,
-            other_user_id: sellerId
+            other_user_id: sellerId,
+            ad_id: adId
         };
         
         chats.push(newChat);
         displayChats(); // Обновляем список чатов
         openChat(newChat); // Открываем новый чат
         
+        // Показываем уведомление
+        showNotification('Чат создан. Вы можете обсудить детали сделки.', 'success');
+        
     } catch (error) {
-        console.error('Error creating chat:', error);
-        showNotification('Ошибка создания чата', 'error');
+        console.error('❌ Create/open chat error:', error);
+        showNotification('Ошибка создания чата. Попробуйте открыть чаты вручную.', 'error');
         loadChats(false); // Загружаем обычные чаты
     }
 }
