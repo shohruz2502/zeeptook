@@ -660,7 +660,7 @@ app.post('/api/auth/google/complete', async (req, res) => {
                 username, email, password, full_name, 
                 avatar_url, google_id, auth_method
             ) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7) 
              RETURNING id, username, email, full_name, avatar_url, rating, created_at`,
             [username, email, hashedPassword, full_name, 
              avatar_url, google_id, auth_method]
@@ -749,7 +749,7 @@ app.post('/api/register', async (req, res) => {
                 username, email, password, full_name, 
                 avatar_url, google_id, auth_method
             ) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7) 
              RETURNING id, username, email, full_name, avatar_url, rating, created_at`,
             [actualUsername, email, hashedPassword, full_name, 
              avatar_url, google_id, auth_method]
@@ -1061,7 +1061,7 @@ app.post('/api/ads', async (req, res) => {
             // Create ad
             const adResult = await client.query(`
                 INSERT INTO ads (title, description, price, category_id, user_id, location, is_urgent, seller_info)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 RETURNING *
             `, [title, description, price, category_id, user_id, location, is_urgent || false, actual_seller_info]);
 
