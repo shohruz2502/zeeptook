@@ -741,23 +741,23 @@
         }
         
         // Функция для начала чата с продавцом
-        function startChat(adId, sellerId) {
-            if (!token) {
-                showNotification('Для отправки сообщений необходимо войти в систему', 'error');
-                setTimeout(() => {
-                    window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
-                }, 2000);
-                return;
-            }
-            
-            if (!sellerId || sellerId === 'null') {
-                showNotification('Не удалось определить продавца', 'error');
-                return;
-            }
-            
-            // Переходим к чатам с предварительно выбранным продавцом
-            window.location.href = `messages.html?seller=${encodeURIComponent(sellerId)}&ad=${encodeURIComponent(adId)}`;
-        }
+function startChat(adId, sellerId) {
+    if (!token) {
+        showNotification('Для отправки сообщений необходимо войти в систему', 'error');
+        setTimeout(() => {
+            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
+        }, 2000);
+        return;
+    }
+    
+    if (!sellerId || sellerId === 'null') {
+        showNotification('Не удалось определить продавца', 'error');
+        return;
+    }
+    
+    // Переходим к чатам с параметрами продавца и объявления
+    window.location.href = `messages.html?seller=${sellerId}&ad=${adId}`;
+}
         
         // Функция для возврата назад
         function goBack() {
