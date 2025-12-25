@@ -1783,52 +1783,73 @@ app.get('/api/chats', authenticateToken, async (req, res) => {
         console.log(`💬 Loading chats for user: ${user_id}`);
         
         const result = await pool.query(`
-    SELECT DISTINCT ON (c.id)
-        c.id,
-        CASE 
-            WHEN c.user1_id = $1 THEN u2.full_name
-            WHEN u2.full_name IS NULL THEN 'Пользователь'
-            ELSE u1.full_name
-        END as name,
-        CASE 
-            WHEN c.user1_id = $1 THEN u2.id
-            ELSE u1.id
-        END as other_user_id,
-        COALESCE(m.content, 'Нет сообщений') as last_message,
-        COALESCE(m.created_at, c.created_at) as last_message_time,
-        COALESCE((
-            SELECT COUNT(*) 
-            FROM messages m2 
-            WHERE m2.chat_id = c.id 
-            AND m2.sender_id != $1 
-            AND m2.is_read = FALSE
-        ), 0) as unread_count,
-        COALESCE(c.has_deal, FALSE) as has_deal,
-        c.deal_id,
-        CASE 
-            WHEN c.deal_id IS NOT NULL THEN 'deal' 
-            ELSE 'regular' 
-        END as type,
-        CASE 
-            WHEN c.user1_id = $1 THEN u2.id
-            ELSE u1.id
-        END != $1 as is_online
-    FROM chats c
-    LEFT JOIN users u1 ON c.user1_id = u1.id
-    LEFT JOIN users u2 ON c.user2_id = u2.id
-    LEFT JOIN LATERAL (
-        SELECT content, created_at
-        FROM messages
-        WHERE chat_id = c.id
-        ORDER BY created_at DESC
-        LIMIT 1
-    ) m ON true
-    WHERE c.user1_id = $1 OR c.user2_id = $1
-    ORDER BY c.id, last_message_time DESC NULLS LAST
-`, [user_id]);
+            SELECT 
+                c.id,
+                -- Определяем имя собеседника
+                CASE 
+                    WHEN c.user1_id = $1 THEN u2.full_name
+                    ELSE u1.full_name
+                END as name,
+                -- Определяем ID собеседника
+                CASE 
+                    WHEN c.user1_id = $1 THEN u2.id
+                    ELSE u1.id
+                END as other_user_id,
+                -- Определяем username собеседника
+                CASE 
+                    WHEN c.user1_id = $1 THEN u2.username
+                    ELSE u1.username
+                END as other_username,
+                -- Последнее сообщение
+                COALESCE(m.content, 'Чат создан') as last_message,
+                COALESCE(m.created_at, c.created_at) as last_message_time,
+                -- Непрочитанные сообщения
+                COALESCE((
+                    SELECT COUNT(*) 
+                    FROM messages m2 
+                    WHERE m2.chat_id = c.id 
+                    AND m2.sender_id != $1 
+                    AND m2.is_read = FALSE
+                ), 0) as unread_count,
+                -- Информация о сделке
+                COALESCE(c.has_deal, FALSE) as has_deal,
+                c.deal_id,
+                -- Тип чата
+                CASE 
+                    WHEN c.deal_id IS NOT NULL THEN 'deal' 
+                    ELSE 'regular' 
+                END as type,
+                -- ID объявления
+                c.ad_id,
+                -- Время создания
+                c.created_at,
+                c.updated_at
+            FROM chats c
+            LEFT JOIN users u1 ON c.user1_id = u1.id
+            LEFT JOIN users u2 ON c.user2_id = u2.id
+            LEFT JOIN LATERAL (
+                SELECT content, created_at
+                FROM messages
+                WHERE chat_id = c.id
+                ORDER BY created_at DESC
+                LIMIT 1
+            ) m ON true
+            -- КРИТИЧНО: пользователь должен быть одним из двух участников
+            WHERE (c.user1_id = $1 OR c.user2_id = $1)
+            -- И оба пользователя должны существовать
+            AND u1.id IS NOT NULL AND u2.id IS NOT NULL
+            ORDER BY COALESCE(m.created_at, c.created_at) DESC
+        `, [user_id]);
         
         console.log(`✅ Loaded ${result.rows.length} chats for user ${user_id}`);
-        res.json(result.rows);
+        
+        // Дополнительная проверка на стороне сервера
+        const validChats = result.rows.filter(chat => {
+            // Убеждаемся, что other_user_id не равен текущему пользователю
+            return chat.other_user_id && parseInt(chat.other_user_id) !== parseInt(user_id);
+        });
+        
+        res.json(validChats);
         
     } catch (error) {
         console.error('❌ Get chats error:', error);
@@ -1848,70 +1869,94 @@ app.post('/api/chats/create', authenticateToken, async (req, res) => {
         
         console.log(`💬 Creating/loading chat: user=${user_id}, seller=${other_user_id}, ad=${ad_id}`);
         
-        if (!other_user_id) {
-            return res.status(400).json({ error: 'Необходимо указать ID продавца' });
+        // ВАЖНОЕ ИСПРАВЛЕНИЕ: Проверяем, что пользователь существует
+        if (!other_user_id || isNaN(parseInt(other_user_id))) {
+            return res.status(400).json({ error: 'Необходимо указать корректный ID продавца' });
         }
         
-        if (user_id == other_user_id) {
+        // Приводим к числам для сравнения
+        const userIdNum = parseInt(user_id);
+        const otherUserIdNum = parseInt(other_user_id);
+        
+        if (userIdNum === otherUserIdNum) {
             return res.status(400).json({ error: 'Вы не можете создать чат с самим собой' });
         }
         
-        // Генерируем стабильный chat_id
-        const generatedChatId = `chat_${ad_id || 'no_ad'}_${Math.min(user_id, other_user_id)}_${Math.max(user_id, other_user_id)}`;
+        // Проверяем существование пользователя
+        const otherUserCheck = await pool.query(
+            'SELECT id, username, full_name FROM users WHERE id = $1',
+            [otherUserIdNum]
+        );
         
-        // Проверяем существующий чат
+        if (otherUserCheck.rows.length === 0) {
+            console.error(`❌ User ${otherUserIdNum} not found`);
+            return res.status(404).json({ error: 'Пользователь не найден' });
+        }
+        
+        // Определяем порядок ID пользователей для единообразия
+        const user1_id = Math.min(userIdNum, otherUserIdNum);
+        const user2_id = Math.max(userIdNum, otherUserIdNum);
+        
+        console.log(`🔍 Checking for chat between ${user1_id} and ${user2_id}`);
+        
+        // Ищем существующий чат с правильным порядком
         const existingChat = await pool.query(`
             SELECT id FROM chats 
-            WHERE (user1_id = $1 AND user2_id = $2)
-               OR (user1_id = $2 AND user2_id = $1)
-        `, [user_id, other_user_id]);
+            WHERE user1_id = $1 AND user2_id = $2
+        `, [user1_id, user2_id]);
         
         if (existingChat.rows.length > 0) {
             // Возвращаем существующий чат
-            const chat = existingChat.rows[0];
-            console.log(`✅ Found existing chat: ${chat.id}`);
+            const chatId = existingChat.rows[0].id;
+            console.log(`✅ Found existing chat: ${chatId}`);
+            
             return res.json({ 
-                chatId: chat.id, 
+                success: true,
+                chatId: chatId, 
                 existed: true,
-                sellerId: other_user_id,
+                sellerId: otherUserIdNum,
                 adId: ad_id 
             });
         }
         
-        // Создаем новый чат
+        // Создаем новый чат с ПРАВИЛЬНЫМ порядком ID
         const result = await pool.query(`
             INSERT INTO chats (user1_id, user2_id, ad_id, created_at)
             VALUES ($1, $2, $3, NOW())
             RETURNING id
-        `, [user_id, other_user_id, ad_id]);
+        `, [user1_id, user2_id, ad_id]);
         
         const newChatId = result.rows[0].id;
-        console.log(`✅ Created new chat: ${newChatId}`);
+        console.log(`✅ Created new chat ${newChatId} between ${user1_id} and ${user2_id}`);
+        
+        // Определяем, кто из пользователей является создателем (инициатором чата)
+        const initiatorId = userIdNum; // Текущий авторизованный пользователь
+        const receiverId = otherUserIdNum; // Второй участник
         
         // Создаем приветственное сообщение (системное)
+        const otherUser = otherUserCheck.rows[0];
+        const welcomeMessage = `👋 Привет! Вы начали общение с ${otherUser.full_name || otherUser.username || 'пользователем'}`;
+        
         await pool.query(`
             INSERT INTO messages (chat_id, sender_id, receiver_id, content, is_system, created_at)
             VALUES ($1, $2, $3, $4, TRUE, NOW())
-        `, [newChatId, user_id, other_user_id, `👋 Пользователь заинтересовался вашим объявлением`]);
+        `, [newChatId, initiatorId, receiverId, welcomeMessage]);
         
         // Отправляем уведомление в Telegram (если настроено)
         try {
-            const sellerInfo = await pool.query(
-                'SELECT full_name, email FROM users WHERE id = $1',
-                [other_user_id]
-            );
             const userInfo = await pool.query(
                 'SELECT full_name, email FROM users WHERE id = $1',
-                [user_id]
+                [userIdNum]
             );
             
-            if (sellerInfo.rows.length > 0 && TELEGRAM_BOT_TOKEN) {
+            if (userInfo.rows.length > 0 && TELEGRAM_BOT_TOKEN) {
                 await sendToTelegram(
                     `💬 НОВЫЙ ЧАТ ПО ОБЪЯВЛЕНИЮ\n` +
                     `👤 Покупатель: ${userInfo.rows[0]?.full_name || 'Неизвестно'}\n` +
                     `📧 Email: ${userInfo.rows[0]?.email || 'Не указан'}\n` +
+                    `👥 Участники: ${user1_id} ↔ ${user2_id}\n` +
                     `🆔 Chat ID: ${newChatId}`,
-                    sellerInfo.rows[0],
+                    otherUserCheck.rows[0],
                     'support'
                 );
             }
@@ -1920,15 +1965,52 @@ app.post('/api/chats/create', authenticateToken, async (req, res) => {
         }
         
         res.json({ 
+            success: true,
             chatId: newChatId, 
             existed: false,
-            sellerId: other_user_id,
+            sellerId: otherUserIdNum,
             adId: ad_id 
         });
         
     } catch (error) {
         console.error('❌ Create chat error:', error);
-        res.status(500).json({ error: 'Internal server error: ' + error.message });
+        
+        // Проверяем специфические ошибки
+        if (error.code === '23505') { // unique_violation (дубликат)
+            console.log('⚠️ Chat already exists, trying to find it...');
+            try {
+                const user_id = req.user.userId;
+                const { other_user_id, ad_id } = req.body;
+                
+                const userIdNum = parseInt(user_id);
+                const otherUserIdNum = parseInt(other_user_id);
+                const user1_id = Math.min(userIdNum, otherUserIdNum);
+                const user2_id = Math.max(userIdNum, otherUserIdNum);
+                
+                const existingChat = await pool.query(`
+                    SELECT id FROM chats 
+                    WHERE user1_id = $1 AND user2_id = $2
+                `, [user1_id, user2_id]);
+                
+                if (existingChat.rows.length > 0) {
+                    return res.json({ 
+                        success: true,
+                        chatId: existingChat.rows[0].id, 
+                        existed: true,
+                        sellerId: otherUserIdNum,
+                        adId: ad_id 
+                    });
+                }
+            } catch (findError) {
+                console.error('Error finding existing chat:', findError);
+            }
+        }
+        
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка создания чата',
+            details: error.message 
+        });
     }
 });
 
