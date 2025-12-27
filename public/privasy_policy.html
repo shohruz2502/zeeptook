@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Политика конфиденциальности - Zeeptook</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        
+        :root {
+            --primary: #00f2fe;
+            --primary-dark: #4facfe;
+            --secondary: #0f172a;
+            --accent: #ff6b6b;
+            --success: #00d9a6;
+            --warning: #ffb74d;
+            --gray: #64748b;
+            --gray-light: #cbd5e1;
+            --white: #ffffff;
+            --dark: #1e293b;
+            --gradient: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            --gradient-dark: linear-gradient(135deg, var(--secondary) 0%, #1e3a8a 100%);
+            --radius: 16px;
+            --shadow: 0 8px 32px rgba(0, 242, 254, 0.15);
+        }
+        
+        body {
+            background: var(--gradient-dark);
+            color: var(--white);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 0;
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: var(--radius);
+            border: 1px solid rgba(0, 242, 254, 0.1);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--white);
+        }
+        
+        .logo i {
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            color: var(--gray-light);
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .last-updated {
+            background: rgba(0, 242, 254, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+            display: inline-block;
+            font-size: 13px;
+            color: var(--primary);
+            font-weight: 500;
+            margin-top: 10px;
+        }
+        
+        /* Content Sections */
+        .section {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: var(--radius);
+            padding: 30px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(0, 242, 254, 0.1);
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(10px);
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(0, 242, 254, 0.2);
+        }
+        
+        .section-title i {
+            color: var(--primary);
+            width: 30px;
+            text-align: center;
+        }
+        
+        /* Data Items */
+        .data-item {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .data-title {
+            font-weight: 600;
+            color: var(--white);
+            margin-bottom: 8px;
+            font-size: 17px;
+        }
+        
+        .data-desc {
+            color: var(--gray-light);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        /* Permission Cards */
+        .permissions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .permission-card {
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .permission-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .permission-icon {
+            font-size: 32px;
+            margin-bottom: 15px;
+            height: 60px;
+            width: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin: 0 auto 15px;
+        }
+        
+        .permission-allowed .permission-icon {
+            background: rgba(0, 217, 166, 0.1);
+            color: var(--success);
+            border: 2px solid var(--success);
+        }
+        
+        .permission-denied .permission-icon {
+            background: rgba(255, 107, 107, 0.1);
+            color: var(--accent);
+            border: 2px solid var(--accent);
+        }
+        
+        .permission-title {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--white);
+        }
+        
+        .permission-desc {
+            color: var(--gray-light);
+            font-size: 13px;
+        }
+        
+        /* Do Not List */
+        .do-not-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .do-not-item {
+            background: rgba(255, 107, 107, 0.05);
+            border: 1px solid rgba(255, 107, 107, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .do-not-item i {
+            color: var(--accent);
+            font-size: 18px;
+            min-width: 24px;
+        }
+        
+        /* Rights List */
+        .rights-list {
+            margin-top: 20px;
+        }
+        
+        .right-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: rgba(0, 242, 254, 0.05);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--primary);
+        }
+        
+        .right-item i {
+            color: var(--primary);
+            font-size: 20px;
+            min-width: 24px;
+        }
+        
+        /* Simple Version */
+        .simple-version {
+            background: rgba(0, 242, 254, 0.1);
+            border-radius: var(--radius);
+            padding: 25px;
+            margin-top: 30px;
+            border: 2px solid var(--primary);
+            position: relative;
+        }
+        
+        .simple-version::before {
+            content: "📋 Простая версия";
+            position: absolute;
+            top: -12px;
+            left: 20px;
+            background: var(--gradient);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        /* Contact Info */
+        .contact-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .contact-item {
+            flex: 1;
+            min-width: 200px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(0, 242, 254, 0.1);
+        }
+        
+        .contact-item i {
+            font-size: 24px;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+        
+        .contact-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--white);
+        }
+        
+        .contact-detail {
+            color: var(--gray-light);
+            font-size: 14px;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 30px 0;
+            color: var(--gray);
+            font-size: 14px;
+            margin-top: 40px;
+            border-top: 1px solid rgba(0, 242, 254, 0.1);
+        }
+        
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--gradient);
+            color: white;
+            padding: 12px 25px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 20px;
+            transition: transform 0.3s ease;
+        }
+        
+        .back-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .section {
+                padding: 20px;
+            }
+            
+            .section-title {
+                font-size: 19px;
+            }
+            
+            .permissions-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .do-not-list {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .logo {
+                font-size: 24px;
+            }
+            
+            .section-title {
+                font-size: 18px;
+            }
+            
+            .data-item {
+                padding: 15px;
+            }
+            
+            .contact-item {
+                min-width: 100%;
+            }
+        }
+        
+        /* Print Styles */
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+            
+            .header, .section {
+                background: white;
+                border: 1px solid #ddd;
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-diamond"></i>
+                <span>Zeeptook</span>
+            </div>
+            <div class="subtitle">Маркетплейс игровых аккаунтов</div>
+            <h1>Политика конфиденциальности</h1>
+            <div class="last-updated">
+                <i class="fas fa-calendar-alt"></i>
+                Последнее обновление: 15 февраля 2024 г.
+            </div>
+        </div>
+        
+        <!-- Introduction Section -->
+        <div class="section">
+            <h2 class="section-title">
+                <i class="fas fa-info-circle"></i>
+                1. Введение
+            </h2>
+            <div class="data-item">
+                <p class="data-desc">
+                    Добро пожаловать в Zeeptook — маркетплейс для покупки и продажи игровых аккаунтов. 
+                    Эта Политика конфиденциальности объясняет, как мы обрабатываем вашу информацию при использовании нашего приложения.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Data Collection Section -->
+        <div class="section">
+            <h2 class="section-title">
+                <i class="fas fa-database"></i>
+                2. Какие данные мы собираем
+            </h2>
+            
+            <div class="data-item">
+                <div class="data-title">📝 Данные для регистрации</div>
+                <div class="data-desc">
+                    • <strong>Google аккаунт:</strong> только для входа через Google OAuth (email и имя)<br>
+                    • <strong>Email регистрация:</strong> если вы регистрируетесь через email
+                </div>
+            </div>
+            
+            <div class="data-item">
+                <div class="data-title">👤 Данные профиля</div>
+                <div class="data-desc">
+                    • Имя пользователя (username)<br>
+                    • Полное имя (по желанию)<br>
+                    • Год рождения (для проверки возраста)<br>
+                    • Аватар (по желанию)
+                </div>
+            </div>
+            
+            <div class="data-item">
+                <div class="data-title">🔐 Разрешения приложения</div>
+                <p class="data-desc" style="margin-bottom: 15px;">
+                    Приложение запрашивает минимально необходимые разрешения для работы:
+                </p>
+                
+                <div class="permissions-grid">
+                    <div class="permission-card permission-denied">
+                        <div class="permission-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="permission-title">Не запрашиваем</div>
+                        <div class="permission-desc">Доступ к местоположению</div>
+                    </div>
+                    
+                    <div class="permission-card permission-denied">
+                        <div class="permission-icon">
+                            <i class="fas fa-address-book"></i>
+                        </div>
+                        <div class="permission-title">Не запрашиваем</div>
+                        <div class="permission-desc">Доступ к контактам</div>
+                    </div>
+                    
+                    <div class="permission-card permission-denied">
+                        <div class="permission-icon">
+                            <i class="fas fa-microphone"></i>
+                        </div>
+                        <div class="permission-title">Не запрашиваем</div>
+                        <div class="permission-desc">Доступ к микрофону</div>
+                    </div>
+                    
+                    <div class="permission-card permission-allowed">
+                        <div class="permission-icon">
+                            <i class="fas fa-camera"></i>
+                        </div>
+                        <div class="permission-title">Может запросить</div>
+                        <div class="permission-desc">Временный доступ к камере/галерее для добавления фото</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- What We Don't Do Section -->
+        <div class="section">
+            <h2 class="section-title">
+                <i class="fas fa-ban"></i>
+                3. Что мы НЕ делаем с вашими данными
+            </h2>
+            
+            <div class="do-not-list">
+                <div class="do-not-item">
+                    <i class="fas fa-times-circle"></i>
+                    <span>НЕ передаем данные третьим лицам</span>
+                </div>
+                <div class="do-not-item">
+                    <i class="fas fa-times-circle"></i>
+                    <span>НЕ продаем вашу информацию</span>
+                </div>
+                <div class="do-not-item">
+                    <i class="fas fa-times-circle"></i>
+                    <span>НЕ отслеживаем местоположение</span>
+                </div>
+                <div class="do-not-item">
+                    <i class="fas fa-times-circle"></i>
+                    <span>НЕ собираем контакты</span>
+                </div>
+                <div class="do-not-item">
+                    <i class="fas fa-times-circle"></i>
+                    <span>НЕ анализируем личные сообщения</span>
+                </div>
+                <div class="do-not-item">
+                    <i class="fas fa-times-circle"></i>
+                    <span>НЕ используем данные для рекламы</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- How We Use Data Section -->
+        <div class="section">
+            <h2 class="section-title">
+                <i class="fas fa-check-circle"></i>
+                4. Как мы используем данные
+            </h2>
+            
+            <div class="rights-list">
+                <div class="right-item">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span>Для входа в аккаунт</span>
+                </div>
+                <div class="right-item">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Для отображения вашего профиля другим пользователям</span>
+                </div>
+                <div class="right-item">
+                    <i class="fas fa-bullhorn"></i>
+                    <span>Для создания объявлений</span>
+                </div>
+                <div class="right-item">
+                    <i class="fas fa-comments"></i>
+                    <span>Для общения через встроенный чат</span>
+                </div>
+                <div class="right-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Для обеспечения безопасности приложения</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- User Rights Section -->
+        <div class="section">
+            <h2 class="section-title">
+                <i class="fas fa-user-check"></i>
+                6. Ваши права
+            </h2>
+            
+            <div class="rights-list">
+                <div class="right-item">
+                    <i class="fas fa-edit"></i>
+                    <span>Редактировать профиль в любое время</span>
+                </div>
+                <div class="right-item">
+                    <i class="fas fa-trash-alt"></i>
+                    <span>Удалить аккаунт через настройки</span>
+                </div>
+                <div class="right-item">
+                    <i class="fas fa-envelope"></i>
+                    <span>Удалить все данные, отправив запрос на faridun.exam@gmail.com</span>
+                </div>
+                <div class="right-item">
+                    <i class="fas fa-eye"></i>
+                    <span>Просматривать какие данные о вас хранятся</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Simple Version -->
+        <div class="simple-version">
+            <p style="font-size: 16px; line-height: 1.6; color: var(--white);">
+                <strong>Простая версия для понимания:</strong><br>
+                "Мы собираем только данные для входа (Google или email) и информацию, которую вы сами указываете в профиле. 
+                Мы не передаем ничего третьим лицам. Единственное разрешение, которое может запросить приложение — 
+                доступ к фото для добавления картинок к объявлению. Все остальное остается полностью приватным."
+            </p>
+        </div>
+        
+        <!-- Contact Section -->
+        <div class="section">
+            <h2 class="section-title">
+                <i class="fas fa-headset"></i>
+                9. Контакты
+            </h2>
+            <p class="data-desc" style="margin-bottom: 20px;">
+                Если у вас есть вопросы о конфиденциальности:
+            </p>
+            
+            <div class="contact-info">
+                <div class="contact-item">
+                    <i class="fas fa-mobile-alt"></i>
+                    <div class="contact-title">В приложении</div>
+                    <div class="contact-detail">Раздел "Помощь" в профиле</div>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-envelope"></i>
+                    <div class="contact-title">Email</div>
+                    <div class="contact-detail">faridun.exam@gmail.com</div>
+                </div>
+                <div class="contact-item">
+                    <i class="fab fa-google-play"></i>
+                    <div class="contact-title">Google Play</div>
+                    <div class="contact-detail">Раздел отзывов</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>© 2024 Zeeptook. Все права защищены.</p>
+            <p>Эта политика конфиденциальности применяется только к приложению Zeeptook.</p>
+            
+            <a href="javascript:window.print()" class="back-btn" style="margin-right: 10px;">
+                <i class="fas fa-print"></i>
+                Распечатать
+            </a>
+            
+            <a href="javascript:history.back()" class="back-btn">
+                <i class="fas fa-arrow-left"></i>
+                Вернуться назад
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Анимация появления при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('.section');
+            sections.forEach((section, index) => {
+                setTimeout(() => {
+                    section.style.animation = 'fadeIn 0.5s ease-out forwards';
+                }, index * 100);
+            });
+            
+            // Добавление года в футер
+            const year = new Date().getFullYear();
+            const footerText = document.querySelector('.footer p');
+            if (footerText) {
+                footerText.innerHTML = footerText.innerHTML.replace('2024', year);
+            }
+            
+            // Плавная прокрутка для якорных ссылок (если будут добавлены)
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    if (targetId !== '#') {
+                        const targetElement = document.querySelector(targetId);
+                        if (targetElement) {
+                            window.scrollTo({
+                                top: targetElement.offsetTop - 20,
+                                behavior: 'smooth'
+                            });
+                        }
+                    }
+                });
+            });
+        });
+        
+        // Копирование email по клику
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.contact-item') && e.target.textContent.includes('@')) {
+                const email = 'faridun.exam@gmail.com';
+                navigator.clipboard.writeText(email).then(() => {
+                    const originalText = e.target.textContent;
+                    e.target.textContent = 'Скопировано!';
+                    setTimeout(() => {
+                        e.target.textContent = originalText;
+                    }, 2000);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
