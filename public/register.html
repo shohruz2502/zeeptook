@@ -509,20 +509,6 @@
 
     <script>
     const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
-    // Определяем, находится ли пользователь в веб-приложении (WebView)
-const isInAppBrowser = 
-    window.navigator.userAgent.includes('WebView') || 
-    /(FBAN|FBAV)/.test(window.navigator.userAgent) ||
-    /Instagram/.test(window.navigator.userAgent) ||
-    /Line/.test(window.navigator.userAgent) ||
-    /Twitter/.test(window.navigator.userAgent) ||
-    /FB_IAB/.test(window.navigator.userAgent) ||
-    /FBAN/.test(window.navigator.userAgent);
-
-// Для отладки
-console.log('🌐 User Agent:', navigator.userAgent);
-console.log('📱 Is In App Browser?', isInAppBrowser);
-
     let currentMode = 'login';
     let googleUserData = null;
     let googleClientId = null;
@@ -530,58 +516,36 @@ console.log('📱 Is In App Browser?', isInAppBrowser);
     let googleOAuthState = null;
     
 
-    // Проверка OAuth callback в URL - ИСПРАВЛЕННАЯ ВЕРСИЯ
-function checkForOAuthCallback() {
-    console.log('🔍 Проверка OAuth callback...');
-    
-    // ПРОВЕРЯЕМ СНАЧАЛА СЕССИЮ (для callback из google-callback.html)
-    const savedCode = sessionStorage.getItem('google_auth_code');
-    const savedState = sessionStorage.getItem('google_auth_state');
-    const authError = localStorage.getItem('google_auth_error');
-    
-    if (authError) {
-        console.error('❌ Ошибка из callback:', authError);
-        showError('Ошибка авторизации: ' + authError);
-        localStorage.removeItem('google_auth_error');
-        return;
-    }
-    
-    if (savedCode && savedState) {
-        console.log('✅ Найден код в sessionStorage, обрабатываем...');
-        sessionStorage.removeItem('google_auth_code');
-        sessionStorage.removeItem('google_auth_state');
-        handleGoogleAuthorizationCode(savedCode);
-        return;
-    }
-    
-    // Затем проверяем URL параметры (для обычных браузеров)
-    const params = new URLSearchParams(window.location.search);
-    const urlCode = params.get('code');
-    const urlState = params.get('state');
-    const urlError = params.get('error');
-    
-    // Убираем параметры из URL
-    if (urlCode || urlError) {
-        history.replaceState(null, null, window.location.pathname);
-    }
-    
-    if (urlError) {
-        showError('Ошибка Google авторизации: ' + urlError);
-        return;
-    }
-    
-    if (urlCode && urlState) {
-        const savedState = sessionStorage.getItem('google_oauth_state');
-        if (urlState !== savedState) {
-            showError('Ошибка безопасности. Попробуйте снова.');
+    // Проверка OAuth callback в URL
+    function checkForOAuthCallback() {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        const state = params.get('state');
+        const error = params.get('error');
+        
+        // Убираем параметры из URL
+        if (code || error) {
+            history.replaceState(null, null, window.location.pathname);
+        }
+        
+        if (error) {
+            showError('Ошибка Google авторизации: ' + error);
             return;
         }
         
-        sessionStorage.removeItem('google_oauth_state');
-        console.log('✅ Найден код в URL, обрабатываем...');
-        handleGoogleAuthorizationCode(urlCode);
+        if (code && state) {
+            const savedState = sessionStorage.getItem('google_oauth_state');
+            if (state !== savedState) {
+                showError('Ошибка безопасности. Попробуйте снова.');
+                return;
+            }
+            
+            sessionStorage.removeItem('google_oauth_state');
+            
+            // Отправляем code на сервер для обмена на токен
+            handleGoogleAuthorizationCode(code);
+        }
     }
-}
 
     // Функция для обработки кода авторизации
     async function handleGoogleAuthorizationCode(code) {
@@ -871,58 +835,41 @@ function checkForOAuthCallback() {
         googleBtn.style.opacity = '0.6';
     }
 
-    // Google OAuth через redirect - ИСПРАВЛЕННАЯ ВЕРСИЯ ДЛЯ WEBVIEW
-function handleGoogleRedirectAuth() {
-    if (!googleAuthInitialized || !googleClientId) {
-        showError('Google авторизация временно недоступна. Используйте email.');
-        return;
-    }
+    // Google OAuth через redirect
+    function handleGoogleRedirectAuth() {
+        if (!googleAuthInitialized || !googleClientId) {
+            showError('Google авторизация временно недоступна. Используйте email.');
+            return;
+        }
 
-    try {
-        // Создаем уникальный state для защиты от CSRF
-        googleOAuthState = 'google_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        sessionStorage.setItem('google_oauth_state', googleOAuthState);
-        
-        let redirectUri;
-        
-        if (isInAppBrowser) {
-            // Для веб-приложений используем статичный callback
-            redirectUri = 'https://zeeptook.vercel.app/google-callback.html';
-            console.log('📱 Используем callback для WebView:', redirectUri);
-        } else {
-            // Для обычных браузеров используем текущую страницу
-            redirectUri = window.location.origin + window.location.pathname;
-            console.log('🌐 Используем текущую страницу для браузера:', redirectUri);
-        }
-        
-        const encodedRedirectUri = encodeURIComponent(redirectUri);
-        const scope = encodeURIComponent('email profile openid');
-        const responseType = 'code';
-        
-        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-            `client_id=${googleClientId}` +
-            `&redirect_uri=${encodedRedirectUri}` +
-            `&response_type=${responseType}` +
-            `&scope=${scope}` +
-            `&state=${googleOAuthState}` +
-            `&prompt=select_account`;
-        
-        console.log('🔗 Google OAuth URL:', authUrl);
-        
-        // Открываем в зависимости от типа браузера
-        if (isInAppBrowser) {
-            // В WebView открываем в той же вкладке
+        try {
+            // Создаем уникальный state для защиты от CSRF
+            googleOAuthState = 'google_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            sessionStorage.setItem('google_oauth_state', googleOAuthState);
+            
+            // ВАЖНО: Используем SAME PAGE для callback
+            const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
+            const scope = encodeURIComponent('email profile openid');
+            const responseType = 'code'; // Используем Authorization Code Flow
+            
+            const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+                `client_id=${googleClientId}` +
+                `&redirect_uri=${redirectUri}` +
+                `&response_type=${responseType}` +
+                `&scope=${scope}` +
+                `&state=${googleOAuthState}` +
+                `&prompt=select_account`;
+            
+            console.log('Перенаправляем на Google OAuth...', authUrl);
+            
+            // Перенаправляем пользователя
             window.location.href = authUrl;
-        } else {
-            // В обычном браузере тоже в той же вкладке
-            window.location.href = authUrl;
+            
+        } catch (error) {
+            console.error('Ошибка Google авторизации:', error);
+            showError('Ошибка при запуске Google авторизации');
         }
-        
-    } catch (error) {
-        console.error('Ошибка Google авторизации:', error);
-        showError('Ошибка при запуске Google авторизации');
     }
-}
 
     // Сохранить пользователя и перенаправить
     async function saveUserAndRedirect(data) {
@@ -1129,46 +1076,6 @@ function handleGoogleRedirectAuth() {
             }
         });
     });
-
-    // Функция для обработки callback из google-callback.html
-function handleCallbackFromPopup() {
-    console.log('🔄 Проверка callback данных...');
-    
-    // Проверяем sessionStorage на наличие данных от callback страницы
-    const code = sessionStorage.getItem('google_auth_code');
-    const state = sessionStorage.getItem('google_auth_state');
-    const error = localStorage.getItem('google_auth_error');
-    
-    if (error) {
-        console.error('❌ Ошибка из callback:', error);
-        showError('Ошибка авторизации: ' + error);
-        localStorage.removeItem('google_auth_error');
-        return;
-    }
-    
-    if (code && state) {
-        console.log('✅ Получены данные из callback, начинаю обработку...');
-        sessionStorage.removeItem('google_auth_code');
-        sessionStorage.removeItem('google_auth_state');
-        handleGoogleAuthorizationCode(code);
-    }
-}
-
-// И В инициализации добавьте вызов этой функции
-document.addEventListener('DOMContentLoaded', function() {
-    // СНАЧАЛА проверяем callback из popup/callback страницы
-    handleCallbackFromPopup();
-    
-    // Затем обычная проверка
-    checkForOAuthCallback();
-    
-    // Остальной код остается как был...
-    // Проверяем авторизацию
-    checkExistingAuth();
-    
-    // Загружаем конфигурацию Google
-    loadGoogleConfig();
-});
 </script>
 </body>
 </html>
