@@ -17,6 +17,7 @@ const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+const APP_GOOGLE_CLIENT_ID = process.env.APP_GOOGLE_CLIENT_ID; // Для вебвью приложения
 
 // Поддержка как DATABASE_URL (для Vercel + Neon), так и отдельных переменных
 let poolConfig;
@@ -388,45 +389,102 @@ app.get('/operator-profile', (req, res) => {
 
 // Google Config endpoint
 app.get('/api/config/google', (req, res) => {
+    const clientType = req.query.clientType || 'web';
+    
+    let googleClientId;
+    if (clientType === 'app') {
+        googleClientId = APP_GOOGLE_CLIENT_ID || 'not-configured';
+        console.log(`📱 Providing APP Google Client ID for ${clientType}`);
+    } else {
+        googleClientId = GOOGLE_CLIENT_ID || 'not-configured';
+        console.log(`🌐 Providing WEB Google Client ID for ${clientType}`);
+    }
+    
     res.json({
         success: true,
-        googleClientId: GOOGLE_CLIENT_ID || 'not-configured',
-        redirectUri: `${req.protocol}://${req.get('host')}`
+        googleClientId: googleClientId,
+        redirectUri: `${req.protocol}://${req.get('host')}`,
+        clientType: clientType
     });
 });
 
 // Обмен authorization code на access token
-async function exchangeCodeForToken(code) {
+async function exchangeCodeForToken(code, clientType = 'web') {
     try {
-        console.log('🔄 Exchanging code for token...');
+        console.log(`🔄 Exchanging code for token for ${clientType}...`);
         
-        const redirectUri = process.env.NODE_ENV === 'production' 
-            ? 'https://zeeptook.vercel.app/register.html' 
-            : 'http://localhost:3000/register.html';
+        // Определяем client_id в зависимости от типа клиента
+        const clientId = clientType === 'app' ? APP_GOOGLE_CLIENT_ID : GOOGLE_CLIENT_ID;
+        const clientSecret = clientType === 'app' ? null : GOOGLE_CLIENT_SECRET; // Для приложений нет секрета
         
-        const response = await fetch('https://oauth2.googleapis.com/token', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-                code: code,
-                client_id: GOOGLE_CLIENT_ID,
-                client_secret: GOOGLE_CLIENT_SECRET,
-                redirect_uri: redirectUri,
-                grant_type: 'authorization_code'
-            })
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error('❌ Token exchange error:', errorData);
-            throw new Error('Failed to exchange code for token: ' + (errorData.error || 'unknown'));
+        console.log(`📱 Using client ID: ${clientType === 'app' ? 'APP_' : 'WEB_'}${clientId?.slice(-8)}`);
+        
+        if (!clientId) {
+            throw new Error(`Google Client ID not configured for ${clientType}`);
         }
+        
+        if (clientType === 'web' && !clientSecret) {
+            throw new Error('Google Client Secret required for web');
+        }
+        
+        const redirectUri = clientType === 'app' 
+            ? 'https://zeeptook.vercel.app/register.html' // Или ваш URL
+            : process.env.NODE_ENV === 'production' 
+                ? 'https://zeeptook.vercel.app/register.html' 
+                : 'http://localhost:3000/register.html';
+        
+        // Для веб-сайта используем стандартный OAuth flow
+        if (clientType === 'web') {
+            const response = await fetch('https://oauth2.googleapis.com/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    code: code,
+                    client_id: clientId,
+                    client_secret: clientSecret,
+                    redirect_uri: redirectUri,
+                    grant_type: 'authorization_code'
+                })
+            });
 
-        const tokenData = await response.json();
-        console.log('✅ Token exchange successful');
-        return tokenData;
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('❌ Token exchange error:', errorData);
+                throw new Error('Failed to exchange code for token: ' + (errorData.error || 'unknown'));
+            }
+
+            const tokenData = await response.json();
+            console.log('✅ Token exchange successful');
+            return tokenData;
+        } 
+        // Для приложения используем flow без секрета (Google Sign-In для веба)
+        else {
+            const response = await fetch('https://oauth2.googleapis.com/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: new URLSearchParams({
+                    code: code,
+                    client_id: clientId,
+                    redirect_uri: redirectUri,
+                    grant_type: 'authorization_code'
+                    // Для веб-приложений (Android/iOS) не нужен client_secret
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('❌ App token exchange error:', errorData);
+                throw new Error('Failed to exchange code for token: ' + (errorData.error || 'unknown'));
+            }
+
+            const tokenData = await response.json();
+            console.log('✅ App token exchange successful');
+            return tokenData;
+        }
     } catch (error) {
         console.error('❌ Code exchange error:', error);
         throw error;
@@ -456,20 +514,29 @@ async function getGoogleUserInfo(accessToken) {
 // Google OAuth endpoint - авторизация по code
 app.post('/api/auth/google', async (req, res) => {
     try {
-        if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-            return res.status(503).json({ error: 'Google OAuth is not configured' });
+        const { code, clientType = 'web' } = req.body;
+        
+        console.log(`🔐 Google auth attempt with code for ${clientType}`);
+        
+        // Проверяем конфигурацию в зависимости от типа клиента
+        if (clientType === 'web') {
+            if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+                return res.status(503).json({ error: 'Google OAuth is not configured for web' });
+            }
+        } else if (clientType === 'app') {
+            if (!APP_GOOGLE_CLIENT_ID) {
+                return res.status(503).json({ error: 'Google OAuth is not configured for app' });
+            }
+        } else {
+            return res.status(400).json({ error: 'Invalid client type' });
         }
-
-        const { code } = req.body;
         
         if (!code) {
             return res.status(400).json({ error: 'Authorization code is required' });
         }
 
-        console.log('🔐 Google auth attempt with code');
-
-        // Exchange code for tokens
-        const tokenData = await exchangeCodeForToken(code);
+        // Exchange code for tokens с учетом типа клиента
+        const tokenData = await exchangeCodeForToken(code, clientType);
         const { access_token } = tokenData;
 
         // Get user info from Google
@@ -478,13 +545,13 @@ app.post('/api/auth/google', async (req, res) => {
             return res.status(400).json({ error: 'Failed to get user info from Google' });
         }
 
-        console.log('🔐 Google user info:', { 
+        console.log(`🔐 ${clientType.toUpperCase()} Google user info:`, { 
             email: userInfo.email, 
             name: userInfo.name,
             sub: userInfo.sub 
         });
 
-        // Check if user already exists
+        // Проверяем существование пользователя
         const userResult = await pool.query(
             'SELECT * FROM users WHERE google_id = $1 OR email = $2',
             [userInfo.sub, userInfo.email]
@@ -505,7 +572,7 @@ app.post('/api/auth/google', async (req, res) => {
             // Generate JWT token
             const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET);
             
-            console.log('✅ Google user logged in:', user.email);
+            console.log(`✅ ${clientType.toUpperCase()} Google user logged in:`, user.email);
 
             return res.json({
                 success: true,
@@ -522,7 +589,7 @@ app.post('/api/auth/google', async (req, res) => {
             });
         } else {
             // New user - return user data for additional info
-            console.log('🆕 New Google user:', userInfo.email);
+            console.log(`🆕 New ${clientType} Google user:`, userInfo.email);
             return res.json({
                 success: true,
                 exists: false,
