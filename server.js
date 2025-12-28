@@ -413,78 +413,57 @@ async function exchangeCodeForToken(code, clientType = 'web') {
     try {
         console.log(`🔄 Exchanging code for token for ${clientType}...`);
         
-        // Определяем client_id в зависимости от типа клиента
         const clientId = clientType === 'app' ? APP_GOOGLE_CLIENT_ID : GOOGLE_CLIENT_ID;
-        const clientSecret = clientType === 'app' ? null : GOOGLE_CLIENT_SECRET; // Для приложений нет секрета
-        
-        console.log(`📱 Using client ID: ${clientType === 'app' ? 'APP_' : 'WEB_'}${clientId?.slice(-8)}`);
+        const clientSecret = clientType === 'app' ? null : GOOGLE_CLIENT_SECRET;
         
         if (!clientId) {
             throw new Error(`Google Client ID not configured for ${clientType}`);
         }
         
-        if (clientType === 'web' && !clientSecret) {
-            throw new Error('Google Client Secret required for web');
-        }
+        // ВАЖНО: Определяем правильный redirect_uri
+        let redirectUri;
         
-        const redirectUri = clientType === 'app' 
-            ? 'https://zeeptook.vercel.app/register.html' // Или ваш URL
-            : process.env.NODE_ENV === 'production' 
+        if (clientType === 'app') {
+            // Для приложения используем ту же страницу
+            redirectUri = window.location.origin + window.location.pathname;
+        } else {
+            // Для веба определяем в зависимости от окружения
+            redirectUri = process.env.NODE_ENV === 'production' 
                 ? 'https://zeeptook.vercel.app/register.html' 
                 : 'http://localhost:3000/register.html';
-        
-        // Для веб-сайта используем стандартный OAuth flow
-        if (clientType === 'web') {
-            const response = await fetch('https://oauth2.googleapis.com/token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    code: code,
-                    client_id: clientId,
-                    client_secret: clientSecret,
-                    redirect_uri: redirectUri,
-                    grant_type: 'authorization_code'
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('❌ Token exchange error:', errorData);
-                throw new Error('Failed to exchange code for token: ' + (errorData.error || 'unknown'));
-            }
-
-            const tokenData = await response.json();
-            console.log('✅ Token exchange successful');
-            return tokenData;
-        } 
-        // Для приложения используем flow без секрета (Google Sign-In для веба)
-        else {
-            const response = await fetch('https://oauth2.googleapis.com/token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    code: code,
-                    client_id: clientId,
-                    redirect_uri: redirectUri,
-                    grant_type: 'authorization_code'
-                    // Для веб-приложений (Android/iOS) не нужен client_secret
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('❌ App token exchange error:', errorData);
-                throw new Error('Failed to exchange code for token: ' + (errorData.error || 'unknown'));
-            }
-
-            const tokenData = await response.json();
-            console.log('✅ App token exchange successful');
-            return tokenData;
         }
+        
+        console.log(`📱 Using redirect_uri: ${redirectUri}`);
+        
+        const tokenParams = {
+            code: code,
+            client_id: clientId,
+            redirect_uri: redirectUri,
+            grant_type: 'authorization_code'
+        };
+        
+        // Добавляем секрет только для веб-приложения
+        if (clientType === 'web' && clientSecret) {
+            tokenParams.client_secret = clientSecret;
+        }
+        
+        const response = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams(tokenParams)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error('❌ Token exchange error:', errorData);
+            throw new Error('Failed to exchange code for token: ' + (errorData.error || 'unknown'));
+        }
+
+        const tokenData = await response.json();
+        console.log('✅ Token exchange successful');
+        return tokenData;
     } catch (error) {
         console.error('❌ Code exchange error:', error);
         throw error;
