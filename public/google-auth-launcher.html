@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Auth - Открытие браузера</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            padding: 30px;
+            max-width: 400px;
+        }
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 4px solid #00f2fe;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .btn {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #3367d6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <h2>Открываю Google авторизацию...</h2>
+        <p>Пожалуйста, авторизуйтесь в системном браузере</p>
+        
+        <!-- Кнопка для ручного открытия, если автоматика не сработала -->
+        <button id="open-manually" class="btn" style="display:none;">
+            Открыть вручную
+        </button>
+    </div>
+
+    <script>
+        // Получаем Google Client ID с сервера
+        async function getGoogleConfig() {
+            try {
+                const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
+                const response = await fetch(`${API_BASE}/config/google`);
+                const config = await response.json();
+                
+                if (config.success && config.googleClientId !== 'not-configured') {
+                    return config.googleClientId;
+                }
+                return null;
+            } catch (error) {
+                console.error('Error loading config:', error);
+                return null;
+            }
+        }
+
+        // Открывает Google OAuth в системном браузере
+        async function openGoogleAuth() {
+            try {
+                const clientId = await getGoogleConfig();
+                
+                if (!clientId) {
+                    document.querySelector('h2').textContent = 'Ошибка конфигурации';
+                    document.querySelector('p').textContent = 'Google OAuth не настроен';
+                    document.getElementById('open-manually').style.display = 'block';
+                    return;
+                }
+
+                // Генерируем уникальный state
+                const state = 'google_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                sessionStorage.setItem('google_oauth_state', state);
+                
+                // Используем google-auth-callback.html для получения данных
+                const redirectUri = encodeURIComponent(
+                    window.location.origin.includes('localhost') 
+                        ? 'http://localhost:3000/google-auth-callback.html'
+                        : 'https://zeeptook.vercel.app/google-auth-callback.html'
+                );
+                
+                const scope = encodeURIComponent('email profile openid');
+                
+                const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+                    `client_id=${clientId}` +
+                    `&redirect_uri=${redirectUri}` +
+                    `&response_type=code` +
+                    `&scope=${scope}` +
+                    `&state=${state}` +
+                    `&prompt=select_account`;
+                
+                console.log('🌐 Opening Google OAuth:', authUrl);
+                
+                // Попробуем разные методы открытия в системном браузере
+                
+                // Метод 1: Использование window.open с _system (работает в Cordova/PhoneGap)
+                if (window.cordova || window.Capacitor) {
+                    window.open(authUrl, '_system');
+                }
+                // Метод 2: Использование _blank и надежда на редирект
+                else {
+                    window.open(authUrl, '_blank');
+                }
+                
+                // Метод 3: Показать кнопку для ручного открытия
+                setTimeout(() => {
+                    document.getElementById('open-manually').style.display = 'block';
+                    document.querySelector('h2').textContent = 'Откройте браузер вручную';
+                    document.querySelector('p').textContent = 'Нажмите кнопку ниже, чтобы открыть Google авторизацию';
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error opening Google auth:', error);
+                document.querySelector('h2').textContent = 'Ошибка';
+                document.querySelector('p').textContent = 'Не удалось открыть авторизацию: ' + error.message;
+                document.getElementById('open-manually').style.display = 'block';
+            }
+        }
+
+        // Обработчик ручного открытия
+        document.getElementById('open-manually').addEventListener('click', async () => {
+            const clientId = await getGoogleConfig();
+            if (clientId) {
+                const state = 'google_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                sessionStorage.setItem('google_oauth_state', state);
+                
+                const redirectUri = encodeURIComponent(
+                    window.location.origin.includes('localhost') 
+                        ? 'http://localhost:3000/google-auth-callback.html'
+                        : 'https://zeeptook.vercel.app/google-auth-callback.html'
+                );
+                
+                const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+                    `client_id=${clientId}` +
+                    `&redirect_uri=${redirectUri}` +
+                    `&response_type=code` +
+                    `&scope=email%20profile%20openid` +
+                    `&state=${state}` +
+                    `&prompt=select_account`;
+                
+                // Создаем ссылку и кликаем по ней
+                const link = document.createElement('a');
+                link.href = authUrl;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        });
+
+        // Автоматически открываем при загрузке
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(openGoogleAuth, 1000);
+        });
+    </script>
+</body>
+</html>
