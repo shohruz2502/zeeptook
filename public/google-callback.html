@@ -12,53 +12,99 @@
     </div>
 
     <script>
-        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
+    console.log('🔗 Google callback page loaded');
+    
+    // Определяем, откуда пришли
+    const referrer = document.referrer;
+    console.log('🔗 Referrer:', referrer);
+    console.log('🔗 Current URL:', window.location.href);
 
-        async function handleGoogleCallback() {
-            const params = new URLSearchParams(window.location.search);
-            const code = params.get('code');
-            const state = params.get('state');
-            const error = params.get('error');
+    async function handleGoogleCallback() {
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        const state = params.get('state');
+        const error = params.get('error');
 
-            // Убираем параметры из URL
-            if (code || error) {
-                history.replaceState(null, null, window.location.pathname);
-            }
+        console.log('📊 Callback parameters:', { code: !!code, state: !!state, error });
 
-            if (error) {
-                localStorage.setItem('google_auth_error', error);
-                window.location.href = 'register.html';
-                return;
-            }
+        // Убираем параметры из URL
+        if (code || error) {
+            history.replaceState(null, null, window.location.pathname);
+        }
 
-            if (code && state) {
-                try {
-                    // Проверяем state
-                    const savedState = sessionStorage.getItem('google_oauth_state');
-                    if (state !== savedState) {
-                        throw new Error('Ошибка безопасности');
-                    }
-
-                    sessionStorage.removeItem('google_oauth_state');
-
-                    // Сохраняем code в sessionStorage
-                    sessionStorage.setItem('google_auth_code', code);
-                    sessionStorage.setItem('google_auth_state', state);
-
-                    // Перенаправляем на регистрацию
-                    window.location.href = 'register.html';
-
-                } catch (error) {
-                    console.error('Callback error:', error);
-                    localStorage.setItem('google_auth_error', error.message);
-                    window.location.href = 'register.html';
-                }
+        if (error) {
+            console.error('❌ OAuth error:', error);
+            localStorage.setItem('google_auth_error', error);
+            
+            // Пытаемся вернуться на register.html
+            if (window.opener && !window.opener.closed) {
+                window.opener.postMessage({ 
+                    type: 'oauth_error', 
+                    error: error 
+                }, '*');
+                window.close();
             } else {
                 window.location.href = 'register.html';
             }
+            return;
         }
 
-        document.addEventListener('DOMContentLoaded', handleGoogleCallback);
-    </script>
+        if (code && state) {
+            try {
+                console.log('✅ Valid OAuth callback received');
+                
+                // Проверяем state
+                const savedState = sessionStorage.getItem('google_oauth_state');
+                console.log('🔐 State check:', { 
+                    received: state, 
+                    saved: savedState, 
+                    match: state === savedState 
+                });
+                
+                if (state !== savedState) {
+                    throw new Error('Ошибка безопасности. State не совпадает.');
+                }
+
+                sessionStorage.removeItem('google_oauth_state');
+
+                // Сохраняем код в sessionStorage
+                sessionStorage.setItem('google_auth_code', code);
+                sessionStorage.setItem('google_auth_state', state);
+                console.log('💾 Code saved to sessionStorage');
+
+                // Перенаправляем на регистрацию
+                console.log('🔄 Redirecting to register.html...');
+                
+                // Если открыто в popup, закрываем и отправляем сообщение
+                if (window.opener && !window.opener.closed) {
+                    window.opener.postMessage({ 
+                        type: 'oauth_code', 
+                        code: code, 
+                        state: state 
+                    }, '*');
+                    setTimeout(() => window.close(), 500);
+                } else {
+                    // Иначе редирект
+                    window.location.href = 'register.html';
+                }
+
+            } catch (error) {
+                console.error('❌ Callback error:', error);
+                localStorage.setItem('google_auth_error', error.message);
+                window.location.href = 'register.html';
+            }
+        } else {
+            console.warn('⚠️ No code or state in callback');
+            window.location.href = 'register.html';
+        }
+    }
+
+    // Также добавляем обработчик сообщений на случай, если нужно что-то передать обратно
+    window.addEventListener('message', function(event) {
+        console.log('📩 Message received in callback:', event.data);
+    });
+
+    document.addEventListener('DOMContentLoaded', handleGoogleCallback);
+</script>
 </body>
 </html>
