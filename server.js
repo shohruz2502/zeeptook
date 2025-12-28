@@ -386,22 +386,6 @@ app.get('/operator-profile', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'operator-profile.html'));
 });
 
-// Serve new Google auth pages
-app.get('/google-auth-launcher', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'google-auth-launcher.html'));
-});
-
-app.get('/google-auth-callback', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'google-auth-callback.html'));
-});
-
-// Keep the old callback for compatibility
-app.get('/google-callback', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'google-callback.html'));
-});
-
-
-
 // Google Config endpoint
 app.get('/api/config/google', (req, res) => {
     res.json({
@@ -416,12 +400,9 @@ async function exchangeCodeForToken(code) {
     try {
         console.log('🔄 Exchanging code for token...');
         
-        // Поддерживаем оба варианта callback URI для совместимости
         const redirectUri = process.env.NODE_ENV === 'production' 
-            ? 'https://zeeptook.vercel.app/google-auth-callback.html' 
-            : 'http://localhost:3000/google-auth-callback.html';
-        
-        console.log('🔗 Using redirect URI:', redirectUri);
+            ? 'https://zeeptook.vercel.app/register.html' 
+            : 'http://localhost:3000/register.html';
         
         const response = await fetch('https://oauth2.googleapis.com/token', {
             method: 'POST',
@@ -440,36 +421,6 @@ async function exchangeCodeForToken(code) {
         if (!response.ok) {
             const errorData = await response.json();
             console.error('❌ Token exchange error:', errorData);
-            
-            // Пробуем старый redirect_uri для обратной совместимости
-            if (errorData.error === 'invalid_grant' && errorData.error_description?.includes('redirect_uri')) {
-                console.log('⚠️ Trying with old redirect_uri...');
-                
-                const oldRedirectUri = process.env.NODE_ENV === 'production' 
-                    ? 'https://zeeptook.vercel.app/register.html' 
-                    : 'http://localhost:3000/register.html';
-                
-                const retryResponse = await fetch('https://oauth2.googleapis.com/token', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: new URLSearchParams({
-                        code: code,
-                        client_id: GOOGLE_CLIENT_ID,
-                        client_secret: GOOGLE_CLIENT_SECRET,
-                        redirect_uri: oldRedirectUri,
-                        grant_type: 'authorization_code'
-                    })
-                });
-                
-                if (retryResponse.ok) {
-                    const tokenData = await retryResponse.json();
-                    console.log('✅ Token exchange successful (with old redirect_uri)');
-                    return tokenData;
-                }
-            }
-            
             throw new Error('Failed to exchange code for token: ' + (errorData.error || 'unknown'));
         }
 
