@@ -516,71 +516,78 @@
     let googleOAuthState = null;
 
     // Проверка OAuth callback в URL
-    function checkForOAuthCallback() {
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
-        const state = params.get('state');
-        const error = params.get('error');
-        
-        // Убираем параметры из URL
-        if (code || error) {
-            history.replaceState(null, null, window.location.pathname);
-        }
-        
-        if (error) {
-            showError('Ошибка Google авторизации: ' + error);
+function checkForOAuthCallback() {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const state = params.get('state');
+    const error = params.get('error');
+    
+    // Убираем параметры из URL
+    if (code || error) {
+        history.replaceState(null, null, window.location.pathname);
+    }
+    
+    if (error) {
+        showError('Ошибка Google авторизации: ' + error);
+        return;
+    }
+    
+    if (code && state) {
+        const savedState = sessionStorage.getItem('google_oauth_state');
+        if (!savedState || !state.startsWith(savedState.split('_')[0])) {
+            showError('Ошибка безопасности. Попробуйте снова.');
             return;
         }
         
-        if (code && state) {
-            const savedState = sessionStorage.getItem('google_oauth_state');
-            if (state !== savedState) {
-                showError('Ошибка безопасности. Попробуйте снова.');
-                return;
-            }
-            
-            sessionStorage.removeItem('google_oauth_state');
-            
-            // Отправляем code на сервер для обмена на токен
-            handleGoogleAuthorizationCode(code);
-        }
+        sessionStorage.removeItem('google_oauth_state');
+        
+        // Отправляем code на сервер для обмена на токен
+        handleGoogleAuthorizationCode(code, state);
     }
+}
 
     // Функция для обработки кода авторизации
-    async function handleGoogleAuthorizationCode(code) {
-        try {
-            showSuccess('Авторизация Google...');
-            
-            const response = await fetch(`${API_BASE}/auth/google`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    code: code
-                })
-            });
+async function handleGoogleAuthorizationCode(code, state) {
+    try {
+        // Извлекаем тип клиента из state
+        const stateParts = state.split('_');
+        const clientType = stateParts[stateParts.length - 1] || 'web';
+        
+        console.log(`🔐 Обработка Google кода для ${clientType} клиента`);
+        
+        showSuccess('Авторизация Google...');
+        
+        const response = await fetch(`${API_BASE}/auth/google`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                code: code,
+                clientType: clientType
+            })
+        });
 
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.error || 'Ошибка авторизации через Google');
-            }
-            
-            if (data.success && data.exists) {
-                saveUserAndRedirect(data);
-            } else if (data.success && !data.exists) {
-                googleUserData = data.user;
-                showGoogleCompleteModal();
-            } else {
-                throw new Error('Неожиданный ответ от сервера');
-            }
-            
-        } catch (error) {
-            console.error('Ошибка обработки Google кода:', error);
-            showError(error.message || 'Ошибка обработки данных Google');
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.error || 'Ошибка авторизации через Google');
         }
+        
+        if (data.success && data.exists) {
+            saveUserAndRedirect(data);
+        } else if (data.success && !data.exists) {
+            googleUserData = data.user;
+            showGoogleCompleteModal();
+        } else {
+            throw new Error('Неожиданный ответ от сервера');
+        }
+        
+    } catch (error) {
+        console.error('Ошибка обработки Google кода:', error);
+        showError(error.message || 'Ошибка обработки данных Google');
     }
+}
 
     // Проверяем, если пользователь уже авторизован
     function checkExistingAuth() {
@@ -795,36 +802,44 @@
         }
     }
 
-    // Загрузка конфигурации Google
-    async function loadGoogleConfig() {
-        try {
-            console.log('Загрузка конфигурации Google...');
-            const response = await fetch(`${API_BASE}/config/google`);
+    // Загрузка конфигурации Google с определением типа клиента
+async function loadGoogleConfig() {
+    try {
+        console.log('Загрузка конфигурации Google...');
+        
+        // Определяем тип клиента (веб-сайт или вебвью приложение)
+        const isApp = /(Android|iPhone|iPad|iPod|Mobile)/i.test(navigator.userAgent) && 
+                     /WebView|wv|CriOS|FxiOS/.test(navigator.userAgent);
+        
+        const clientType = isApp ? 'app' : 'web';
+        console.log(`📱 Определен тип клиента: ${clientType} (User-Agent: ${navigator.userAgent})`);
+        
+        const response = await fetch(`${API_BASE}/config/google?clientType=${clientType}`);
+        
+        if (!response.ok) {
+            throw new Error('Ошибка получения конфигурации');
+        }
+        
+        const config = await response.json();
+        
+        if (config.success && config.googleClientId && config.googleClientId !== 'not-configured') {
+            googleClientId = config.googleClientId;
+            console.log(`✅ ${clientType.toUpperCase()} Google Client ID получен:`, googleClientId?.slice(-8));
             
-            if (!response.ok) {
-                throw new Error('Ошибка получения конфигурации');
-            }
+            // Включаем кнопку Google
+            const googleBtn = document.getElementById('google-auth-btn');
+            googleBtn.disabled = false;
+            googleAuthInitialized = true;
             
-            const config = await response.json();
-            
-            if (config.success && config.googleClientId && config.googleClientId !== 'not-configured') {
-                googleClientId = config.googleClientId;
-                console.log('✅ Google Client ID получен:', googleClientId);
-                
-                // Включаем кнопку Google
-                const googleBtn = document.getElementById('google-auth-btn');
-                googleBtn.disabled = false;
-                googleAuthInitialized = true;
-                
-            } else {
-                console.warn('Google OAuth не настроен на сервере');
-                disableGoogleButton();
-            }
-        } catch (error) {
-            console.error('Ошибка загрузки конфигурации Google:', error);
+        } else {
+            console.warn(`Google OAuth не настроен для ${clientType} на сервере`);
             disableGoogleButton();
         }
+    } catch (error) {
+        console.error('Ошибка загрузки конфигурации Google:', error);
+        disableGoogleButton();
     }
+}
 
     // Отключение кнопки Google
     function disableGoogleButton() {
@@ -835,40 +850,49 @@
     }
 
     // Google OAuth через redirect
-    function handleGoogleRedirectAuth() {
-        if (!googleAuthInitialized || !googleClientId) {
-            showError('Google авторизация временно недоступна. Используйте email.');
-            return;
-        }
-
-        try {
-            // Создаем уникальный state для защиты от CSRF
-            googleOAuthState = 'google_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            sessionStorage.setItem('google_oauth_state', googleOAuthState);
-            
-            // ВАЖНО: Используем SAME PAGE для callback
-            const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
-            const scope = encodeURIComponent('email profile openid');
-            const responseType = 'code'; // Используем Authorization Code Flow
-            
-            const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-                `client_id=${googleClientId}` +
-                `&redirect_uri=${redirectUri}` +
-                `&response_type=${responseType}` +
-                `&scope=${scope}` +
-                `&state=${googleOAuthState}` +
-                `&prompt=select_account`;
-            
-            console.log('Перенаправляем на Google OAuth...', authUrl);
-            
-            // Перенаправляем пользователя
-            window.location.href = authUrl;
-            
-        } catch (error) {
-            console.error('Ошибка Google авторизации:', error);
-            showError('Ошибка при запуске Google авторизации');
-        }
+function handleGoogleRedirectAuth() {
+    if (!googleAuthInitialized || !googleClientId) {
+        showError('Google авторизация временно недоступна. Используйте email.');
+        return;
     }
+
+    try {
+        // Определяем тип клиента
+        const isApp = /(Android|iPhone|iPad|iPod|Mobile)/i.test(navigator.userAgent) && 
+                     /WebView|wv|CriOS|FxiOS/.test(navigator.userAgent);
+        const clientType = isApp ? 'app' : 'web';
+        
+        console.log(`🔐 Запуск Google OAuth для ${clientType} клиента`);
+        
+        // Создаем уникальный state для защиты от CSRF
+        googleOAuthState = 'google_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9) + '_' + clientType;
+        sessionStorage.setItem('google_oauth_state', googleOAuthState);
+        
+        // ВАЖНО: Используем SAME PAGE для callback
+        const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
+        const scope = encodeURIComponent('email profile openid');
+        const responseType = 'code'; // Используем Authorization Code Flow
+        
+        // Для приложения можно добавить дополнительные параметры
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+            `client_id=${googleClientId}` +
+            `&redirect_uri=${redirectUri}` +
+            `&response_type=${responseType}` +
+            `&scope=${scope}` +
+            `&state=${googleOAuthState}` +
+            `&prompt=select_account` +
+            (clientType === 'app' ? '&access_type=offline&include_granted_scopes=true' : '');
+        
+        console.log(`Перенаправляем на Google OAuth для ${clientType}...`);
+        
+        // Перенаправляем пользователя
+        window.location.href = authUrl;
+        
+    } catch (error) {
+        console.error('Ошибка Google авторизации:', error);
+        showError('Ошибка при запуске Google авторизации');
+    }
+}
 
     // Сохранить пользователя и перенаправить
     async function saveUserAndRedirect(data) {
