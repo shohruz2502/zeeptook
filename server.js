@@ -395,14 +395,33 @@ app.get('/api/config/google', (req, res) => {
     });
 });
 
-// Обмен authorization code на access token
+// Обмен authorization code на access token - ИСПРАВЛЕННАЯ ВЕРСИЯ
 async function exchangeCodeForToken(code) {
     try {
         console.log('🔄 Exchanging code for token...');
+        console.log('📝 Полученный код:', code ? '***' + code.slice(-10) : 'пустой');
         
-        const redirectUri = process.env.NODE_ENV === 'production' 
-            ? 'https://zeeptook.vercel.app/register.html' 
-            : 'http://localhost:3000/register.html';
+        // ВАЖНО: используем ОДИНАКОВЫЙ redirect_uri что в клиенте
+        // Для продакшена - google-callback.html
+        // Для разработки - localhost/google-callback.html
+        
+        let redirectUri;
+        
+        if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+            // Продакшен на Vercel
+            redirectUri = 'https://zeeptook.vercel.app/google-callback.html';
+            console.log('🌐 Production redirect URI:', redirectUri);
+        } else {
+            // Локальная разработка
+            redirectUri = 'http://localhost:3000/google-callback.html';
+            console.log('💻 Development redirect URI:', redirectUri);
+        }
+        
+        console.log('🔧 Параметры запроса к Google:', {
+            client_id: GOOGLE_CLIENT_ID ? '***' + GOOGLE_CLIENT_ID.slice(-10) : 'не настроен',
+            redirect_uri: redirectUri,
+            code_length: code ? code.length : 0
+        });
         
         const response = await fetch('https://oauth2.googleapis.com/token', {
             method: 'POST',
@@ -413,7 +432,7 @@ async function exchangeCodeForToken(code) {
                 code: code,
                 client_id: GOOGLE_CLIENT_ID,
                 client_secret: GOOGLE_CLIENT_SECRET,
-                redirect_uri: redirectUri,
+                redirect_uri: redirectUri,  // ← СОВПАДАЕТ С КЛИЕНТОМ!
                 grant_type: 'authorization_code'
             })
         });
@@ -421,14 +440,39 @@ async function exchangeCodeForToken(code) {
         if (!response.ok) {
             const errorData = await response.json();
             console.error('❌ Token exchange error:', errorData);
+            
+            // Детальная диагностика ошибки
+            if (errorData.error === 'invalid_grant') {
+                console.error('⚠️ Возможные причины invalid_grant:');
+                console.error('   1. Код был уже использован');
+                console.error('   2. Неправильный redirect_uri');
+                console.error('   3. Истекло время жизни кода (>10 минут)');
+                console.error('   4. Неправильный client_id/client_secret');
+            }
+            
             throw new Error('Failed to exchange code for token: ' + (errorData.error || 'unknown'));
         }
 
         const tokenData = await response.json();
         console.log('✅ Token exchange successful');
+        console.log('🔑 Получены токены:', {
+            access_token: tokenData.access_token ? '***' + tokenData.access_token.slice(-10) : 'нет',
+            expires_in: tokenData.expires_in,
+            token_type: tokenData.token_type
+        });
+        
         return tokenData;
     } catch (error) {
         console.error('❌ Code exchange error:', error);
+        console.error('❌ Error stack:', error.stack);
+        
+        // Добавляем больше информации об ошибке
+        if (error.message.includes('Failed to fetch')) {
+            console.error('⚠️ Нет доступа к Google API. Проверьте:');
+            console.error('   1. Интернет соединение');
+            console.error('   2. Доступ к https://oauth2.googleapis.com');
+        }
+        
         throw error;
     }
 }
