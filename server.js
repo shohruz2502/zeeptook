@@ -236,7 +236,7 @@ async function sendToTelegram(message, userInfo = null, chatType = 'support') {
     try {
         let text = '';
         
-        // Форматируем сообщение в точности как ты просил
+        // Форматируем сообщение в зависимости от типа чата
         if (chatType === 'support') {
             text = `🆘 НОВОЕ СООБЩЕНИЕ В ЧАТ ПОДДЕРЖКИ\n`;
             text += `👤 ID пользователя: ${userInfo?.userId || 'Неизвестно'}\n`;
@@ -245,7 +245,7 @@ async function sendToTelegram(message, userInfo = null, chatType = 'support') {
             text += `🆔 Chat ID: ${userInfo?.chatId || 'Не указан'}\n`;
             text += `📝 Сообщение: ${message}`;
         } else {
-            // Для обычных уведомлений (о сделках и т.д.)
+            // Для обычных уведомлений
             text = message;
             if (userInfo) {
                 text = `👤 ${userInfo.name}\n📧 ${userInfo.email}\n💬 ${message}`;
@@ -260,7 +260,7 @@ async function sendToTelegram(message, userInfo = null, chatType = 'support') {
             body: JSON.stringify({
                 chat_id: TELEGRAM_CHAT_ID,
                 text: text,
-                parse_mode: 'HTML' // Используем HTML или убери эту строку, если сообщения не отправляются из-за спецсимволов
+                parse_mode: 'HTML'
             })
         });
         
@@ -278,78 +278,6 @@ async function sendToTelegram(message, userInfo = null, chatType = 'support') {
         return false;
     }
 }
-
-
-// ============================================
-// === TELEGRAM WEBHOOK (ОТВЕТЫ ИЗ ТЕЛЕГРАМА) ===
-// ============================================
-
-app.post('/api/telegram/webhook', async (req, res) => {
-    try {
-        const update = req.body;
-
-        // Проверяем, что это сообщение и что это ответ на другое сообщение (Reply)
-        if (update.message && update.message.reply_to_message && update.message.text) {
-            const originalText = update.message.reply_to_message.text;
-            const replyText = update.message.text;
-
-            // 1. Ищем ID пользователя и Chat ID в оригинальном сообщении с помощью Regex
-            // Мы ищем строки "ID пользователя: 6" и "Chat ID: support_6_..."
-            const userIdMatch = originalText.match(/ID пользователя:\s*(\d+)/);
-            const chatIdMatch = originalText.match(/Chat ID:\s*(\S+)/);
-
-            if (userIdMatch && chatIdMatch) {
-                const userId = userIdMatch[1];
-                const chatId = chatIdMatch[1];
-
-                console.log(`📨 Telegram Reply: Admin answering to User ${userId} in Chat ${chatId}`);
-
-                // 2. Сохраняем ответ админа в базу данных
-                // sender_id = 1 (Админ), receiver_id = User ID
-                const result = await pool.query(`
-                    INSERT INTO messages (sender_id, receiver_id, content, chat_type, chat_id)
-                    VALUES ($1, $2, $3, $4, $5)
-                    RETURNING id, created_at
-                `, [1, userId, replyText, 'support', chatId]);
-
-                // 3. Если пользователь онлайн (WebSocket), отправляем ему уведомление сразу
-                const wsConnection = connections.get(userId);
-                if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
-                    wsConnection.send(JSON.stringify({
-                        type: 'message',
-                        chatId: chatId,
-                        message: {
-                            id: result.rows[0].id,
-                            sender_id: 1, // ID Админа
-                            content: replyText,
-                            created_at: result.rows[0].created_at,
-                            receiver_id: userId
-                        }
-                    }));
-                }
-
-                // Отправляем подтверждение в Telegram (реакцию или сообщение)
-                await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        chat_id: update.message.chat.id,
-                        text: `✅ Ответ отправлен пользователю (ID: ${userId})`,
-                        reply_to_message_id: update.message.message_id
-                    })
-                });
-            }
-        }
-        
-        // Всегда отвечаем 200 OK Телеграму
-        res.sendStatus(200);
-    } catch (error) {
-        console.error('❌ Telegram Webhook Error:', error);
-        res.sendStatus(500);
-    }
-});
-
-
 
 // Функция для сохранения/получения ID чата поддержки в LocalStorage (симуляция на сервере)
 function getSupportChatIdFromStorage(userId) {
@@ -1534,135 +1462,64 @@ app.get('/api/messages/chat/:chatId', authenticateToken, async (req, res) => {
         const { chatId } = req.params;
         const user_id = req.user.userId;
 
-        if (chatId === 'support' || chatId.startsWith('support_')) {
-            // Объединяем сообщения из support_messages и messages
+        if (chatId === 'support') {
+            // Return support messages from database
             const result = await pool.query(`
-                -- Сообщения из таблицы messages
                 SELECT 
-                    m.id,
-                    m.sender_id,
-                    m.receiver_id,
-                    m.content,
-                    m.created_at,
-                    m.chat_type,
-                    m.is_read,
-                    u.username as sender_username,
-                    'message' as source_type
+                    m.*,
+                    u.username as sender_username
                 FROM messages m
                 LEFT JOIN users u ON m.sender_id = u.id
                 WHERE (m.sender_id = $1 OR m.receiver_id = $1) 
                    AND m.chat_type = 'support'
-                
-                UNION ALL
-                
-                -- Сообщения из новой таблицы support_messages
-                SELECT 
-                    sm.id,
-                    CASE 
-                        WHEN sm.is_from_admin = true THEN 1
-                        ELSE sm.user_id
-                    END as sender_id,
-                    CASE 
-                        WHEN sm.is_from_admin = true THEN sm.user_id
-                        ELSE 1
-                    END as receiver_id,
-                    sm.content,
-                    sm.created_at,
-                    'support' as chat_type,
-                    CASE 
-                        WHEN sm.is_from_admin = true AND sm.read_at IS NULL THEN false
-                        ELSE true
-                    END as is_read,
-                    CASE 
-                        WHEN sm.is_from_admin = true THEN 'Поддержка'
-                        ELSE u.username
-                    END as sender_username,
-                    'support_message' as source_type
-                FROM support_messages sm
-                LEFT JOIN users u ON sm.user_id = u.id
-                WHERE sm.user_id = $1 OR sm.is_from_admin = true
-                
-                ORDER BY created_at ASC
+                ORDER BY m.created_at ASC
             `, [user_id]);
 
             // Если нет сообщений, возвращаем приветственное сообщение
-            let messages = result.rows;
-            if (messages.length === 0) {
-                messages = [{
+            if (result.rows.length === 0) {
+                const welcomeMessage = {
                     id: 'support_welcome',
                     sender_id: 1, // Admin ID
                     receiver_id: user_id,
                     content: 'Здравствуйте! Чем могу помочь?',
                     chat_type: 'support',
                     created_at: new Date(),
-                    sender_username: 'Поддержка',
-                    source_type: 'system'
-                }];
+                    sender_username: 'Поддержка'
+                };
+                result.rows.push(welcomeMessage);
             }
 
-            // Форматируем ответ
-            const formattedMessages = messages.map(msg => ({
-                id: msg.id,
-                sender_id: msg.sender_id,
-                receiver_id: msg.receiver_id,
-                content: msg.content,
-                created_at: msg.created_at,
-                chat_type: msg.chat_type,
-                is_read: msg.is_read,
-                sender_name: msg.sender_username,
-                source_type: msg.source_type
-            }));
-
-            console.log(`💬 Loaded ${formattedMessages.length} support messages for user ${user_id}`);
-            
-            return res.json(formattedMessages);
+            res.json(result.rows);
         } else {
-            // Для обычных чатов - существующая логика
+            // Return regular chat messages
+            const chatCheck = await pool.query(
+                'SELECT user1_id, user2_id FROM chats WHERE id = $1',
+                [chatId]
+            );
+
+            if (chatCheck.rows.length === 0) {
+                return res.status(404).json({ error: 'Chat not found' });
+            }
+
+            const chat = chatCheck.rows[0];
+            const otherUserId = chat.user1_id === user_id ? chat.user2_id : chat.user1_id;
+
             const result = await pool.query(`
                 SELECT 
                     m.*,
-                    u.username as sender_name
+                    u.username as sender_username
                 FROM messages m
                 LEFT JOIN users u ON m.sender_id = u.id
-                WHERE m.chat_id = $1
+                WHERE (m.sender_id = $1 AND m.receiver_id = $2)
+                   OR (m.sender_id = $2 AND m.receiver_id = $1)
                 ORDER BY m.created_at ASC
-            `, [chatId]);
+            `, [user_id, otherUserId]);
 
-            console.log(`💬 Loaded ${result.rows.length} messages for chat ${chatId}`);
-            
-            return res.json(result.rows);
+            res.json(result.rows);
         }
     } catch (error) {
         console.error('❌ Get chat messages error:', error);
-        return res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Дополнительный endpoint для проверки поддержки
-app.get('/api/debug/support-messages', authenticateToken, async (req, res) => {
-    try {
-        const user_id = req.user.userId;
-        
-        const messagesFromMessages = await pool.query(`
-            SELECT COUNT(*) as count FROM messages 
-            WHERE (sender_id = $1 OR receiver_id = $1) AND chat_type = 'support'
-        `, [user_id]);
-        
-        const messagesFromSupportMessages = await pool.query(`
-            SELECT COUNT(*) as count FROM support_messages 
-            WHERE user_id = $1 OR is_from_admin = true
-        `, [user_id]);
-        
-        res.json({
-            user_id: user_id,
-            from_messages_table: parseInt(messagesFromMessages.rows[0].count),
-            from_support_messages_table: parseInt(messagesFromSupportMessages.rows[0].count),
-            total: parseInt(messagesFromMessages.rows[0].count) + parseInt(messagesFromSupportMessages.rows[0].count)
-        });
-        
-    } catch (error) {
-        console.error('Debug support error:', error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 
@@ -1693,20 +1550,13 @@ app.post('/api/messages/support', authenticateToken, async (req, res) => {
         const actualChatId = chatId || `support_${sender_id}_${Date.now()}`;
 
         // 2. ЗАПИСЬ В НОВУЮ ТАБЛИЦУ support_messages
-const dbResult = await pool.query(`
-    INSERT INTO support_messages (user_id, content, chat_id, is_from_admin)
-    VALUES ($1, $2, $3, false)
-    RETURNING *
-`, [sender_id, finalContent, actualChatId]);
+        const dbResult = await pool.query(`
+            INSERT INTO support_messages (user_id, content, chat_id, is_from_admin)
+            VALUES ($1, $2, $3, false)
+            RETURNING *
+        `, [sender_id, finalContent, actualChatId]);
 
-// 3. ТАКЖЕ СОХРАНИТЬ В messages ДЛЯ ОТОБРАЖЕНИЯ В ЧАТЕ
-const messageResult = await pool.query(`
-    INSERT INTO messages (sender_id, receiver_id, content, chat_type, chat_id, is_read)
-    VALUES ($1, 1, $2, 'support', $3, false)
-    RETURNING id, created_at
-`, [sender_id, finalContent, actualChatId]);
-
-        // 4. ОТПРАВКА В TELEGRAM (в твоем формате)
+        // 3. ОТПРАВКА В TELEGRAM (в твоем формате)
         const telegramSent = await sendToTelegram(finalContent, {
             userId: user.id,
             email: user.email,
@@ -1786,77 +1636,6 @@ app.post('/api/messages', authenticateToken, async (req, res) => {
         });
     } catch (error) {
         console.error('❌ Send message error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Новый эндпоинт для непрочитанных сообщений поддержки
-app.get('/api/support/unread-messages', authenticateToken, async (req, res) => {
-    try {
-        const user_id = req.user.userId;
-        
-        // Из messages
-        const messagesResult = await pool.query(`
-            SELECT COUNT(*) as count 
-            FROM messages 
-            WHERE receiver_id = $1 
-            AND chat_type = 'support' 
-            AND is_read = false
-        `, [user_id]);
-        
-        // Из support_messages
-        const supportMessagesResult = await pool.query(`
-            SELECT COUNT(*) as count 
-            FROM support_messages 
-            WHERE user_id = $1 
-            AND is_from_admin = true 
-            AND read_at IS NULL
-        `, [user_id]);
-        
-        const totalUnread = 
-            parseInt(messagesResult.rows[0].count) + 
-            parseInt(supportMessagesResult.rows[0].count);
-        
-        res.json({
-            success: true,
-            unread_count: totalUnread,
-            from_messages: parseInt(messagesResult.rows[0].count),
-            from_support_messages: parseInt(supportMessagesResult.rows[0].count)
-        });
-        
-    } catch (error) {
-        console.error('❌ Get unread messages error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Пометить сообщения поддержки как прочитанные
-app.post('/api/support/mark-read', authenticateToken, async (req, res) => {
-    try {
-        const user_id = req.user.userId;
-        
-        // Обновить messages
-        await pool.query(`
-            UPDATE messages 
-            SET is_read = true 
-            WHERE receiver_id = $1 
-            AND chat_type = 'support' 
-            AND is_read = false
-        `, [user_id]);
-        
-        // Обновить support_messages
-        await pool.query(`
-            UPDATE support_messages 
-            SET read_at = NOW() 
-            WHERE user_id = $1 
-            AND is_from_admin = true 
-            AND read_at IS NULL
-        `, [user_id]);
-        
-        res.json({ success: true, message: 'Messages marked as read' });
-        
-    } catch (error) {
-        console.error('❌ Mark as read error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
