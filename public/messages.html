@@ -1373,7 +1373,7 @@ async function loadMessages(chatId, markAsRead = true) {
         const token = localStorage.getItem('token');
         let endpoint;
         
-        if (chatId === 'support') {
+        if (chatId === 'support' || chatId.startsWith('support_')) {
             endpoint = `${API_BASE}/messages/chat/support`;
         } else {
             endpoint = `${API_BASE}/messages/chat/${chatId}`;
@@ -1392,12 +1392,36 @@ async function loadMessages(chatId, markAsRead = true) {
         const messages = await response.json();
         displayMessages(messages);
         
+        // Пометить как прочитанные
+        if (markAsRead && (chatId === 'support' || chatId.startsWith('support_'))) {
+            await markSupportMessagesAsRead();
+        }
+        
     } catch (error) {
         console.error('Error loading messages:', error);
         showNotification('Ошибка загрузки сообщений', 'error');
     }
 }
 
+// Пометить сообщения поддержки как прочитанные
+async function markSupportMessagesAsRead() {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_BASE}/support/mark-read`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            console.log('✅ Support messages marked as read');
+        }
+    } catch (error) {
+        console.error('Error marking messages as read:', error);
+    }
+}
 // Отображение сообщений
 function displayMessages(messages) {
     const container = document.getElementById('messages-container');
