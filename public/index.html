@@ -194,7 +194,7 @@
         }
         
         .main-content {
-            padding: 0 12px 12px;
+            padding: 0 6px 12px; /* Уменьшили боковые отступы */
         }
         
         .content-section {
@@ -229,7 +229,7 @@
         }
         
         .ads-grid {
-            padding: 10px;
+            padding: 8px 6px; /* Уменьшили отступы внутри */
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 8px;
@@ -238,12 +238,14 @@
         .ad-card {
             background: rgba(15, 23, 42, 0.6);
             border-radius: var(--radius-sm);
-            box-shadow: 0 2px 10px rgba(0, 242, 254, 0.08);
+            box-shadow: 0 2px 8px rgba(0, 242, 254, 0.08);
             transition: all 0.2s ease;
             border: 1px solid rgba(0, 242, 254, 0.05);
             overflow: hidden;
             cursor: pointer;
             animation: fadeInUp 0.5s ease-out;
+            display: flex;
+            flex-direction: column;
         }
         
         .ad-card:active {
@@ -251,13 +253,14 @@
         }
         
         .ad-image {
-            height: 120px;
+            height: 140px; /* Увеличили высоту фото */
             background: linear-gradient(135deg, #1e293b, #334155);
             position: relative;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
+            flex-shrink: 0;
         }
         
         .ad-badge {
@@ -275,13 +278,16 @@
         
         .ad-content {
             padding: 8px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
         }
         
         .ad-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
         
         .ad-category {
@@ -298,6 +304,7 @@
             font-size: 14px;
             transition: all 0.2s ease;
             cursor: pointer;
+            flex-shrink: 0;
         }
         
         .ad-favorite.active {
@@ -308,26 +315,28 @@
         .ad-title {
             font-size: 13px;
             font-weight: 600;
-            margin-bottom: 6px;
             color: var(--white);
-            line-height: 1.3;
+            line-height: 1.4;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            height: 32px;
+            margin-bottom: 8px;
+            flex-grow: 1;
+            min-height: 36px;
         }
         
         .ad-price-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-top: auto;
         }
         
         .ad-price {
             font-weight: 700;
             color: var(--primary);
-            font-size: 14px;
+            font-size: 15px;
             display: flex;
             align-items: center;
         }
@@ -500,11 +509,11 @@
             
             .ads-grid {
                 gap: 6px;
-                padding: 8px;
+                padding: 6px 4px;
             }
             
             .ad-image {
-                height: 110px;
+                height: 130px;
             }
             
             .ad-content {
@@ -525,7 +534,7 @@
             }
             
             .ad-image {
-                height: 140px;
+                height: 160px;
             }
         }
         
@@ -545,6 +554,19 @@
             body {
                 background-attachment: fixed;
             }
+        }
+        
+        /* Стиль как в TaoBao - переменная высота карточек */
+        .ad-card.variant-a {
+            /* Первый вариант - нормальная высота */
+        }
+        
+        .ad-card.variant-b {
+            /* Второй вариант - чуть выше */
+        }
+        
+        .ad-card.variant-b .ad-title {
+            min-height: 30px;
         }
     </style>
 </head>
@@ -814,17 +836,21 @@
                 return;
             }
             
-            ads.forEach(ad => {
-                const adElement = createAdElement(ad);
+            ads.forEach((ad, index) => {
+                const adElement = createAdElement(ad, index);
                 adsContainer.appendChild(adElement);
             });
         }
         
         // Функция для создания элемента объявления
-        function createAdElement(ad) {
+        function createAdElement(ad, index) {
             const adElement = document.createElement('div');
             adElement.className = 'ad-card';
             adElement.dataset.adId = ad.id;
+            
+            // Чередуем варианты высоты как в TaoBao
+            const variantClass = index % 2 === 0 ? 'variant-a' : 'variant-b';
+            adElement.classList.add(variantClass);
             
             // Форматируем цену красиво
             const priceFormatted = ad.price ? 
