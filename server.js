@@ -1586,24 +1586,83 @@ app.get('/api/messages/chat/:chatId', authenticateToken, async (req, res) => {
             `, [user_id]);
 
             // Если нет сообщений, возвращаем приветственное сообщение
-            if (result.rows.length === 0) {
-                const welcomeMessage = {
+            let messages = result.rows;
+            if (messages.length === 0) {
+                messages = [{
                     id: 'support_welcome',
                     sender_id: 1, // Admin ID
                     receiver_id: user_id,
                     content: 'Здравствуйте! Чем могу помочь?',
                     chat_type: 'support',
                     created_at: new Date(),
-                    sender_username: 'Поддержка'
-                };
-                result.rows.push(welcomeMessage);
+                    sender_username: 'Поддержка',
+                    source_type: 'system'
+                }];
             }
 
-            res.json(result.rows);
+            // Форматируем ответ
+            const formattedMessages = messages.map(msg => ({
+                id: msg.id,
+                sender_id: msg.sender_id,
+                receiver_id: msg.receiver_id,
+                content: msg.content,
+                created_at: msg.created_at,
+                chat_type: msg.chat_type,
+                is_read: msg.is_read,
+                sender_name: msg.sender_username,
+                source_type: msg.source_type
+            }));
+
+            console.log(`💬 Loaded ${formattedMessages.length} support messages for user ${user_id}`);
+            
+            return res.json(formattedMessages);
+        } else {
+            // Для обычных чатов - существующая логика
+            const result = await pool.query(`
+                SELECT 
+                    m.*,
+                    u.username as sender_name
+                FROM messages m
+                LEFT JOIN users u ON m.sender_id = u.id
+                WHERE m.chat_id = $1
+                ORDER BY m.created_at ASC
+            `, [chatId]);
+
+            console.log(`💬 Loaded ${result.rows.length} messages for chat ${chatId}`);
+            
+            return res.json(result.rows);
         }
     } catch (error) {
         console.error('❌ Get chat messages error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Дополнительный endpoint для проверки поддержки
+app.get('/api/debug/support-messages', authenticateToken, async (req, res) => {
+    try {
+        const user_id = req.user.userId;
+        
+        const messagesFromMessages = await pool.query(`
+            SELECT COUNT(*) as count FROM messages 
+            WHERE (sender_id = $1 OR receiver_id = $1) AND chat_type = 'support'
+        `, [user_id]);
+        
+        const messagesFromSupportMessages = await pool.query(`
+            SELECT COUNT(*) as count FROM support_messages 
+            WHERE user_id = $1 OR is_from_admin = true
+        `, [user_id]);
+        
+        res.json({
+            user_id: user_id,
+            from_messages_table: parseInt(messagesFromMessages.rows[0].count),
+            from_support_messages_table: parseInt(messagesFromSupportMessages.rows[0].count),
+            total: parseInt(messagesFromMessages.rows[0].count) + parseInt(messagesFromSupportMessages.rows[0].count)
+        });
+        
+    } catch (error) {
+        console.error('Debug support error:', error);
+        res.status(500).json({ error: error.message });
     }
 });
 
