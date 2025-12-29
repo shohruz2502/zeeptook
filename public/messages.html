@@ -1068,8 +1068,6 @@ let currentChat = null;
 let currentChatId = null;
 let currentReceiverId = null;
 let currentUserId = null;
-let supportWebSocket = null;
-let supportChatId = null;
 
 // Получение ID пользователя из токена
 function getUserId() {
@@ -1454,7 +1452,7 @@ function createMessageElement(msg) {
     return element;
 }
 
-// Обновляем функцию sendMessage для работы с WebSocket
+// Отправка сообщения
 async function sendMessage() {
     const messageInput = document.getElementById('message-input');
     const message = messageInput.value.trim();
@@ -1465,78 +1463,42 @@ async function sendMessage() {
     
     try {
         const token = localStorage.getItem('token');
+        let endpoint, body;
         
         if (currentChatId === 'support') {
-            // Отправляем через WebSocket если подключен
-            if (supportWebSocket && supportWebSocket.readyState === WebSocket.OPEN) {
-                const userId = getUserId();
-                const webSocketMessage = {
-                    type: 'message',
-                    chatId: 'support',
-                    message: {
-                        content: message,
-                        sender_id: userId
-                    }
-                };
-                
-                supportWebSocket.send(JSON.stringify(webSocketMessage));
-                
-                // Также отправляем на сервер через API для сохранения в БД
-                await fetch(`${API_BASE}/messages/support`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        content: message,
-                        chatId: `support_${userId}`
-                    })
-                });
-                
-            } else {
-                // Или обычным API если WebSocket не работает
-                const response = await fetch(`${API_BASE}/messages/support`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        content: message,
-                        chatId: `support_${userId}`
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error('Failed to send message');
-                }
-            }
+            endpoint = `${API_BASE}/messages/support`;
+            body = {
+                content: message,
+                chatId: currentChatId
+            };
         } else {
-            // Обычные сообщения
-            const response = await fetch(`${API_BASE}/messages`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    chat_id: currentChatId,
-                    content: message,
-                    receiver_id: currentReceiverId
-                })
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to send message');
-            }
+            endpoint = `${API_BASE}/messages`;
+            body = {
+                chat_id: currentChatId,
+                content: message,
+                receiver_id: currentReceiverId
+            };
+        }
+        
+        const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(body)
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to send message');
         }
         
         // Очищаем поле ввода
         messageInput.value = '';
-        messageInput.style.height = 'auto';
         
-        // Не нужно загружать сообщения заново - они придут через WebSocket
+        // Обновляем сообщения
+        await loadMessages(currentChatId);
+        
         // Обновляем список чатов
         loadChats(false);
         
@@ -1659,121 +1621,6 @@ function showEmptyState(title, message = '') {
         </div>
     `;
 }
-
-
-function connectSupportWebSocket() {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-    
-    const userId = getUserId();
-    if (!userId) return;
-    
-    // Закрываем предыдущее соединение
-    if (supportWebSocket && supportWebSocket.readyState === WebSocket.OPEN) {
-        supportWebSocket.close();
-    }
-    
-    // Определяем chatId для поддержки
-    supportChatId = `support_${userId}`;
-    
-    // Подключаемся к WebSocket серверу
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}?userId=${userId}&chatType=support`;
-    
-    supportWebSocket = new WebSocket(wsUrl);
-    
-    supportWebSocket.onopen = function() {
-        console.log('✅ WebSocket для поддержки подключен');
-    };
-    
-    supportWebSocket.onmessage = function(event) {
-        try {
-            const data = JSON.parse(event.data);
-            handleSupportWebSocketMessage(data);
-        } catch (error) {
-            console.error('Ошибка обработки WebSocket сообщения:', error);
-        }
-    };
-    
-    supportWebSocket.onerror = function(error) {
-        console.error('❌ WebSocket ошибка:', error);
-    };
-    
-    supportWebSocket.onclose = function() {
-        console.log('📡 WebSocket соединение закрыто');
-        // Переподключаемся через 5 секунд
-        setTimeout(() => {
-            if (document.getElementById('chat-window').classList.contains('active') && 
-                currentChatId === 'support') {
-                connectSupportWebSocket();
-            }
-        }, 5000);
-    };
-}
-
-function handleSupportWebSocketMessage(data) {
-    console.log('📨 WebSocket сообщение поддержки:', data);
-    
-    if (data.type === 'message') {
-        // Добавляем новое сообщение в чат поддержки
-        if (currentChatId === 'support') {
-            addSupportMessageToChat(data.message);
-        }
-    }
-}
-
-function addSupportMessageToChat(message) {
-    const container = document.getElementById('messages-container');
-    const isOutgoing = message.sender_id == getUserId();
-    
-    const messageElement = document.createElement('div');
-    messageElement.className = `message ${isOutgoing ? 'outgoing' : 'incoming'}`;
-    messageElement.innerHTML = `
-        <div class="message-text">${escapeHtml(message.content || '')}</div>
-        <div class="message-time">${formatMessageTime(message.created_at)}</div>
-    `;
-    
-    // Добавляем с анимацией
-    messageElement.style.animation = 'messageSlideIn 0.3s ease-out';
-    container.appendChild(messageElement);
-    
-    // Прокручиваем вниз
-    scrollToBottom();
-}
-
-// Обновляем функцию openChat для поддержки WebSocket
-async function openChat(chat) {
-    if (!checkAuth()) return;
-    
-    currentChat = chat;
-    currentChatId = chat.id;
-    currentUserId = getUserId();
-    
-    // Закрываем все WebSocket соединения
-    if (supportWebSocket) {
-        supportWebSocket.close();
-    }
-    
-    // Если это чат поддержки - подключаем WebSocket
-    if (chat.id === 'support') {
-        connectSupportWebSocket();
-    }
-    
-    const chatWindow = document.getElementById('chat-window');
-    const name = document.getElementById('chat-contact-name');
-    const status = document.getElementById('chat-contact-status');
-    
-    name.textContent = chat.name || 'Чат';
-    status.textContent = chat.is_online ? 'онлайн' : 'офлайн';
-    
-    // Загружаем сообщения
-    await loadMessages(chat.id);
-    
-    // Показываем окно чата
-    chatWindow.classList.add('active');
-    scrollToBottom();
-}
-
 
 // Добавляем анимации
 const style = document.createElement('style');
