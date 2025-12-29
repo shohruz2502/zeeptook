@@ -1403,6 +1403,43 @@ async function loadMessages(chatId, markAsRead = true) {
     }
 }
 
+
+async function loadMessages(chatId) {
+    try {
+        showLoading();
+        console.log(`📥 Loading messages for chat: ${chatId}`);
+        
+        const response = await fetch(`/api/messages/chat/${chatId}`, {
+            headers: getAuthHeaders()
+        });
+        
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            console.error(`❌ Failed to load messages: ${response.status}`, errorData);
+            throw new Error(`Failed to load messages: ${response.status} ${errorData.error || ''}`);
+        }
+        
+        const messages = await response.json();
+        console.log(`✅ Loaded ${messages.length} messages`);
+        
+        displayMessages(messages);
+        hideLoading();
+        
+    } catch (error) {
+        console.error('❌ Error loading messages:', error);
+        hideLoading();
+        
+        // Показать сообщение об ошибке пользователю
+        messagesContainer.innerHTML = `
+            <div class="error-message">
+                <p>Не удалось загрузить сообщения</p>
+                <button onclick="loadMessages('${chatId}')">Повторить</button>
+            </div>
+        `;
+    }
+}
+
+
 // Пометить сообщения поддержки как прочитанные
 async function markSupportMessagesAsRead() {
     try {
