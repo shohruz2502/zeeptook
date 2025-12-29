@@ -236,7 +236,7 @@ async function sendToTelegram(message, userInfo = null, chatType = 'support') {
     try {
         let text = '';
         
-        // Форматируем сообщение в зависимости от типа чата
+        // Форматируем сообщение в точности как ты просил
         if (chatType === 'support') {
             text = `🆘 НОВОЕ СООБЩЕНИЕ В ЧАТ ПОДДЕРЖКИ\n`;
             text += `👤 ID пользователя: ${userInfo?.userId || 'Неизвестно'}\n`;
@@ -245,7 +245,7 @@ async function sendToTelegram(message, userInfo = null, chatType = 'support') {
             text += `🆔 Chat ID: ${userInfo?.chatId || 'Не указан'}\n`;
             text += `📝 Сообщение: ${message}`;
         } else {
-            // Для обычных уведомлений
+            // Для обычных уведомлений (о сделках и т.д.)
             text = message;
             if (userInfo) {
                 text = `👤 ${userInfo.name}\n📧 ${userInfo.email}\n💬 ${message}`;
@@ -260,7 +260,7 @@ async function sendToTelegram(message, userInfo = null, chatType = 'support') {
             body: JSON.stringify({
                 chat_id: TELEGRAM_CHAT_ID,
                 text: text,
-                parse_mode: 'HTML'
+                parse_mode: 'HTML' // Используем HTML или убери эту строку, если сообщения не отправляются из-за спецсимволов
             })
         });
         
@@ -278,6 +278,78 @@ async function sendToTelegram(message, userInfo = null, chatType = 'support') {
         return false;
     }
 }
+
+
+// ============================================
+// === TELEGRAM WEBHOOK (ОТВЕТЫ ИЗ ТЕЛЕГРАМА) ===
+// ============================================
+
+app.post('/api/telegram/webhook', async (req, res) => {
+    try {
+        const update = req.body;
+
+        // Проверяем, что это сообщение и что это ответ на другое сообщение (Reply)
+        if (update.message && update.message.reply_to_message && update.message.text) {
+            const originalText = update.message.reply_to_message.text;
+            const replyText = update.message.text;
+
+            // 1. Ищем ID пользователя и Chat ID в оригинальном сообщении с помощью Regex
+            // Мы ищем строки "ID пользователя: 6" и "Chat ID: support_6_..."
+            const userIdMatch = originalText.match(/ID пользователя:\s*(\d+)/);
+            const chatIdMatch = originalText.match(/Chat ID:\s*(\S+)/);
+
+            if (userIdMatch && chatIdMatch) {
+                const userId = userIdMatch[1];
+                const chatId = chatIdMatch[1];
+
+                console.log(`📨 Telegram Reply: Admin answering to User ${userId} in Chat ${chatId}`);
+
+                // 2. Сохраняем ответ админа в базу данных
+                // sender_id = 1 (Админ), receiver_id = User ID
+                const result = await pool.query(`
+                    INSERT INTO messages (sender_id, receiver_id, content, chat_type, chat_id)
+                    VALUES ($1, $2, $3, $4, $5)
+                    RETURNING id, created_at
+                `, [1, userId, replyText, 'support', chatId]);
+
+                // 3. Если пользователь онлайн (WebSocket), отправляем ему уведомление сразу
+                const wsConnection = connections.get(userId);
+                if (wsConnection && wsConnection.readyState === WebSocket.OPEN) {
+                    wsConnection.send(JSON.stringify({
+                        type: 'message',
+                        chatId: chatId,
+                        message: {
+                            id: result.rows[0].id,
+                            sender_id: 1, // ID Админа
+                            content: replyText,
+                            created_at: result.rows[0].created_at,
+                            receiver_id: userId
+                        }
+                    }));
+                }
+
+                // Отправляем подтверждение в Telegram (реакцию или сообщение)
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        chat_id: update.message.chat.id,
+                        text: `✅ Ответ отправлен пользователю (ID: ${userId})`,
+                        reply_to_message_id: update.message.message_id
+                    })
+                });
+            }
+        }
+        
+        // Всегда отвечаем 200 OK Телеграму
+        res.sendStatus(200);
+    } catch (error) {
+        console.error('❌ Telegram Webhook Error:', error);
+        res.sendStatus(500);
+    }
+});
+
+
 
 // Функция для сохранения/получения ID чата поддержки в LocalStorage (симуляция на сервере)
 function getSupportChatIdFromStorage(userId) {
