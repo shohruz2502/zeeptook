@@ -1373,7 +1373,7 @@ async function loadMessages(chatId, markAsRead = true) {
         const token = localStorage.getItem('token');
         let endpoint;
         
-        if (chatId === 'support' || chatId.startsWith('support_')) {
+        if (chatId === 'support') {
             endpoint = `${API_BASE}/messages/chat/support`;
         } else {
             endpoint = `${API_BASE}/messages/chat/${chatId}`;
@@ -1392,73 +1392,12 @@ async function loadMessages(chatId, markAsRead = true) {
         const messages = await response.json();
         displayMessages(messages);
         
-        // Пометить как прочитанные
-        if (markAsRead && (chatId === 'support' || chatId.startsWith('support_'))) {
-            await markSupportMessagesAsRead();
-        }
-        
     } catch (error) {
         console.error('Error loading messages:', error);
         showNotification('Ошибка загрузки сообщений', 'error');
     }
 }
 
-
-async function loadMessages(chatId) {
-    try {
-        showLoading();
-        console.log(`📥 Loading messages for chat: ${chatId}`);
-        
-        const response = await fetch(`/api/messages/chat/${chatId}`, {
-            headers: getAuthHeaders()
-        });
-        
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            console.error(`❌ Failed to load messages: ${response.status}`, errorData);
-            throw new Error(`Failed to load messages: ${response.status} ${errorData.error || ''}`);
-        }
-        
-        const messages = await response.json();
-        console.log(`✅ Loaded ${messages.length} messages`);
-        
-        displayMessages(messages);
-        hideLoading();
-        
-    } catch (error) {
-        console.error('❌ Error loading messages:', error);
-        hideLoading();
-        
-        // Показать сообщение об ошибке пользователю
-        messagesContainer.innerHTML = `
-            <div class="error-message">
-                <p>Не удалось загрузить сообщения</p>
-                <button onclick="loadMessages('${chatId}')">Повторить</button>
-            </div>
-        `;
-    }
-}
-
-
-// Пометить сообщения поддержки как прочитанные
-async function markSupportMessagesAsRead() {
-    try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${API_BASE}/support/mark-read`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            console.log('✅ Support messages marked as read');
-        }
-    } catch (error) {
-        console.error('Error marking messages as read:', error);
-    }
-}
 // Отображение сообщений
 function displayMessages(messages) {
     const container = document.getElementById('messages-container');
