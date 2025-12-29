@@ -7,9 +7,6 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const WebSocket = require('ws');
 
-// Мапа для хранения соединений поддержки
-const supportConnections = new Map();
-
 const app = express();
 
 const wss = new WebSocket.Server({ noServer: true });
@@ -1637,7 +1634,7 @@ app.post('/api/messages/support', authenticateToken, async (req, res) => {
 });
 
 
-// В функции обработки Telegram webhook добавьте:
+// Эндпоинт для получения сообщений от Telegram бота (webhook или API)
 app.post('/api/telegram/webhook', async (req, res) => {
     try {
         console.log('🤖 Telegram webhook received:', req.body);
@@ -1656,34 +1653,32 @@ app.post('/api/telegram/webhook', async (req, res) => {
             return res.status(403).json({ error: 'Unauthorized chat' });
         }
         
-        // Ищем ID пользователя в формате "id-24" или "ID: 24"
-        const userIdMatch = text.match(/(?:id-|ID[:\s]*)(\d+)/i);
+        // Извлекаем ID пользователя из сообщения
+        // Формат: "🆘 НОВОЕ СООБЩЕНИЕ В ЧАТ ПОДДЕРЖКИ\n👤 ID пользователя: 123\n..."
+        const userIdMatch = text.match(/ID пользователя:\s*(\d+)/);
         
-        if (userIdMatch) {
-            const userId = userIdMatch[1];
-            // Извлекаем само сообщение (всё после ID)
-            const messageText = text.replace(/^(?:id-|ID[:\s]*\d+\s*)/i, '').trim();
-            
-            if (messageText) {
-                // Сохраняем сообщение от оператора
-                const chatId = `support_${userId}`;
+        if (!userIdMatch) {
+            console.log('❌ No user ID found in message');
+            return res.json({ success: false, error: 'No user ID' });
+        }
+        
+        const userId = userIdMatch[1];
+        
+        // Если оператор отвечает в Telegram (отправляет ответное сообщение)
+        // Проверяем, что это ответ на сообщение пользователя, а не системное уведомление
+        if (text.includes('👤 Ответ оператора:')) {
+            // Получаем текст ответа оператора
+            const responseMatch = text.match(/👤 Ответ оператора:\s*(.+)/s);
+            if (responseMatch) {
+                const operatorResponse = responseMatch[1].trim();
                 
+                // Сохраняем сообщение от оператора в базу
                 await pool.query(`
-                    INSERT INTO support_messages (user_id, content, chat_id, is_from_admin)
-                    VALUES ($1, $2, $3, true)
-                    RETURNING *
-                `, [userId, messageText, chatId]);
+                    INSERT INTO support_messages (user_id, admin_id, content, chat_id, is_from_admin)
+                    VALUES ($1, $2, $3, $4, true)
+                `, [userId, 1, operatorResponse, `support_${userId}`]);
                 
-                // Отправляем через WebSocket клиенту
-                broadcastSupportMessage(userId, {
-                    user_id: 1, // Admin ID
-                    content: messageText,
-                    chat_id: chatId,
-                    is_from_admin: true,
-                    created_at: new Date()
-                });
-                
-                console.log(`✅ Operator reply sent to user ${userId}`);
+                console.log(`✅ Operator response saved for user ${userId}`);
             }
         }
         
@@ -1694,52 +1689,6 @@ app.post('/api/telegram/webhook', async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
-
-// Эндпоинт для отправки сообщений от оператора (через Telegram)
-app.post('/api/support/operator-reply', async (req, res) => {
-    try {
-        const { userId, message, chatId } = req.body;
-        
-        console.log(`🤖 Operator reply for user ${userId}: ${message}`);
-        
-        // Проверяем, что сообщение от авторизованного источника
-        const authHeader = req.headers['authorization'];
-        if (!authHeader || !authHeader.startsWith('Operator ')) {
-            return res.status(401).json({ error: 'Unauthorized' });
-        }
-        
-        // Сохраняем сообщение от оператора в БД
-        const result = await pool.query(`
-            INSERT INTO support_messages (user_id, content, chat_id, is_from_admin)
-            VALUES ($1, $2, $3, true)
-            RETURNING *
-        `, [userId, message, chatId || `support_${userId}`]);
-        
-        // Отправляем через WebSocket клиенту
-        broadcastSupportMessage(userId, result.rows[0]);
-        
-        res.json({ success: true, message: result.rows[0] });
-        
-    } catch (error) {
-        console.error('❌ Operator reply error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
-
-// Функция для трансляции сообщений поддержки через WebSocket
-function broadcastSupportMessage(userId, message) {
-    // Ищем WebSocket соединение для этого пользователя
-    connections.forEach((ws, wsUserId) => {
-        if (parseInt(wsUserId) === parseInt(userId) && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({
-                type: 'message',
-                chatId: 'support',
-                message: message
-            }));
-        }
-    });
-}
-
 
 
 // Регулярные сообщения
