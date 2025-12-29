@@ -1534,17 +1534,55 @@ app.get('/api/messages/chat/:chatId', authenticateToken, async (req, res) => {
         const { chatId } = req.params;
         const user_id = req.user.userId;
 
-        if (chatId === 'support') {
-            // Return support messages from database
+        if (chatId === 'support' || chatId.startsWith('support_')) {
+            // Объединяем сообщения из support_messages и messages
             const result = await pool.query(`
+                -- Сообщения из таблицы messages
                 SELECT 
-                    m.*,
-                    u.username as sender_username
+                    m.id,
+                    m.sender_id,
+                    m.receiver_id,
+                    m.content,
+                    m.created_at,
+                    m.chat_type,
+                    m.is_read,
+                    u.username as sender_username,
+                    'message' as source_type
                 FROM messages m
                 LEFT JOIN users u ON m.sender_id = u.id
                 WHERE (m.sender_id = $1 OR m.receiver_id = $1) 
                    AND m.chat_type = 'support'
-                ORDER BY m.created_at ASC
+                
+                UNION ALL
+                
+                -- Сообщения из новой таблицы support_messages
+                SELECT 
+                    sm.id,
+                    CASE 
+                        WHEN sm.is_from_admin = true THEN 1
+                        ELSE sm.user_id
+                    END as sender_id,
+                    CASE 
+                        WHEN sm.is_from_admin = true THEN sm.user_id
+                        ELSE 1
+                    END as receiver_id,
+                    sm.content,
+                    sm.created_at,
+                    'support' as chat_type,
+                    CASE 
+                        WHEN sm.is_from_admin = true AND sm.read_at IS NULL THEN false
+                        ELSE true
+                    END as is_read,
+                    CASE 
+                        WHEN sm.is_from_admin = true THEN 'Поддержка'
+                        ELSE u.username
+                    END as sender_username,
+                    'support_message' as source_type
+                FROM support_messages sm
+                LEFT JOIN users u ON sm.user_id = u.id
+                WHERE sm.user_id = $1 OR sm.is_from_admin = true
+                
+                ORDER BY created_at ASC
             `, [user_id]);
 
             // Если нет сообщений, возвращаем приветственное сообщение
@@ -1560,32 +1598,6 @@ app.get('/api/messages/chat/:chatId', authenticateToken, async (req, res) => {
                 };
                 result.rows.push(welcomeMessage);
             }
-
-            res.json(result.rows);
-        } else {
-            // Return regular chat messages
-            const chatCheck = await pool.query(
-                'SELECT user1_id, user2_id FROM chats WHERE id = $1',
-                [chatId]
-            );
-
-            if (chatCheck.rows.length === 0) {
-                return res.status(404).json({ error: 'Chat not found' });
-            }
-
-            const chat = chatCheck.rows[0];
-            const otherUserId = chat.user1_id === user_id ? chat.user2_id : chat.user1_id;
-
-            const result = await pool.query(`
-                SELECT 
-                    m.*,
-                    u.username as sender_username
-                FROM messages m
-                LEFT JOIN users u ON m.sender_id = u.id
-                WHERE (m.sender_id = $1 AND m.receiver_id = $2)
-                   OR (m.sender_id = $2 AND m.receiver_id = $1)
-                ORDER BY m.created_at ASC
-            `, [user_id, otherUserId]);
 
             res.json(result.rows);
         }
@@ -1622,13 +1634,20 @@ app.post('/api/messages/support', authenticateToken, async (req, res) => {
         const actualChatId = chatId || `support_${sender_id}_${Date.now()}`;
 
         // 2. ЗАПИСЬ В НОВУЮ ТАБЛИЦУ support_messages
-        const dbResult = await pool.query(`
-            INSERT INTO support_messages (user_id, content, chat_id, is_from_admin)
-            VALUES ($1, $2, $3, false)
-            RETURNING *
-        `, [sender_id, finalContent, actualChatId]);
+const dbResult = await pool.query(`
+    INSERT INTO support_messages (user_id, content, chat_id, is_from_admin)
+    VALUES ($1, $2, $3, false)
+    RETURNING *
+`, [sender_id, finalContent, actualChatId]);
 
-        // 3. ОТПРАВКА В TELEGRAM (в твоем формате)
+// 3. ТАКЖЕ СОХРАНИТЬ В messages ДЛЯ ОТОБРАЖЕНИЯ В ЧАТЕ
+const messageResult = await pool.query(`
+    INSERT INTO messages (sender_id, receiver_id, content, chat_type, chat_id, is_read)
+    VALUES ($1, 1, $2, 'support', $3, false)
+    RETURNING id, created_at
+`, [sender_id, finalContent, actualChatId]);
+
+        // 4. ОТПРАВКА В TELEGRAM (в твоем формате)
         const telegramSent = await sendToTelegram(finalContent, {
             userId: user.id,
             email: user.email,
@@ -1708,6 +1727,77 @@ app.post('/api/messages', authenticateToken, async (req, res) => {
         });
     } catch (error) {
         console.error('❌ Send message error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Новый эндпоинт для непрочитанных сообщений поддержки
+app.get('/api/support/unread-messages', authenticateToken, async (req, res) => {
+    try {
+        const user_id = req.user.userId;
+        
+        // Из messages
+        const messagesResult = await pool.query(`
+            SELECT COUNT(*) as count 
+            FROM messages 
+            WHERE receiver_id = $1 
+            AND chat_type = 'support' 
+            AND is_read = false
+        `, [user_id]);
+        
+        // Из support_messages
+        const supportMessagesResult = await pool.query(`
+            SELECT COUNT(*) as count 
+            FROM support_messages 
+            WHERE user_id = $1 
+            AND is_from_admin = true 
+            AND read_at IS NULL
+        `, [user_id]);
+        
+        const totalUnread = 
+            parseInt(messagesResult.rows[0].count) + 
+            parseInt(supportMessagesResult.rows[0].count);
+        
+        res.json({
+            success: true,
+            unread_count: totalUnread,
+            from_messages: parseInt(messagesResult.rows[0].count),
+            from_support_messages: parseInt(supportMessagesResult.rows[0].count)
+        });
+        
+    } catch (error) {
+        console.error('❌ Get unread messages error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Пометить сообщения поддержки как прочитанные
+app.post('/api/support/mark-read', authenticateToken, async (req, res) => {
+    try {
+        const user_id = req.user.userId;
+        
+        // Обновить messages
+        await pool.query(`
+            UPDATE messages 
+            SET is_read = true 
+            WHERE receiver_id = $1 
+            AND chat_type = 'support' 
+            AND is_read = false
+        `, [user_id]);
+        
+        // Обновить support_messages
+        await pool.query(`
+            UPDATE support_messages 
+            SET read_at = NOW() 
+            WHERE user_id = $1 
+            AND is_from_admin = true 
+            AND read_at IS NULL
+        `, [user_id]);
+        
+        res.json({ success: true, message: 'Messages marked as read' });
+        
+    } catch (error) {
+        console.error('❌ Mark as read error:', error);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
