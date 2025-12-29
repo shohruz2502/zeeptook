@@ -1595,64 +1595,57 @@ app.get('/api/messages/chat/:chatId', authenticateToken, async (req, res) => {
     }
 });
 
-// ОТПРАВКА СООБЩЕНИЙ В ЧАТ ПОДДЕРЖКИ
+// ОТПРАВКА СООБЩЕНИЙ В ЧАТ ПОДДЕРЖКИ (НОВАЯ ТАБЛИЦА)
 app.post('/api/messages/support', authenticateToken, async (req, res) => {
     try {
-        const { content, chatId } = req.body;
+        const { message, content, chatId } = req.body; 
         const sender_id = req.user.userId;
 
-        if (!content) {
-            return res.status(400).json({ error: 'Message content is required' });
+        // Берем текст из любого доступного поля (зависит от фронтенда)
+        const finalContent = message || content;
+
+        if (!finalContent) {
+            return res.status(400).json({ error: 'Сообщение не может быть пустым' });
         }
 
-        // Получаем информацию о пользователе
+        // 1. Получаем данные пользователя для Телеграма
         const userResult = await pool.query(
             'SELECT id, username, email, full_name FROM users WHERE id = $1',
             [sender_id]
         );
 
         if (userResult.rows.length === 0) {
-            return res.status(404).json({ error: 'User not found' });
+            return res.status(404).json({ error: 'Пользователь не найден' });
         }
 
         const user = userResult.rows[0];
+        const actualChatId = chatId || `support_${sender_id}_${Date.now()}`;
 
-        // Генерируем chatId, если его нет
-        const actualChatId = chatId || generateSupportChatId(sender_id);
-
-        // Сохраняем сообщение в базу данных
-        const messageResult = await pool.query(`
-            INSERT INTO messages (sender_id, receiver_id, content, chat_type, chat_id)
-            VALUES ($1, $2, $3, $4, $5)
+        // 2. ЗАПИСЬ В НОВУЮ ТАБЛИЦУ support_messages
+        const dbResult = await pool.query(`
+            INSERT INTO support_messages (user_id, content, chat_id, is_from_admin)
+            VALUES ($1, $2, $3, false)
             RETURNING *
-        `, [sender_id, 1, content, 'support', actualChatId]);
+        `, [sender_id, finalContent, actualChatId]);
 
-        const savedMessage = messageResult.rows[0];
-
-        // Отправляем сообщение в Telegram
-        const telegramSent = await sendToTelegram(content, {
+        // 3. ОТПРАВКА В TELEGRAM (в твоем формате)
+        const telegramSent = await sendToTelegram(finalContent, {
             userId: user.id,
             email: user.email,
             name: user.full_name || user.username,
             chatId: actualChatId
         }, 'support');
 
-        if (!telegramSent) {
-            console.warn('⚠️ Failed to send message to Telegram, but saved to database');
-        }
-
-        console.log(`💬 Support message sent from user ${sender_id} (chatId: ${actualChatId})`);
-
         res.json({
-            message: 'Support message sent successfully',
-            savedMessage,
-            chatId: actualChatId,
+            success: true,
+            message: 'Сообщение отправлено в поддержку',
+            data: dbResult.rows[0],
             telegramSent
         });
 
     } catch (error) {
-        console.error('❌ Send support message error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('❌ Ошибка поддержки:', error);
+        res.status(500).json({ error: 'Ошибка сервера', details: error.message });
     }
 });
 
