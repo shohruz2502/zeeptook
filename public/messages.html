@@ -1069,6 +1069,70 @@ let currentChatId = null;
 let currentReceiverId = null;
 let currentUserId = null;
 
+// Таймеры для автоответчика
+let autoReplyTimers = {};
+
+// Функция автоответчика
+function setupAutoReply(chatId) {
+    // Очищаем предыдущий таймер для этого чата, если есть
+    if (autoReplyTimers[chatId]) {
+        clearTimeout(autoReplyTimers[chatId]);
+    }
+    
+    // Устанавливаем новый таймер на 3 минуты (180000 миллисекунд)
+    autoReplyTimers[chatId] = setTimeout(async () => {
+        await sendAutoReply(chatId);
+        delete autoReplyTimers[chatId];
+    }, 180000); // 3 минуты = 180000 миллисекунд
+}
+
+// Функция отправки автоответа
+async function sendAutoReply(chatId) {
+    try {
+        const autoReplyMessage = "Приветствуем игрок! Сообщаем, что ваше обращение в ZEEPTOOK успешно прошло первичную верификацию и интегрировано в систему обработки запросов. В данный момент мы проводим детальный анализ предоставленных вами данных. Благодарим за ваше терпение и понимание внутренних регламентов.";
+        
+        // Отображаем сообщение в интерфейсе
+        displayAutoReplyMessage(chatId, autoReplyMessage);
+        
+        // Если чат активен, обновляем сообщения
+        if (currentChatId === chatId) {
+            await loadMessages(chatId);
+            scrollToBottom();
+        }
+        
+        // Обновляем список чатов
+        loadChats(false);
+        
+    } catch (error) {
+        console.error('Ошибка автоответчика:', error);
+    }
+}
+
+// Функция отображения автоответа в интерфейсе
+function displayAutoReplyMessage(chatId, message) {
+    const messagesContainer = document.getElementById('messages-container');
+    
+    // Если это активный чат, добавляем сообщение
+    if (currentChatId === chatId && messagesContainer) {
+        const messageElement = document.createElement('div');
+        messageElement.className = 'message incoming';
+        messageElement.innerHTML = `
+            <div class="message-text">${escapeHtml(message)}</div>
+            <div class="message-time">${formatMessageTime(new Date())}</div>
+        `;
+        messageElement.style.opacity = '0.7';
+        messagesContainer.appendChild(messageElement);
+    }
+}
+
+// Очистка таймеров при закрытии чата
+function clearAutoReplyTimer(chatId) {
+    if (autoReplyTimers[chatId]) {
+        clearTimeout(autoReplyTimers[chatId]);
+        delete autoReplyTimers[chatId];
+    }
+}
+
 // Получение ID пользователя из токена
 function getUserId() {
     const token = localStorage.getItem('token');
@@ -1263,7 +1327,6 @@ function createChatElement(chat) {
 }
 
 // Создание или открытие чата с продавцом
-// Функция для создания или открытия чата с продавцом
 async function createOrOpenChat(sellerId, adId) {
     try {
         if (!checkAuth()) return;
@@ -1452,7 +1515,7 @@ function createMessageElement(msg) {
     return element;
 }
 
-// Отправка сообщения
+// ОТПРАВКА СООБЩЕНИЯ - МОДИФИЦИРОВАНА ДЛЯ АВТООТВЕТЧИКА
 async function sendMessage() {
     const messageInput = document.getElementById('message-input');
     const message = messageInput.value.trim();
@@ -1495,6 +1558,12 @@ async function sendMessage() {
         
         // Очищаем поле ввода
         messageInput.value = '';
+        
+        // Запускаем автоответчик только для входящих сообщений (не от нас)
+        // и не для чата поддержки
+        if (currentChatId !== 'support') {
+            setupAutoReply(currentChatId);
+        }
         
         // Обновляем сообщения
         await loadMessages(currentChatId);
@@ -1648,92 +1717,16 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Загружаем чаты
     loadChats();
-
-    async function loadChats(showLoading = true) {
-    try {
-        if (!checkAuth()) return;
-        
-        const token = localStorage.getItem('token');
-        if (!token) {
-            showEmptyState('Для просмотра чатов необходимо авторизоваться');
-            return;
-        }
-
-        const container = document.getElementById('chats-container');
-        if (showLoading) {
-            container.innerHTML = `
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    <div>Загрузка чатов...</div>
-                </div>
-            `;
-        }
-
-        const response = await fetch(`${API_BASE}/chats`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-
-        if (response.status === 401) {
-            showEmptyState('Сессия истекла', 'Пожалуйста, войдите снова');
-            setTimeout(() => {
-                window.location.href = 'login.html';
-            }, 2000);
-            return;
-        }
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-
-        chats = await response.json();
-        
-        // ДОПОЛНИТЕЛЬНАЯ ФИЛЬТРАЦИЯ НА КЛИЕНТЕ
-        const currentUserId = getUserId();
-        chats = chats.filter(chat => {
-            // Проверяем, что чат содержит корректные ID
-            return chat.other_user_id && chat.other_user_id !== currentUserId;
-        });
-        
-        displayChats();
-        
-    } catch (error) {
-        console.error('❌ Error loading chats:', error);
-        showEmptyState('Не удалось загрузить чаты', 'Попробуйте обновить страницу');
-    }
-}
-
-// Функция для получения ID пользователя из токена
-function getUserId() {
-    const token = localStorage.getItem('token');
-    if (!token) return null;
-    
-    try {
-        // Простой способ для вашего токена
-        if (token.includes('.')) {
-            // JWT токен
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            return payload.userId || payload.sub;
-        } else {
-            // Простой base64 токен
-            try {
-                const decoded = atob(token);
-                const parts = decoded.split(':');
-                return parts[0]; // Первая часть - ID
-            } catch (e) {
-                return null;
-            }
-        }
-    } catch (e) {
-        console.error('Error parsing token:', e);
-        return null;
-    }
-}
     
     // Настройка обработчиков
     document.getElementById('close-chat').addEventListener('click', () => {
         document.getElementById('chat-window').classList.remove('active');
+        
+        // Очищаем таймер автоответчика при закрытии чата
+        if (currentChatId) {
+            clearAutoReplyTimer(currentChatId);
+        }
+        
         currentChatId = null;
         loadChats(false); // Обновляем список чатов
     });
