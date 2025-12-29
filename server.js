@@ -116,9 +116,40 @@ async function handleChatMessage(data, senderId, dealId) {
         let chatType = 'regular';
         
         if (chatId === 'support' || chatId.startsWith('support_')) {
-            // Для чата поддержки
+            // ДЛЯ ПОДДЕРЖКИ - используем НОВУЮ ТАБЛИЦУ
             chatType = 'support';
-            receiverId = 1; // ID администратора/поддержки
+            
+            // Проверяем, есть ли уже chatId, если нет - создаем
+            let actualChatId = chatId;
+            if (chatId === 'support') {
+                actualChatId = `support_${senderId}_${Date.now()}`;
+            }
+            
+            // Сохраняем в support_messages
+            const result = await pool.query(`
+                INSERT INTO support_messages (user_id, content, chat_id, is_from_admin)
+                VALUES ($1, $2, $3, false)
+                RETURNING id, created_at
+            `, [senderId, message.content, actualChatId]);
+            
+            // Формируем данные для трансляции
+            const broadcastData = {
+                chatId: actualChatId,
+                message: {
+                    id: result.rows[0].id,
+                    sender_id: senderId,
+                    content: message.content,
+                    created_at: result.rows[0].created_at,
+                    chat_type: 'support'
+                }
+            };
+            
+            // Отправляем через WebSocket
+            broadcastMessage(broadcastData, senderId, dealId);
+            
+            console.log(`✅ Support message saved to support_messages for chat ${actualChatId}`);
+            return;
+            
         } else {
             // Для обычного чата - получаем информацию о чате
             const chatResult = await pool.query(`
@@ -140,31 +171,31 @@ async function handleChatMessage(data, senderId, dealId) {
             
             // Определяем получателя
             receiverId = chat.user1_id === parseInt(senderId) ? chat.user2_id : chat.user1_id;
+            
+            // Сохраняем сообщение в БД (старая таблица messages)
+            const result = await pool.query(`
+                INSERT INTO messages (sender_id, receiver_id, content, chat_id, chat_type)
+                VALUES ($1, $2, $3, $4, $5)
+                RETURNING id, created_at
+            `, [senderId, receiverId, message.content, chatId, chatType]);
+            
+            // Формируем данные для трансляции
+            const broadcastData = {
+                chatId: chatId,
+                message: {
+                    id: result.rows[0].id,
+                    sender_id: senderId,
+                    content: message.content,
+                    created_at: result.rows[0].created_at,
+                    receiver_id: receiverId
+                }
+            };
+            
+            // Отправляем через WebSocket
+            broadcastMessage(broadcastData, senderId, dealId);
+            
+            console.log(`✅ Message saved to DB and broadcasted for chat ${chatId}`);
         }
-        
-        // Сохраняем сообщение в БД
-        const result = await pool.query(`
-            INSERT INTO messages (sender_id, receiver_id, content, chat_id, chat_type)
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING id, created_at
-        `, [senderId, receiverId, message.content, chatId, chatType]);
-        
-        // Формируем данные для трансляции
-        const broadcastData = {
-            chatId: chatId,
-            message: {
-                id: result.rows[0].id,
-                sender_id: senderId,
-                content: message.content,
-                created_at: result.rows[0].created_at,
-                receiver_id: receiverId
-            }
-        };
-        
-        // Отправляем через WebSocket
-        broadcastMessage(broadcastData, senderId, dealId);
-        
-        console.log(`✅ Message saved to DB and broadcasted for chat ${chatId}`);
         
     } catch (error) {
         console.error('❌ Error handling chat message:', error);
@@ -1462,36 +1493,54 @@ app.get('/api/messages/chat/:chatId', authenticateToken, async (req, res) => {
         const { chatId } = req.params;
         const user_id = req.user.userId;
 
-        if (chatId === 'support') {
-            // Return support messages from database
-            const result = await pool.query(`
-                SELECT 
-                    m.*,
-                    u.username as sender_username
-                FROM messages m
-                LEFT JOIN users u ON m.sender_id = u.id
-                WHERE (m.sender_id = $1 OR m.receiver_id = $1) 
-                   AND m.chat_type = 'support'
-                ORDER BY m.created_at ASC
-            `, [user_id]);
+        if (chatId === 'support' || chatId.startsWith('support_')) {
+            // ИСПОЛЬЗУЕМ НОВУЮ ТАБЛИЦУ support_messages
+            let actualChatId = chatId;
+            
+            // Если общий чат поддержки, ищем все чаты пользователя
+            if (chatId === 'support') {
+                const result = await pool.query(`
+                    SELECT 
+                        sm.*,
+                        u.username as sender_username,
+                        u.full_name as sender_name
+                    FROM support_messages sm
+                    LEFT JOIN users u ON sm.user_id = u.id
+                    WHERE sm.user_id = $1
+                    ORDER BY sm.created_at ASC
+                `, [user_id]);
 
-            // Если нет сообщений, возвращаем приветственное сообщение
-            if (result.rows.length === 0) {
-                const welcomeMessage = {
-                    id: 'support_welcome',
-                    sender_id: 1, // Admin ID
-                    receiver_id: user_id,
-                    content: 'Здравствуйте! Чем могу помочь?',
-                    chat_type: 'support',
-                    created_at: new Date(),
-                    sender_username: 'Поддержка'
-                };
-                result.rows.push(welcomeMessage);
+                // Если нет сообщений, возвращаем приветственное сообщение
+                if (result.rows.length === 0) {
+                    const welcomeMessage = {
+                        id: 'support_welcome',
+                        sender_id: 1, // Admin ID
+                        content: 'Здравствуйте! Чем могу помочь?',
+                        chat_type: 'support',
+                        created_at: new Date(),
+                        sender_username: 'Поддержка'
+                    };
+                    return res.json([welcomeMessage]);
+                }
+
+                return res.json(result.rows);
+            } else {
+                // Конкретный чат поддержки
+                const result = await pool.query(`
+                    SELECT 
+                        sm.*,
+                        u.username as sender_username,
+                        u.full_name as sender_name
+                    FROM support_messages sm
+                    LEFT JOIN users u ON sm.user_id = u.id
+                    WHERE sm.chat_id = $1
+                    ORDER BY sm.created_at ASC
+                `, [actualChatId]);
+
+                return res.json(result.rows);
             }
-
-            res.json(result.rows);
         } else {
-            // Return regular chat messages
+            // Остальной код для обычных чатов остается без изменений...
             const chatCheck = await pool.query(
                 'SELECT user1_id, user2_id FROM chats WHERE id = $1',
                 [chatId]
@@ -1523,13 +1572,14 @@ app.get('/api/messages/chat/:chatId', authenticateToken, async (req, res) => {
     }
 });
 
+
 // ОТПРАВКА СООБЩЕНИЙ В ЧАТ ПОДДЕРЖКИ (НОВАЯ ТАБЛИЦА)
 app.post('/api/messages/support', authenticateToken, async (req, res) => {
     try {
         const { message, content, chatId } = req.body; 
         const sender_id = req.user.userId;
 
-        // Берем текст из любого доступного поля (зависит от фронтенда)
+        // Берем текст из любого доступного поля
         const finalContent = message || content;
 
         if (!finalContent) {
@@ -1547,7 +1597,12 @@ app.post('/api/messages/support', authenticateToken, async (req, res) => {
         }
 
         const user = userResult.rows[0];
-        const actualChatId = chatId || `support_${sender_id}_${Date.now()}`;
+        let actualChatId = chatId;
+        
+        // Если chatId не указан, создаем новый
+        if (!actualChatId || actualChatId === 'support') {
+            actualChatId = `support_${sender_id}_${Date.now()}`;
+        }
 
         // 2. ЗАПИСЬ В НОВУЮ ТАБЛИЦУ support_messages
         const dbResult = await pool.query(`
@@ -1556,7 +1611,7 @@ app.post('/api/messages/support', authenticateToken, async (req, res) => {
             RETURNING *
         `, [sender_id, finalContent, actualChatId]);
 
-        // 3. ОТПРАВКА В TELEGRAM (в твоем формате)
+        // 3. ОТПРАВКА В TELEGRAM
         const telegramSent = await sendToTelegram(finalContent, {
             userId: user.id,
             email: user.email,
@@ -1568,7 +1623,8 @@ app.post('/api/messages/support', authenticateToken, async (req, res) => {
             success: true,
             message: 'Сообщение отправлено в поддержку',
             data: dbResult.rows[0],
-            telegramSent
+            telegramSent,
+            chatId: actualChatId
         });
 
     } catch (error) {
