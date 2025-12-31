@@ -240,21 +240,27 @@
             opacity: 0.7;
         }
 
-        /* Ads Grid - Telegram стиль список */
+        /* Ads Grid - ДВА РЯДА с закруглениями как на фото */
         .ads-grid {
-            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            padding: 12px;
             background: var(--chat-bg);
         }
 
-        /* Ad Card - Telegram стиль */
+        /* Ad Card - Закругленный стиль как на фото */
         .ad-card {
             background: var(--nav-bg);
-            border-bottom: 1px solid var(--gray-dark);
-            margin: 0;
+            border-radius: var(--radius);
+            overflow: hidden;
             cursor: pointer;
-            transition: background 0.2s ease;
+            transition: all 0.2s ease;
             opacity: 0;
             transform: translateY(10px);
+            border: 1px solid var(--gray-dark);
+            display: flex;
+            flex-direction: column;
         }
         
         .ad-card.show {
@@ -264,41 +270,51 @@
         }
         
         .ad-card:active {
-            background: rgba(255, 255, 255, 0.05);
+            transform: scale(0.98);
+            background: rgba(255, 255, 255, 0.03);
         }
         
-        /* Ad Image */
+        /* Ad Image - Исправленная загрузка */
         .ad-image {
-            height: 180px;
-            background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
             position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 100%;
+            height: 150px;
+            background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
             overflow: hidden;
+            border-radius: var(--radius) var(--radius) 0 0;
         }
         
-        .ad-image img {
+        .ad-image-img {
             width: 100%;
             height: 100%;
             object-fit: cover;
             transition: transform 0.3s ease;
+            border-radius: var(--radius) var(--radius) 0 0;
+            background-color: #1c2836;
         }
         
-        .ad-card:active .ad-image img {
+        .ad-image-img.loaded {
+            opacity: 1;
+        }
+        
+        .ad-card:active .ad-image-img {
             transform: scale(1.05);
         }
         
         .ad-image-placeholder {
-            color: var(--gray-light);
-            font-size: 14px;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px;
-            width: 100%;
-            height: 100%;
             justify-content: center;
+            color: var(--gray-light);
+            gap: 8px;
+            background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
+            border-radius: var(--radius) var(--radius) 0 0;
         }
         
         .ad-image-placeholder i {
@@ -306,8 +322,15 @@
             opacity: 0.5;
         }
         
+        .ad-image-placeholder span {
+            font-size: 12px;
+        }
+        
         .ad-content {
-            padding: 12px 16px;
+            padding: 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
         
         .ad-header {
@@ -318,20 +341,24 @@
         }
         
         .ad-category {
-            font-size: 12px;
+            font-size: 11px;
             background: rgba(0, 136, 204, 0.15);
-            padding: 4px 10px;
-            border-radius: 12px;
+            padding: 4px 8px;
+            border-radius: 10px;
             color: var(--primary);
             font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 70%;
         }
         
         .ad-favorite {
             color: var(--gray-light);
-            background: rgba(255, 255, 255, 0.05);
+            background: transparent;
             border: none;
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -339,11 +366,11 @@
             font-size: 14px;
             cursor: pointer;
             transition: all 0.2s ease;
+            flex-shrink: 0;
         }
         
         .ad-favorite.active {
             color: var(--accent);
-            background: rgba(255, 107, 107, 0.1);
         }
         
         .ad-favorite:active {
@@ -352,38 +379,45 @@
         }
         
         .ad-title {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             color: var(--white);
             line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 36px;
         }
         
         .ad-description {
             color: var(--gray-light);
-            margin-bottom: 12px;
-            font-size: 14px;
+            margin-bottom: 10px;
+            font-size: 12px;
             line-height: 1.4;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            flex: 1;
         }
         
         .ad-footer {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-top: auto;
         }
         
         .ad-price {
             font-weight: 700;
             color: var(--primary);
-            font-size: 16px;
+            font-size: 15px;
         }
         
         .ad-meta {
-            font-size: 12px;
+            font-size: 11px;
             color: var(--gray-light);
             display: flex;
             align-items: center;
@@ -391,7 +425,7 @@
         }
         
         .ad-meta i {
-            font-size: 11px;
+            font-size: 10px;
         }
 
         /* Empty State */
@@ -403,6 +437,7 @@
             border-radius: var(--radius);
             border: 1px solid var(--gray-dark);
             animation: fadeIn 0.6s ease-out;
+            grid-column: 1 / -1;
         }
         
         .empty-state i {
@@ -434,6 +469,7 @@
             text-align: center;
             padding: 40px 20px;
             color: var(--gray-light);
+            grid-column: 1 / -1;
         }
         
         .loading-spinner {
@@ -450,7 +486,8 @@
         .load-more {
             text-align: center;
             padding: 20px 16px;
-            background: var(--nav-bg);
+            background: var(--chat-bg);
+            grid-column: 1 / -1;
         }
         
         .load-more-btn {
@@ -486,6 +523,7 @@
             margin: 12px;
             border-radius: var(--radius);
             border: 1px solid var(--gray-dark);
+            grid-column: 1 / -1;
         }
         
         .error-state i {
@@ -626,20 +664,45 @@
                 padding: 10px 12px;
             }
             
-            .ad-content {
-                padding: 10px 12px;
-            }
-            
-            .ad-title {
-                font-size: 15px;
-            }
-            
-            .ad-description {
-                font-size: 13px;
+            .ads-grid {
+                gap: 8px;
+                padding: 10px;
             }
             
             .ad-image {
-                height: 150px;
+                height: 130px;
+            }
+            
+            .ad-content {
+                padding: 10px;
+            }
+            
+            .ad-title {
+                font-size: 13px;
+            }
+            
+            .ad-description {
+                font-size: 11px;
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .ads-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 15px;
+                padding: 16px;
+            }
+            
+            .ad-image {
+                height: 180px;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .ads-grid {
+                grid-template-columns: repeat(4, 1fr);
+                max-width: 1200px;
+                margin: 0 auto;
             }
         }
     </style>
@@ -839,7 +902,7 @@
                 }
 
                 // Формируем URL для запроса
-                let url = `${API_BASE}/ads?page=${page}&limit=10`;
+                let url = `${API_BASE}/ads?page=${page}&limit=12`;
                 if (category !== 'all') {
                     url += `&category=${encodeURIComponent(category)}`;
                 }
@@ -926,7 +989,7 @@
             });
         }
 
-        // Функция для создания элемента объявления С ИЗОБРАЖЕНИЕМ
+        // Функция для создания элемента объявления с ИЗОБРАЖЕНИЯМИ из таблицы ad_photos
         function createAdElement(ad, index) {
             const adElement = document.createElement('div');
             adElement.className = 'ad-card';
@@ -949,13 +1012,48 @@
             // Создаем HTML
             let adHTML = '';
             
-            // Добавляем изображение
-            if (ad.image && ad.image.startsWith('http')) {
+            // Добавляем изображение - ИСПРАВЛЕННАЯ ЧАСТЬ
+            // Используем первое изображение из ad_photos или заглушку
+            let imageUrl = '';
+            
+            // Если есть photos массив от сервера
+            if (ad.photos && ad.photos.length > 0) {
+                // Берем первую фотографию
+                const firstPhoto = ad.photos[0];
+                // Проверяем, что image_data существует и это строка
+                if (firstPhoto.image_data) {
+                    // Если это base64 строка
+                    if (firstPhoto.image_data.startsWith('data:image')) {
+                        imageUrl = firstPhoto.image_data;
+                    } 
+                    // Если это URL
+                    else if (firstPhoto.image_data.startsWith('http')) {
+                        imageUrl = firstPhoto.image_data;
+                    }
+                    // Если это просто строка base64 без префикса
+                    else if (firstPhoto.image_data.length > 100) {
+                        imageUrl = `data:image/jpeg;base64,${firstPhoto.image_data}`;
+                    }
+                }
+            }
+            // Если есть image поле в самом объявлении
+            else if (ad.image) {
+                if (ad.image.startsWith('data:image') || ad.image.startsWith('http')) {
+                    imageUrl = ad.image;
+                }
+            }
+            
+            // Генерируем HTML для изображения
+            if (imageUrl) {
                 adHTML += `
                     <div class="ad-image">
-                        <img src="${ad.image}" alt="${ad.title}" loading="lazy" 
-                             onload="this.style.opacity='1'"
-                             onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\"ad-image-placeholder\"><i class=\"fa fa-gamepad\"></i><span>Нет изображения</span></div>';">
+                        <img src="${imageUrl}" 
+                             alt="${ad.title || 'Игровой аккаунт'}" 
+                             class="ad-image-img"
+                             loading="lazy"
+                             onload="this.classList.add('loaded'); this.style.opacity='1';"
+                             onerror="this.onerror=null; this.style.display='none'; 
+                                      this.parentElement.innerHTML='<div class=\"ad-image-placeholder\"><i class=\"fa fa-gamepad\"></i><span>Нет изображения</span></div>';">
                     </div>
                 `;
             } else {
@@ -986,6 +1084,7 @@
                         <div class="ad-meta">
                             <i class="fa fa-eye"></i>
                             <span>${ad.views || 0}</span>
+                            <span style="margin-left: 8px;">${timeAgo}</span>
                         </div>
                     </div>
                 </div>
@@ -1025,6 +1124,7 @@
                     description: ad.description,
                     price: ad.price,
                     category: ad.category,
+                    photos: ad.photos || [],
                     image: ad.image,
                     views: ad.views,
                     created_at: ad.created_at || new Date().toISOString()
@@ -1206,12 +1306,12 @@
                 }
                 
                 /* Стили для плавной загрузки изображений */
-                .ad-image img {
+                .ad-image-img {
                     opacity: 0;
                     transition: opacity 0.3s ease;
                 }
                 
-                .ad-image img[src]:not([src=""]) {
+                .ad-image-img.loaded {
                     opacity: 1;
                 }
             `;
