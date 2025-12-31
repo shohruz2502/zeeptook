@@ -267,6 +267,45 @@
             background: rgba(255, 255, 255, 0.05);
         }
         
+        /* Ad Image */
+        .ad-image {
+            height: 180px;
+            background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .ad-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        .ad-card:active .ad-image img {
+            transform: scale(1.05);
+        }
+        
+        .ad-image-placeholder {
+            color: var(--gray-light);
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+        }
+        
+        .ad-image-placeholder i {
+            font-size: 32px;
+            opacity: 0.5;
+        }
+        
         .ad-content {
             padding: 12px 16px;
         }
@@ -309,6 +348,7 @@
         
         .ad-favorite:active {
             transform: scale(0.9);
+            background: rgba(255, 255, 255, 0.1);
         }
         
         .ad-title {
@@ -352,50 +392,6 @@
         
         .ad-meta i {
             font-size: 11px;
-        }
-
-        /* Ad Image */
-        .ad-image {
-            height: 200px;
-            background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-        
-        .ad-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .ad-image-placeholder {
-            color: var(--gray-light);
-            font-size: 14px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .ad-image-placeholder i {
-            font-size: 32px;
-            opacity: 0.5;
-        }
-        
-        .image-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 500;
-            backdrop-filter: blur(10px);
         }
 
         /* Empty State */
@@ -643,7 +639,7 @@
             }
             
             .ad-image {
-                height: 180px;
+                height: 150px;
             }
         }
     </style>
@@ -930,7 +926,7 @@
             });
         }
 
-        // Функция для создания элемента объявления
+        // Функция для создания элемента объявления С ИЗОБРАЖЕНИЕМ
         function createAdElement(ad, index) {
             const adElement = document.createElement('div');
             adElement.className = 'ad-card';
@@ -953,12 +949,23 @@
             // Создаем HTML
             let adHTML = '';
             
-            // Добавляем изображение, если есть
+            // Добавляем изображение
             if (ad.image && ad.image.startsWith('http')) {
                 adHTML += `
                     <div class="ad-image">
-                        ${ad.isUrgent ? '<div class="image-badge">СРОЧНО</div>' : ''}
-                        <img src="${ad.image}" alt="${ad.title}" loading="lazy">
+                        <img src="${ad.image}" alt="${ad.title}" loading="lazy" 
+                             onload="this.style.opacity='1'"
+                             onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\"ad-image-placeholder\"><i class=\"fa fa-gamepad\"></i><span>Нет изображения</span></div>';">
+                    </div>
+                `;
+            } else {
+                // Заглушка если нет изображения
+                adHTML += `
+                    <div class="ad-image">
+                        <div class="ad-image-placeholder">
+                            <i class="fa fa-gamepad"></i>
+                            <span>Изображение игры</span>
+                        </div>
                     </div>
                 `;
             }
@@ -1196,6 +1203,16 @@
                 @keyframes slideUp {
                     from { transform: translateX(-50%) translateY(0); opacity: 1; }
                     to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+                }
+                
+                /* Стили для плавной загрузки изображений */
+                .ad-image img {
+                    opacity: 0;
+                    transition: opacity 0.3s ease;
+                }
+                
+                .ad-image img[src]:not([src=""]) {
+                    opacity: 1;
                 }
             `;
             document.head.appendChild(style);
