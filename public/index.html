@@ -246,16 +246,21 @@
             background: var(--chat-bg);
         }
 
-        /* Ad Card - Telegram стиль (сначала текст) */
+        /* Ad Card - Telegram стиль */
         .ad-card {
             background: var(--nav-bg);
             border-bottom: 1px solid var(--gray-dark);
             margin: 0;
             cursor: pointer;
             transition: background 0.2s ease;
-            animation: slideUp 0.3s ease-out;
-            animation-fill-mode: forwards;
             opacity: 0;
+            transform: translateY(10px);
+        }
+        
+        .ad-card.show {
+            opacity: 1;
+            transform: translateY(0);
+            animation: slideUp 0.3s ease-out;
         }
         
         .ad-card:active {
@@ -349,7 +354,7 @@
             font-size: 11px;
         }
 
-        /* Ad Image - появляется после текста (как в телеграме) */
+        /* Ad Image */
         .ad-image {
             height: 200px;
             background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
@@ -358,12 +363,6 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-        }
-        
-        .ad-image.loaded {
-            opacity: 1;
         }
         
         .ad-image img {
@@ -617,51 +616,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Placeholder для загрузки */
-        .ad-card.placeholder {
-            animation: none;
-        }
-        
-        .ad-card.placeholder .ad-category {
-            background: var(--gray-dark);
-            color: transparent;
-            width: 60px;
-        }
-        
-        .ad-card.placeholder .ad-title {
-            background: var(--gray-dark);
-            color: transparent;
-            border-radius: 4px;
-            height: 18px;
-            width: 80%;
-            margin-bottom: 8px;
-        }
-        
-        .ad-card.placeholder .ad-description {
-            background: var(--gray-dark);
-            color: transparent;
-            border-radius: 4px;
-            height: 14px;
-            width: 100%;
-            margin-bottom: 12px;
-        }
-        
-        .ad-card.placeholder .ad-price {
-            background: var(--gray-dark);
-            color: transparent;
-            border-radius: 4px;
-            height: 16px;
-            width: 60px;
-        }
-        
-        .ad-card.placeholder .ad-meta {
-            background: var(--gray-dark);
-            color: transparent;
-            border-radius: 4px;
-            height: 14px;
-            width: 50px;
-        }
-
         /* Responsive */
         @media (max-width: 360px) {
             .header {
@@ -773,10 +727,7 @@
         let currentSearch = '';
         let isLoading = false;
         let token = localStorage.getItem('token');
-        
-        // Для последовательной загрузки изображений
-        let imagesLoading = new Set();
-        let imagesLoaded = new Set();
+        let ads = [];
 
         // API базовый URL
         const API_BASE = '/api';
@@ -918,17 +869,19 @@
 
                 const data = await response.json();
                 
+                // Сохраняем объявления
+                if (page === 1) {
+                    ads = data.ads;
+                } else {
+                    ads = [...ads, ...data.ads];
+                }
+                
                 // Обновляем информацию о пагинации
                 currentPage = data.page;
                 totalPages = data.totalPages;
                 
-                // Отображаем объявления (только текст)
+                // Отображаем объявления
                 displayAds(data.ads, page === 1);
-                
-                // Начинаем загрузку изображений
-                if (data.ads.length > 0) {
-                    loadImagesSequentially(data.ads);
-                }
                 
                 // Управляем кнопкой "Загрузить еще"
                 if (currentPage < totalPages) {
@@ -947,97 +900,15 @@
             }
         }
 
-        // Функция для последовательной загрузки изображений
-        async function loadImagesSequentially(ads) {
-            for (let i = 0; i < ads.length; i++) {
-                // Проверяем, загружается ли уже это изображение
-                if (imagesLoading.has(ads[i].id) || imagesLoaded.has(ads[i].id)) {
-                    continue;
-                }
-                
-                // Помечаем как загружающееся
-                imagesLoading.add(ads[i].id);
-                
-                // Загружаем изображение для этого объявления
-                await loadImageForAd(i, ads[i]);
-                
-                // Помечаем как загруженное
-                imagesLoaded.add(ads[i].id);
-                imagesLoading.delete(ads[i].id);
-                
-                // Небольшая задержка между загрузками для плавности
-                await new Promise(resolve => setTimeout(resolve, 50));
-            }
-        }
-
-        // Функция загрузки изображения для конкретного объявления
-        async function loadImageForAd(index, ad) {
-            return new Promise((resolve) => {
-                const adCard = document.querySelectorAll('.ad-card')[index];
-                if (!adCard) {
-                    resolve();
-                    return;
-                }
-
-                const hasImage = ad.image && ad.image.startsWith('http');
-                
-                // Создаем контейнер для изображения
-                const imageContainer = document.createElement('div');
-                imageContainer.className = 'ad-image';
-                
-                if (hasImage) {
-                    const img = new Image();
-                    
-                    // Слушаем события загрузки
-                    img.onload = () => {
-                        imageContainer.innerHTML = `
-                            ${ad.isUrgent ? '<div class="image-badge">СРОЧНО</div>' : ''}
-                            <img src="${ad.image}" alt="${ad.title}" loading="lazy">
-                        `;
-                        imageContainer.classList.add('loaded');
-                        resolve();
-                    };
-                    
-                    img.onerror = () => {
-                        showFallbackImage(imageContainer);
-                        resolve();
-                    };
-                    
-                    // Начинаем загрузку
-                    img.src = ad.image;
-                } else {
-                    showFallbackImage(imageContainer);
-                    resolve();
-                }
-                
-                // Вставляем изображение ПЕРЕД контентом (как в телеграме)
-                const adContent = adCard.querySelector('.ad-content');
-                if (adContent) {
-                    adCard.insertBefore(imageContainer, adContent);
-                }
-            });
-        }
-
-        // Функция для показа заглушки изображения
-        function showFallbackImage(container) {
-            container.innerHTML = `
-                <div class="ad-image-placeholder">
-                    <i class="fa fa-gamepad"></i>
-                    <span>Изображение игры</span>
-                </div>
-            `;
-            container.classList.add('loaded');
-        }
-
-        // Функция для отображения объявлений (ТОЛЬКО ТЕКСТ)
-        function displayAds(ads, clearContainer = true) {
+        // Функция для отображения объявлений
+        function displayAds(adsToDisplay, clearContainer = true) {
             const adsContainer = document.getElementById('ads-container');
             
             if (clearContainer) {
                 adsContainer.innerHTML = '';
             }
             
-            if (ads.length === 0 && clearContainer) {
+            if (adsToDisplay.length === 0 && clearContainer) {
                 adsContainer.innerHTML = `
                     <div class="empty-state">
                         <i class="fa fa-inbox"></i>
@@ -1048,20 +919,19 @@
                 return;
             }
             
-            ads.forEach((ad, index) => {
-                // Создаем карточку БЕЗ изображения
-                const adElement = createTextOnlyAdElement(ad, index);
+            adsToDisplay.forEach((ad, index) => {
+                const adElement = createAdElement(ad, index);
                 adsContainer.appendChild(adElement);
                 
                 // Анимация появления
                 setTimeout(() => {
-                    adElement.style.opacity = '1';
+                    adElement.classList.add('show');
                 }, index * 50);
             });
         }
 
-        // Функция для создания ТОЛЬКО ТЕКСТОВОГО элемента объявления
-        function createTextOnlyAdElement(ad, index) {
+        // Функция для создания элемента объявления
+        function createAdElement(ad, index) {
             const adElement = document.createElement('div');
             adElement.className = 'ad-card';
             adElement.setAttribute('data-ad-id', ad.id);
@@ -1075,11 +945,30 @@
             // Форматируем время
             const timeAgo = ad.created_at ? formatTimeAgo(ad.created_at) : 'Недавно';
             
-            adElement.innerHTML = `
+            // Восстанавливаем состояние избранного
+            const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+            const favoriteIds = favorites.map(fav => fav.id);
+            const isFavorite = favoriteIds.includes(ad.id);
+            
+            // Создаем HTML
+            let adHTML = '';
+            
+            // Добавляем изображение, если есть
+            if (ad.image && ad.image.startsWith('http')) {
+                adHTML += `
+                    <div class="ad-image">
+                        ${ad.isUrgent ? '<div class="image-badge">СРОЧНО</div>' : ''}
+                        <img src="${ad.image}" alt="${ad.title}" loading="lazy">
+                    </div>
+                `;
+            }
+            
+            // Добавляем контент
+            adHTML += `
                 <div class="ad-content">
                     <div class="ad-header">
                         <div class="ad-category">${ad.category || 'Игры'}</div>
-                        <button class="ad-favorite">
+                        <button class="ad-favorite ${isFavorite ? 'active' : ''}" data-ad-id="${ad.id}">
                             <i class="fa fa-heart"></i>
                         </button>
                     </div>
@@ -1095,12 +984,7 @@
                 </div>
             `;
             
-            // Восстанавливаем состояние избранного
-            const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-            const favoriteIds = favorites.map(fav => fav.id);
-            if (favoriteIds.includes(ad.id)) {
-                adElement.querySelector('.ad-favorite').classList.add('active');
-            }
+            adElement.innerHTML = adHTML;
             
             // Добавляем обработчики событий
             const favoriteBtn = adElement.querySelector('.ad-favorite');
@@ -1135,7 +1019,8 @@
                     price: ad.price,
                     category: ad.category,
                     image: ad.image,
-                    views: ad.views
+                    views: ad.views,
+                    created_at: ad.created_at || new Date().toISOString()
                 };
                 favorites.push(favoriteAd);
                 favoriteBtn.classList.add('active');
@@ -1188,6 +1073,15 @@
                     performSearch();
                 }
             });
+            
+            // Очистка поиска при клике на "Все" в категориях
+            const allCategory = document.querySelector('[data-category="all"]');
+            if (allCategory) {
+                allCategory.addEventListener('click', () => {
+                    searchInput.value = '';
+                    currentSearch = '';
+                });
+            }
         }
 
         // Функция для настройки категорий
@@ -1222,18 +1116,22 @@
 
         // Вспомогательная функция для форматирования времени
         function formatTimeAgo(dateString) {
-            const now = new Date();
-            const date = new Date(dateString);
-            const diffMs = now - date;
-            const diffMins = Math.floor(diffMs / 60000);
-            const diffHours = Math.floor(diffMs / 3600000);
-            const diffDays = Math.floor(diffMs / 86400000);
+            try {
+                const now = new Date();
+                const date = new Date(dateString);
+                const diffMs = now - date;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+                const diffDays = Math.floor(diffMs / 86400000);
 
-            if (diffMins < 1) return 'только что';
-            if (diffMins < 60) return `${diffMins} мин`;
-            if (diffHours < 24) return `${diffHours} ч`;
-            if (diffDays < 7) return `${diffDays} д`;
-            return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+                if (diffMins < 1) return 'только что';
+                if (diffMins < 60) return `${diffMins} мин`;
+                if (diffHours < 24) return `${diffHours} ч`;
+                if (diffDays < 7) return `${diffDays} д`;
+                return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+            } catch (e) {
+                return 'Недавно';
+            }
         }
 
         // Функция для показа уведомлений
@@ -1268,6 +1166,13 @@
         // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Initializing Zeeptook app...');
+            
+            // Проверяем наличие элементов перед их использованием
+            if (!document.getElementById('ads-container')) {
+                console.error('❌ ads-container not found!');
+                return;
+            }
+            
             checkDBConnection();
             loadCategories();
             fetchAds();
