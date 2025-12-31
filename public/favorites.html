@@ -344,78 +344,80 @@
         }
         
         .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(30, 41, 59, 0.98);
-            backdrop-filter: blur(20px);
-            display: flex;
-            justify-content: space-around;
-            padding: 12px 0;
-            box-shadow: 0 -2px 20px rgba(0, 242, 254, 0.1);
-            z-index: 1000;
-            border-top: 1px solid rgba(0, 242, 254, 0.1);
-        }
-        
-        .nav-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-decoration: none;
-            color: var(--gray);
-            font-size: 11px;
-            padding: 5px;
-            transition: all 0.3s ease;
-            flex: 1;
-            position: relative;
-        }
-        
-        .nav-btn i {
-            font-size: 20px;
-            margin-bottom: 3px;
-            transition: all 0.3s ease;
-        }
-        
-        .nav-btn.active {
-            color: var(--primary);
-        }
-        
-        .nav-btn.active i {
-            transform: translateY(-2px);
-        }
-        
-        .nav-btn:active {
-            transform: scale(0.95);
-        }
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #18222d;
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 0 10px;
+    border-top: 1px solid #2a2f36;
+    z-index: 1000;
+    height: 60px;
+}
 
-        /* Адаптивность */
-        @media (min-width: 768px) {
-            .app-container {
-                max-width: 750px;
-                margin: 0 auto;
-            }
-            
-            .ads-container {
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 15px;
-            }
-            
-            .ad-card {
-                margin-bottom: 0;
-            }
-        }
-        
-        @media (min-width: 1024px) {
-            .app-container {
-                max-width: 900px;
-            }
-            
-            .ads-container {
-                grid-template-columns: repeat(3, 1fr);
-            }
-        }
+.nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: #8e98a3;
+    font-size: 10px;
+    padding: 6px 4px;
+    transition: all 0.2s ease;
+    flex: 1;
+    position: relative;
+}
+
+.nav-btn i {
+    font-size: 20px;
+    margin-bottom: 2px;
+    transition: all 0.2s ease;
+}
+
+.nav-btn span {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.nav-btn.active {
+    color: #0088cc;
+}
+
+.nav-btn.active i {
+    transform: translateY(-1px);
+}
+
+.nav-btn:active {
+    transform: scale(0.95);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* Индикатор активной вкладки (точка сверху) */
+.nav-btn.active::after {
+    content: '';
+    position: absolute;
+    top: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: #0088cc;
+    border-radius: 50%;
+}
+
+/* Адаптивность для планшетов */
+@media (min-width: 768px) {
+    .bottom-nav {
+        max-width: 500px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-radius: 20px 20px 0 0;
+        border: 1px solid #2a2f36;
+        border-bottom: none;
+    }
+}
 
         /* Анимации */
         @keyframes fadeInUp {
