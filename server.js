@@ -1581,7 +1581,7 @@ app.get('/api/messages/chat/:chatId', authenticateToken, async (req, res) => {
                 return res.json(result.rows);
             }
         } else {
-            // Обычный чат между пользователями
+            // ★★★ ОСТАВЛЯЕМ БЕЗ ИЗМЕНЕНИЙ - это работает! ★★★
             const chatCheck = await pool.query(
                 'SELECT user1_id, user2_id FROM chats WHERE id = $1',
                 [chatId]
@@ -1592,29 +1592,18 @@ app.get('/api/messages/chat/:chatId', authenticateToken, async (req, res) => {
             }
 
             const chat = chatCheck.rows[0];
-            
-            // Проверяем, что пользователь является участником чата
-            if (chat.user1_id !== parseInt(user_id) && chat.user2_id !== parseInt(user_id)) {
-                return res.status(403).json({ error: 'Access denied' });
-            }
-            
-            const otherUserId = chat.user1_id === parseInt(user_id) ? chat.user2_id : chat.user1_id;
+            const otherUserId = chat.user1_id === user_id ? chat.user2_id : chat.user1_id;
 
             const result = await pool.query(`
                 SELECT 
-                    m.id,
-                    m.sender_id,
-                    m.content,
-                    m.created_at,
-                    u.username as sender_username,
-                    u.full_name as sender_name,
-                    'regular' as chat_type,
-                    false as is_from_admin
+                    m.*,
+                    u.username as sender_username
                 FROM messages m
                 LEFT JOIN users u ON m.sender_id = u.id
-                WHERE m.chat_id = $1
+                WHERE (m.sender_id = $1 AND m.receiver_id = $2)
+                   OR (m.sender_id = $2 AND m.receiver_id = $1)
                 ORDER BY m.created_at ASC
-            `, [chatId]);
+            `, [user_id, otherUserId]);
 
             res.json(result.rows);
         }
