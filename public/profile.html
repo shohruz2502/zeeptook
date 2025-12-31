@@ -50,20 +50,26 @@
             padding-bottom: 70px;
         }
 
-        /* Header */
+        /* Header с кнопками справа */
         .header {
             background: var(--nav-bg);
             color: var(--white);
             padding: 10px 16px;
             display: flex;
             align-items: center;
-            gap: 12px;
+            justify-content: space-between;
             position: sticky;
             top: 0;
             z-index: 1000;
             height: 60px;
             border-bottom: 1px solid var(--gray-dark);
             box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
         
         .back-btn {
@@ -88,7 +94,35 @@
             font-size: 17px;
             font-weight: 600;
             color: var(--white);
-            flex: 1;
+        }
+        
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .header-btn {
+            color: var(--gray-light);
+            background: none;
+            border: none;
+            font-size: 18px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .header-btn:active {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .logout-btn {
+            color: var(--accent);
         }
 
         /* Profile Header */
@@ -186,6 +220,7 @@
         /* Profile Info */
         .profile-info {
             background: var(--nav-bg);
+            margin-top: 12px;
         }
         
         .info-item {
@@ -217,6 +252,33 @@
             text-align: right;
             max-width: 60%;
             word-break: break-word;
+        }
+
+        /* Кнопка просмотра логина/пароля */
+        .view-credentials-btn {
+            background: var(--nav-bg);
+            border: none;
+            width: 100%;
+            padding: 14px 16px;
+            text-align: left;
+            color: var(--primary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--gray-dark);
+            transition: background 0.2s ease;
+        }
+        
+        .view-credentials-btn:active {
+            background: rgba(0, 136, 204, 0.1);
+        }
+        
+        .view-credentials-btn i {
+            font-size: 12px;
+            opacity: 0.7;
         }
 
         /* Menu Items */
@@ -275,11 +337,6 @@
         .menu-arrow {
             color: var(--gray-light);
             font-size: 14px;
-        }
-        
-        .logout-btn .menu-icon {
-            color: var(--accent);
-            background: rgba(255, 107, 107, 0.15);
         }
 
         /* Auth Required */
@@ -354,50 +411,6 @@
             background: transparent;
             border: 1px solid var(--primary);
             color: var(--primary);
-        }
-
-        /* Zeeptook Section */
-        .zeeptook-section {
-            background: var(--nav-bg);
-            margin-top: 12px;
-            border-top: 1px solid var(--gray-dark);
-            border-bottom: 1px solid var(--gray-dark);
-        }
-        
-        .zeeptook-header {
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            border-bottom: 1px solid var(--gray-dark);
-        }
-        
-        .zeeptook-logo {
-            width: 40px;
-            height: 40px;
-            background: var(--gradient);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 18px;
-        }
-        
-        .zeeptook-info {
-            flex: 1;
-        }
-        
-        .zeeptook-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--white);
-            margin-bottom: 2px;
-        }
-        
-        .zeeptook-subtitle {
-            font-size: 12px;
-            color: var(--gray-light);
         }
 
         /* Modal */
@@ -502,6 +515,28 @@
         
         .form-actions .btn {
             flex: 1;
+        }
+        
+        /* Credentials Modal */
+        .credentials-item {
+            margin-bottom: 16px;
+        }
+        
+        .credentials-label {
+            font-size: 12px;
+            color: var(--gray-light);
+            margin-bottom: 4px;
+        }
+        
+        .credentials-value {
+            background: var(--input-bg);
+            padding: 12px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--gray-medium);
+            font-family: monospace;
+            font-size: 14px;
+            word-break: break-all;
+            color: var(--white);
         }
 
         /* Loading */
@@ -678,11 +713,23 @@
 </head>
 <body>
     <div class="app-container">
+        <!-- Header с кнопками справа -->
         <div class="header">
-            <a href="index.html" class="back-btn">
-                <i class="fa fa-arrow-left"></i>
-            </a>
-            <div class="page-title">Профиль</div>
+            <div class="header-left">
+                <a href="index.html" class="back-btn">
+                    <i class="fa fa-arrow-left"></i>
+                </a>
+                <div class="page-title">Профиль</div>
+            </div>
+            
+            <div class="header-right" id="header-right" style="display: none;">
+                <button class="header-btn" onclick="showSettings()" title="Настройки">
+                    <i class="fa fa-cog"></i>
+                </button>
+                <button class="header-btn logout-btn" onclick="logout()" title="Выйти">
+                    <i class="fa fa-sign-out"></i>
+                </button>
+            </div>
         </div>
         
         <!-- Контент для неавторизованных пользователей -->
@@ -738,6 +785,12 @@
                 </div>
             </div>
             
+            <!-- Кнопка просмотра учетных данных -->
+            <button class="view-credentials-btn" onclick="showCredentials()">
+                <span>Показать логин и пароль</span>
+                <i class="fa fa-eye"></i>
+            </button>
+            
             <!-- Информация профиля -->
             <div class="profile-info">
                 <div class="info-item">
@@ -758,42 +811,30 @@
                 </div>
             </div>
             
-            <!-- Zeeptook Section (Settings and Logout) -->
-            <div class="zeeptook-section">
-                <div class="zeeptook-header">
-                    <div class="zeeptook-logo">
-                        <i class="fa fa-diamond"></i>
+            <!-- Дополнительные действия -->
+            <div class="menu-list">
+                <div class="menu-item" onclick="editProfile()">
+                    <div class="menu-icon">
+                        <i class="fa fa-edit"></i>
                     </div>
-                    <div class="zeeptook-info">
-                        <div class="zeeptook-title">Zeeptook</div>
-                        <div class="zeeptook-subtitle">Платформа для игроков</div>
+                    <div class="menu-content">
+                        <div class="menu-title">Редактировать профиль</div>
+                        <div class="menu-description">Изменить личную информацию</div>
+                    </div>
+                    <div class="menu-arrow">
+                        <i class="fa fa-chevron-right"></i>
                     </div>
                 </div>
-                
-                <div class="menu-list">
-                    <div class="menu-item" onclick="showSettings()">
-                        <div class="menu-icon">
-                            <i class="fa fa-cog"></i>
-                        </div>
-                        <div class="menu-content">
-                            <div class="menu-title">Настройки</div>
-                            <div class="menu-description">Настройки приложения</div>
-                        </div>
-                        <div class="menu-arrow">
-                            <i class="fa fa-chevron-right"></i>
-                        </div>
+                <div class="menu-item" onclick="showMyAds()">
+                    <div class="menu-icon">
+                        <i class="fa fa-list"></i>
                     </div>
-                    <div class="menu-item logout-btn" onclick="logout()">
-                        <div class="menu-icon">
-                            <i class="fa fa-sign-out"></i>
-                        </div>
-                        <div class="menu-content">
-                            <div class="menu-title">Выйти</div>
-                            <div class="menu-description">Завершить текущую сессию</div>
-                        </div>
-                        <div class="menu-arrow">
-                            <i class="fa fa-chevron-right"></i>
-                        </div>
+                    <div class="menu-content">
+                        <div class="menu-title">Мои объявления</div>
+                        <div class="menu-description">Управление вашими объявлениями</div>
+                    </div>
+                    <div class="menu-arrow">
+                        <i class="fa fa-chevron-right"></i>
                     </div>
                 </div>
             </div>
@@ -832,6 +873,33 @@
         </div>
     </div>
     
+    <!-- Модальное окно с учетными данными -->
+    <div class="modal" id="credentials-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Ваши учетные данные</div>
+                <button class="modal-close" onclick="closeCredentialsModal()">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="credentials-item">
+                    <div class="credentials-label">Логин (Email или имя пользователя):</div>
+                    <div class="credentials-value" id="credentials-login">Загрузка...</div>
+                </div>
+                <div class="credentials-item">
+                    <div class="credentials-label">Пароль:</div>
+                    <div class="credentials-value" id="credentials-password">••••••••</div>
+                </div>
+                <div style="margin-top: 20px; padding: 12px; background: rgba(255, 193, 7, 0.1); border-radius: var(--radius-sm); border-left: 3px solid #ffc107;">
+                    <p style="font-size: 13px; color: #ffc107; margin: 0;">
+                        <i class="fa fa-exclamation-triangle"></i> Храните эти данные в безопасном месте
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <div class="bottom-nav">
         <a href="index.html" class="nav-btn">
             <i class="fa fa-home"></i>
@@ -858,20 +926,24 @@
     <script>
         const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
         let currentUser = null;
+        let userCredentials = null;
 
         // Проверка авторизации при загрузке
         function checkAuth() {
             const token = localStorage.getItem('token');
             const authSection = document.getElementById('auth-required-section');
             const profileSection = document.getElementById('profile-section');
+            const headerRight = document.getElementById('header-right');
             
             if (token) {
                 authSection.style.display = 'none';
                 profileSection.style.display = 'block';
+                headerRight.style.display = 'flex';
                 loadProfile();
             } else {
                 authSection.style.display = 'block';
                 profileSection.style.display = 'none';
+                headerRight.style.display = 'none';
             }
         }
 
@@ -930,6 +1002,12 @@
             document.getElementById('info-fullname').textContent = user.full_name || 'Не указано';
             document.getElementById('info-joined').textContent = formatDate(user.created_at) || 'Не указана';
             
+            // Сохраняем учетные данные для отображения
+            userCredentials = {
+                login: user.email || user.username,
+                password: user.password_hint || '********'
+            };
+            
             const avatarElement = document.getElementById('profile-avatar');
             if (user.avatar_url) {
                 avatarElement.innerHTML = `
@@ -950,6 +1028,23 @@
                     tooltip.style.display = 'none';
                 }, 3000);
             }
+        }
+
+        // Показать учетные данные
+        function showCredentials() {
+            if (!userCredentials) {
+                showNotification('Данные не загружены', 'error');
+                return;
+            }
+            
+            document.getElementById('credentials-login').textContent = userCredentials.login;
+            document.getElementById('credentials-password').textContent = userCredentials.password;
+            document.getElementById('credentials-modal').classList.add('active');
+        }
+
+        // Закрыть модальное окно с учетными данными
+        function closeCredentialsModal() {
+            document.getElementById('credentials-modal').classList.remove('active');
         }
 
         // Функции модальных окон
@@ -1008,6 +1103,7 @@
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
                 currentUser = null;
+                userCredentials = null;
                 showNotification('Вы вышли из аккаунта');
                 checkAuth();
             }
@@ -1016,6 +1112,15 @@
         // Настройки
         function showSettings() {
             showNotification('Настройки будут доступны в следующем обновлении', 'info');
+        }
+
+        // Другие функции
+        function editProfile() {
+            showNotification('Редактирование профиля будет доступно в следующем обновлении', 'info');
+        }
+
+        function showMyAds() {
+            showNotification('Раздел "Мои объявления" будет доступен в следующем обновлении', 'info');
         }
 
         // Вспомогательные функции
@@ -1077,9 +1182,12 @@
             });
             
             // Обработка нажатия Enter в форме входа
-            document.getElementById('login-password').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') login();
-            });
+            const loginPassword = document.getElementById('login-password');
+            if (loginPassword) {
+                loginPassword.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') login();
+                });
+            }
         });
 
         // Стили для анимации уведомлений
