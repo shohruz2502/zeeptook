@@ -37,13 +37,15 @@
             background: var(--gradient-dark);
             color: var(--white);
             min-height: 100vh;
-            padding-bottom: 80px;
+            padding-bottom: 70px;
+            overflow-x: hidden;
         }
 
         .app-container {
             width: 100%;
             max-width: 100%;
             margin: 0 auto;
+            overflow: hidden;
         }
         
         .header {
@@ -484,6 +486,7 @@
             color: var(--gray-light);
         }
         
+        /* ОКНО ЧАТА С iOS-АНИМАЦИЯМИ */
         .chat-window {
             position: fixed;
             top: 0;
@@ -494,11 +497,19 @@
             z-index: 2000;
             display: none;
             flex-direction: column;
-            animation: slideInUp 0.3s ease-out;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
         
         .chat-window.active {
             display: flex;
+            transform: translateY(0);
+            animation: slideInUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+        }
+        
+        .chat-window.closing {
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
         
         .chat-header-bar {
@@ -644,17 +655,18 @@
             box-shadow: none;
         }
         
+        /* ОБНОВЛЕННАЯ НИЖНЯЯ НАВИГАЦИЯ */
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
             background: rgba(30, 41, 59, 0.98);
-            backdrop-filter: blur(20px);
+            backdrop-filter: blur(10px);
             display: flex;
             justify-content: space-around;
-            padding: 12px 0;
-            box-shadow: 0 -2px 20px rgba(0, 242, 254, 0.1);
+            padding: 8px 0;
+            box-shadow: 0 -2px 15px rgba(0, 242, 254, 0.1);
             z-index: 1000;
             border-top: 1px solid rgba(0, 242, 254, 0.1);
         }
@@ -665,16 +677,17 @@
             align-items: center;
             text-decoration: none;
             color: var(--gray);
-            font-size: 11px;
-            padding: 5px;
-            transition: all 0.3s ease;
+            font-size: 9px;
+            padding: 4px;
+            transition: all 0.2s ease;
             flex: 1;
+            position: relative;
         }
         
         .nav-btn i {
-            font-size: 20px;
-            margin-bottom: 3px;
-            transition: all 0.3s ease;
+            font-size: 16px;
+            margin-bottom: 2px;
+            transition: all 0.2s ease;
         }
         
         .nav-btn.active {
@@ -682,7 +695,7 @@
         }
         
         .nav-btn.active i {
-            transform: translateY(-2px);
+            transform: translateY(-1px);
         }
         
         .nav-btn:active {
@@ -809,8 +822,16 @@
             
             .chat-window {
                 left: 50%;
-                transform: translateX(-50%);
+                transform: translateX(-50%) translateY(100%);
                 max-width: 750px;
+            }
+            
+            .chat-window.active {
+                transform: translateX(-50%) translateY(0);
+            }
+            
+            .chat-window.closing {
+                transform: translateX(-50%) translateY(100%);
             }
             
             .story-viewer {
@@ -1394,7 +1415,7 @@ async function createOrOpenChat(sellerId, adId) {
     }
 }
 
-// Открытие чата
+// Открытие чата с плавной анимацией
 async function openChat(chat) {
     if (!checkAuth()) return;
     
@@ -1419,7 +1440,10 @@ async function openChat(chat) {
     // Загружаем сообщения
     await loadMessages(chat.id);
     
-    // Показываем окно чата
+    // Убираем класс closing если он есть
+    chatWindow.classList.remove('closing');
+    
+    // Показываем окно чата с анимацией
     chatWindow.classList.add('active');
     scrollToBottom();
     
@@ -1428,6 +1452,29 @@ async function openChat(chat) {
         const newUrl = window.location.pathname;
         window.history.replaceState({}, document.title, newUrl);
     }
+}
+
+// Закрытие чата с плавной анимацией
+function closeChat() {
+    const chatWindow = document.getElementById('chat-window');
+    
+    // Добавляем класс closing для анимации закрытия
+    chatWindow.classList.add('closing');
+    chatWindow.classList.remove('active');
+    
+    // Очищаем таймер автоответчика при закрытии чата
+    if (currentChatId) {
+        clearAutoReplyTimer(currentChatId);
+    }
+    
+    // Сбрасываем переменные
+    currentChatId = null;
+    currentChat = null;
+    
+    // После завершения анимации обновляем список чатов
+    setTimeout(() => {
+        loadChats(false);
+    }, 400);
 }
 
 // Загрузка сообщений
@@ -1719,17 +1766,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadChats();
     
     // Настройка обработчиков
-    document.getElementById('close-chat').addEventListener('click', () => {
-        document.getElementById('chat-window').classList.remove('active');
-        
-        // Очищаем таймер автоответчика при закрытии чата
-        if (currentChatId) {
-            clearAutoReplyTimer(currentChatId);
-        }
-        
-        currentChatId = null;
-        loadChats(false); // Обновляем список чатов
-    });
+    document.getElementById('close-chat').addEventListener('click', closeChat);
     
     document.getElementById('send-message').addEventListener('click', sendMessage);
     
