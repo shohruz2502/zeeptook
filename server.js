@@ -1165,7 +1165,7 @@ app.post('/api/ads', async (req, res) => {
             // Create ad
             const adResult = await client.query(`
                 INSERT INTO ads (title, description, price, category_id, user_id, location, is_urgent, seller_info)
-                VVALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 RETURNING *
             `, [title, description, price, category_id, user_id, location, is_urgent || false, actual_seller_info]);
 
