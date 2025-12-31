@@ -240,41 +240,52 @@
             opacity: 0.7;
         }
 
-        /* Ads Grid - ДВА РЯДА с закруглениями как на фото */
+        /* Ads Grid - ДВА РЯДА с закруглениями */
         .ads-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 10px;
             padding: 12px;
             background: var(--chat-bg);
+            opacity: 1;
+            transition: opacity 0.3s ease;
         }
 
-        /* Ad Card - Закругленный стиль как на фото */
+        .ads-grid.loading {
+            opacity: 0.5;
+        }
+
+        /* Ad Card - Закругленный стиль */
         .ad-card {
             background: var(--nav-bg);
             border-radius: var(--radius);
             overflow: hidden;
             cursor: pointer;
-            transition: all 0.2s ease;
-            opacity: 0;
-            transform: translateY(10px);
             border: 1px solid var(--gray-dark);
             display: flex;
             flex-direction: column;
+            transform: translateY(0);
+            opacity: 1;
+            animation: cardAppear 0.2s ease-out forwards;
         }
         
-        .ad-card.show {
-            opacity: 1;
-            transform: translateY(0);
-            animation: slideUp 0.3s ease-out;
+        @keyframes cardAppear {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .ad-card:active {
             transform: scale(0.98);
-            background: rgba(255, 255, 255, 0.03);
+            transition: transform 0.1s ease;
         }
         
-        /* Ad Image - Исправленная загрузка */
+        /* Ad Image - раздельная загрузка */
         .ad-image {
             position: relative;
             width: 100%;
@@ -288,17 +299,19 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.3s ease;
+            transition: opacity 0.3s ease;
             border-radius: var(--radius) var(--radius) 0 0;
-            background-color: #1c2836;
+            opacity: 0;
         }
         
         .ad-image-img.loaded {
             opacity: 1;
+            animation: imageFadeIn 0.3s ease;
         }
         
-        .ad-card:active .ad-image-img {
-            transform: scale(1.05);
+        @keyframes imageFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
         
         .ad-image-placeholder {
@@ -315,15 +328,41 @@
             gap: 8px;
             background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
             border-radius: var(--radius) var(--radius) 0 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .ad-image-placeholder.hidden {
+            opacity: 0;
+            pointer-events: none;
         }
         
         .ad-image-placeholder i {
-            font-size: 32px;
+            font-size: 28px;
             opacity: 0.5;
         }
         
         .ad-image-placeholder span {
             font-size: 12px;
+            opacity: 0.7;
+        }
+        
+        .image-loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .image-loader.active {
+            opacity: 1;
         }
         
         .ad-content {
@@ -464,12 +503,13 @@
             color: var(--gray-light);
         }
 
-        /* Loading */
-        .loading {
+        /* Loading - только для первоначальной загрузки */
+        .initial-loading {
             text-align: center;
             padding: 40px 20px;
             color: var(--gray-light);
             grid-column: 1 / -1;
+            animation: fadeIn 0.3s ease;
         }
         
         .loading-spinner {
@@ -634,17 +674,6 @@
             }
         }
         
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -743,7 +772,7 @@
             </div>
             
             <div class="ads-grid" id="ads-container">
-                <div class="loading">
+                <div class="initial-loading">
                     <div class="loading-spinner"></div>
                     <div>Загрузка объявлений...</div>
                 </div>
@@ -787,6 +816,7 @@
         let isLoading = false;
         let token = localStorage.getItem('token');
         let ads = [];
+        let imageLoadQueue = [];
 
         // API базовый URL
         const API_BASE = '/api';
@@ -888,15 +918,16 @@
             const loadMoreBtn = document.getElementById('load-more-btn');
             
             try {
-                // Показываем индикатор загрузки при первой загрузке
+                // Показываем индикатор загрузки только при первой загрузке
                 if (page === 1) {
                     adsContainer.innerHTML = `
-                        <div class="loading">
+                        <div class="initial-loading">
                             <div class="loading-spinner"></div>
                             <div>Загрузка объявлений...</div>
                         </div>
                     `;
                 } else {
+                    adsContainer.classList.add('loading');
                     loadMoreBtn.disabled = true;
                     loadMoreBtn.textContent = 'Загрузка...';
                 }
@@ -939,8 +970,13 @@
                 currentPage = data.page;
                 totalPages = data.totalPages;
                 
-                // Отображаем объявления
-                displayAds(data.ads, page === 1);
+                // СНАЧАЛА ОТОБРАЖАЕМ КАРТОЧКИ БЕЗ ИЗОБРАЖЕНИЙ
+                displayAdsCards(data.ads, page === 1);
+                
+                // ЗАТЕМ ПОСТЕПЕННО ЗАГРУЖАЕМ ИЗОБРАЖЕНИЯ
+                setTimeout(() => {
+                    loadImagesForAds(data.ads);
+                }, 100);
                 
                 // Управляем кнопкой "Загрузить еще"
                 if (currentPage < totalPages) {
@@ -956,11 +992,12 @@
                 showError('Не удалось загрузить объявления. Проверьте подключение к интернету.');
             } finally {
                 isLoading = false;
+                adsContainer.classList.remove('loading');
             }
         }
 
-        // Функция для отображения объявлений
-        function displayAds(adsToDisplay, clearContainer = true) {
+        // Функция для ОТОБРАЖЕНИЯ КАРТОЧЕК БЕЗ ИЗОБРАЖЕНИЙ
+        function displayAdsCards(adsToDisplay, clearContainer = true) {
             const adsContainer = document.getElementById('ads-container');
             
             if (clearContainer) {
@@ -978,23 +1015,29 @@
                 return;
             }
             
+            // Создаем карточки с заглушками для изображений
             adsToDisplay.forEach((ad, index) => {
-                const adElement = createAdElement(ad, index);
+                const adElement = createAdCardWithoutImages(ad, index);
                 adsContainer.appendChild(adElement);
                 
-                // Анимация появления
+                // Анимация появления карточки
                 setTimeout(() => {
-                    adElement.classList.add('show');
-                }, index * 50);
+                    adElement.style.opacity = '1';
+                    adElement.style.transform = 'translateY(0)';
+                }, index * 30);
             });
         }
 
-        // Функция для создания элемента объявления с ИЗОБРАЖЕНИЯМИ из таблицы ad_photos
-        function createAdElement(ad, index) {
+        // Функция для создания карточки БЕЗ ИЗОБРАЖЕНИЙ (только заглушка)
+        function createAdCardWithoutImages(ad, index) {
             const adElement = document.createElement('div');
             adElement.className = 'ad-card';
             adElement.setAttribute('data-ad-id', ad.id);
-            adElement.style.animationDelay = `${index * 0.05}s`;
+            adElement.setAttribute('data-ad-index', index);
+            adElement.style.animationDelay = `${index * 0.03}s`;
+            adElement.style.opacity = '0';
+            adElement.style.transform = 'translateY(5px)';
+            adElement.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
             
             // Форматируем цену
             const priceFormatted = ad.price ? 
@@ -1009,67 +1052,15 @@
             const favoriteIds = favorites.map(fav => fav.id);
             const isFavorite = favoriteIds.includes(ad.id);
             
-            // Создаем HTML
-            let adHTML = '';
-            
-            // Добавляем изображение - ИСПРАВЛЕННАЯ ЧАСТЬ
-            // Используем первое изображение из ad_photos или заглушку
-            let imageUrl = '';
-            
-            // Если есть photos массив от сервера
-            if (ad.photos && ad.photos.length > 0) {
-                // Берем первую фотографию
-                const firstPhoto = ad.photos[0];
-                // Проверяем, что image_data существует и это строка
-                if (firstPhoto.image_data) {
-                    // Если это base64 строка
-                    if (firstPhoto.image_data.startsWith('data:image')) {
-                        imageUrl = firstPhoto.image_data;
-                    } 
-                    // Если это URL
-                    else if (firstPhoto.image_data.startsWith('http')) {
-                        imageUrl = firstPhoto.image_data;
-                    }
-                    // Если это просто строка base64 без префикса
-                    else if (firstPhoto.image_data.length > 100) {
-                        imageUrl = `data:image/jpeg;base64,${firstPhoto.image_data}`;
-                    }
-                }
-            }
-            // Если есть image поле в самом объявлении
-            else if (ad.image) {
-                if (ad.image.startsWith('data:image') || ad.image.startsWith('http')) {
-                    imageUrl = ad.image;
-                }
-            }
-            
-            // Генерируем HTML для изображения
-            if (imageUrl) {
-                adHTML += `
-                    <div class="ad-image">
-                        <img src="${imageUrl}" 
-                             alt="${ad.title || 'Игровой аккаунт'}" 
-                             class="ad-image-img"
-                             loading="lazy"
-                             onload="this.classList.add('loaded'); this.style.opacity='1';"
-                             onerror="this.onerror=null; this.style.display='none'; 
-                                      this.parentElement.innerHTML='<div class=\"ad-image-placeholder\"><i class=\"fa fa-gamepad\"></i><span>Нет изображения</span></div>';">
+            // Создаем HTML с заглушкой для изображения
+            const adHTML = `
+                <div class="ad-image" data-ad-id="${ad.id}">
+                    <div class="ad-image-placeholder">
+                        <i class="fa fa-gamepad"></i>
+                        <span>Загрузка...</span>
                     </div>
-                `;
-            } else {
-                // Заглушка если нет изображения
-                adHTML += `
-                    <div class="ad-image">
-                        <div class="ad-image-placeholder">
-                            <i class="fa fa-gamepad"></i>
-                            <span>Изображение игры</span>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            // Добавляем контент
-            adHTML += `
+                    <div class="image-loader"></div>
+                </div>
                 <div class="ad-content">
                     <div class="ad-header">
                         <div class="ad-category">${ad.category || 'Игры'}</div>
@@ -1104,6 +1095,137 @@
             });
             
             return adElement;
+        }
+
+        // Функция для ПОСТЕПЕННОЙ ЗАГРУЗКИ ИЗОБРАЖЕНИЙ
+        function loadImagesForAds(adsToLoad) {
+            // Очищаем очередь
+            imageLoadQueue = [];
+            
+            // Добавляем все объявления в очередь загрузки
+            adsToLoad.forEach((ad, index) => {
+                const imageContainer = document.querySelector(`.ad-image[data-ad-id="${ad.id}"]`);
+                if (imageContainer) {
+                    imageLoadQueue.push({
+                        adId: ad.id,
+                        ad: ad,
+                        container: imageContainer,
+                        index: index
+                    });
+                }
+            });
+            
+            // Запускаем загрузку с задержками
+            processImageQueue();
+        }
+
+        // Функция для обработки очереди загрузки изображений
+        function processImageQueue() {
+            if (imageLoadQueue.length === 0) return;
+            
+            // Берем первые 2-3 изображения для параллельной загрузки
+            const batchSize = Math.min(3, imageLoadQueue.length);
+            
+            for (let i = 0; i < batchSize; i++) {
+                const item = imageLoadQueue.shift();
+                if (item) {
+                    loadSingleImage(item);
+                }
+            }
+            
+            // Продолжаем загрузку через небольшую задержку
+            setTimeout(() => {
+                if (imageLoadQueue.length > 0) {
+                    processImageQueue();
+                }
+            }, 300);
+        }
+
+        // Функция для загрузки одного изображения
+        function loadSingleImage({ adId, ad, container, index }) {
+            const placeholder = container.querySelector('.ad-image-placeholder');
+            const loader = container.querySelector('.image-loader');
+            
+            // Показываем лоадер
+            if (loader) {
+                loader.classList.add('active');
+            }
+            
+            // Получаем URL изображения
+            let imageUrl = getImageUrlFromAd(ad);
+            
+            if (!imageUrl) {
+                // Если нет изображения, оставляем заглушку
+                if (loader) loader.classList.remove('active');
+                if (placeholder) {
+                    placeholder.querySelector('span').textContent = 'Нет изображения';
+                }
+                return;
+            }
+            
+            // Создаем объект Image для предзагрузки
+            const img = new Image();
+            
+            img.onload = function() {
+                // Создаем элемент img для вставки
+                const imgElement = document.createElement('img');
+                imgElement.className = 'ad-image-img';
+                imgElement.src = imageUrl;
+                imgElement.alt = ad.title || 'Игровой аккаунт';
+                imgElement.loading = 'lazy';
+                
+                // Заменяем содержимое контейнера
+                container.innerHTML = '';
+                container.appendChild(imgElement);
+                
+                // Анимация появления
+                setTimeout(() => {
+                    imgElement.classList.add('loaded');
+                }, 50);
+            };
+            
+            img.onerror = function() {
+                // Ошибка загрузки - оставляем заглушку
+                if (loader) loader.classList.remove('active');
+                if (placeholder) {
+                    placeholder.querySelector('span').textContent = 'Ошибка загрузки';
+                }
+            };
+            
+            // Начинаем загрузку
+            img.src = imageUrl;
+        }
+
+        // Функция для получения URL изображения из объявления
+        function getImageUrlFromAd(ad) {
+            let imageUrl = '';
+            
+            // Если есть photos массив от сервера
+            if (ad.photos && ad.photos.length > 0) {
+                const firstPhoto = ad.photos[0];
+                if (firstPhoto.image_data) {
+                    // Если это base64 строка с префиксом
+                    if (firstPhoto.image_data.startsWith('data:image')) {
+                        imageUrl = firstPhoto.image_data;
+                    } 
+                    // Если это URL
+                    else if (firstPhoto.image_data.startsWith('http')) {
+                        imageUrl = firstPhoto.image_data;
+                    }
+                    // Если это просто строка base64 без префикса
+                    else if (firstPhoto.image_data.length > 100) {
+                        imageUrl = `data:image/jpeg;base64,${firstPhoto.image_data}`;
+                    }
+                }
+            }
+            // Если есть image поле в самом объявлении
+            else if (ad.image) {
+                if (ad.image.startsWith('data:image') || ad.image.startsWith('http')) {
+                    imageUrl = ad.image;
+                }
+            }
+            
+            return imageUrl;
         }
 
         // Функция для добавления/удаления из избранного
@@ -1303,16 +1425,6 @@
                 @keyframes slideUp {
                     from { transform: translateX(-50%) translateY(0); opacity: 1; }
                     to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
-                }
-                
-                /* Стили для плавной загрузки изображений */
-                .ad-image-img {
-                    opacity: 0;
-                    transition: opacity 0.3s ease;
-                }
-                
-                .ad-image-img.loaded {
-                    opacity: 1;
                 }
             `;
             document.head.appendChild(style);
