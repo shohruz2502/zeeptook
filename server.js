@@ -163,33 +163,44 @@ async function handleChatMessage(data, senderId, dealId) {
             
             const chat = chatResult.rows[0];
             
+            
             // Проверяем, что отправитель является участником чата
             if (chat.user1_id !== parseInt(senderId) && chat.user2_id !== parseInt(senderId)) {
                 console.error(`❌ User ${senderId} is not a member of chat ${chatId}`);
                 return;
             }
+
+            // Если это сообщение поддержки, отправляем только отправителю
+if (data.message.chat_type === 'support') {
+    const ws = connections.get(senderId);
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(message));
+    }
+    return;
+}
             
             // Определяем получателя
             receiverId = chat.user1_id === parseInt(senderId) ? chat.user2_id : chat.user1_id;
             
-            // Сохраняем сообщение в БД (старая таблица messages)
-            const result = await pool.query(`
-                INSERT INTO messages (sender_id, receiver_id, content, chat_id, chat_type)
-                VALUES ($1, $2, $3, $4, $5)
-                RETURNING id, created_at
-            `, [senderId, receiverId, message.content, chatId, chatType]);
-            
-            // Формируем данные для трансляции
-            const broadcastData = {
-                chatId: chatId,
-                message: {
-                    id: result.rows[0].id,
-                    sender_id: senderId,
-                    content: message.content,
-                    created_at: result.rows[0].created_at,
-                    receiver_id: receiverId
-                }
-            };
+            // Сохраняем в support_messages с правильным sender_id
+const result = await pool.query(`
+    INSERT INTO support_messages (user_id, content, chat_id, is_from_admin)
+    VALUES ($1, $2, $3, false)
+    RETURNING id, created_at
+`, [senderId, message.content, actualChatId]);
+
+// Формируем данные для трансляции
+const broadcastData = {
+    chatId: actualChatId,
+    message: {
+        id: result.rows[0].id,
+        sender_id: senderId,  // ВАЖНО: это ID пользователя, а не поддержки!
+        content: message.content,
+        created_at: result.rows[0].created_at,
+        chat_type: 'support',
+        is_from_admin: false  // Добавляем это поле
+    }
+};
             
             // Отправляем через WebSocket
             broadcastMessage(broadcastData, senderId, dealId);
@@ -1494,33 +1505,57 @@ app.get('/api/messages/chat/:chatId', authenticateToken, async (req, res) => {
         const user_id = req.user.userId;
 
         if (chatId === 'support' || chatId.startsWith('support_')) {
-            // ИСПОЛЬЗУЕМ НОВУЮ ТАБЛИЦУ support_messages
             let actualChatId = chatId;
             
-            // Если общий чат поддержки, ищем все чаты пользователя
+            // Если общий чат поддержки
             if (chatId === 'support') {
+                // Ищем ВСЕ чаты пользователя или создаем новый
                 const result = await pool.query(`
                     SELECT 
-                        sm.*,
+                        sm.id,
+                        sm.user_id as sender_id,  -- ВАЖНО: переименовываем user_id в sender_id
+                        sm.content,
+                        sm.chat_id,
+                        sm.is_from_admin,
+                        sm.created_at,
                         u.username as sender_username,
-                        u.full_name as sender_name
+                        u.full_name as sender_name,
+                        'support' as chat_type
                     FROM support_messages sm
                     LEFT JOIN users u ON sm.user_id = u.id
                     WHERE sm.user_id = $1
                     ORDER BY sm.created_at ASC
                 `, [user_id]);
 
-                // Если нет сообщений, возвращаем приветственное сообщение
+                // Если нет сообщений, создаем новый чат и приветственное сообщение
                 if (result.rows.length === 0) {
-                    const welcomeMessage = {
-                        id: 'support_welcome',
-                        sender_id: 1, // Admin ID
-                        content: 'Здравствуйте! Чем могу помочь?',
-                        chat_type: 'support',
-                        created_at: new Date(),
-                        sender_username: 'Поддержка'
-                    };
-                    return res.json([welcomeMessage]);
+                    // Создаем уникальный ID чата для пользователя
+                    actualChatId = `support_${user_id}_${Date.now()}`;
+                    
+                    // Сохраняем приветственное сообщение
+                    await pool.query(`
+                        INSERT INTO support_messages (user_id, content, chat_id, is_from_admin)
+                        VALUES ($1, $2, $3, true)
+                    `, [1, 'Здравствуйте! Чем могу помочь?', actualChatId]);
+                    
+                    // Получаем приветственное сообщение
+                    const welcomeResult = await pool.query(`
+                        SELECT 
+                            sm.id,
+                            sm.user_id as sender_id,
+                            sm.content,
+                            sm.chat_id,
+                            sm.is_from_admin,
+                            sm.created_at,
+                            'Поддержка' as sender_username,
+                            'Поддержка Zeeptook' as sender_name,
+                            'support' as chat_type
+                        FROM support_messages sm
+                        WHERE sm.chat_id = $1
+                        ORDER BY sm.created_at ASC
+                    `, [actualChatId]);
+                    
+                    return res.json(welcomeResult.rows);
                 }
 
                 return res.json(result.rows);
@@ -1528,9 +1563,15 @@ app.get('/api/messages/chat/:chatId', authenticateToken, async (req, res) => {
                 // Конкретный чат поддержки
                 const result = await pool.query(`
                     SELECT 
-                        sm.*,
-                        u.username as sender_username,
-                        u.full_name as sender_name
+                        sm.id,
+                        sm.user_id as sender_id,  -- ВАЖНО: переименовываем user_id в sender_id
+                        sm.content,
+                        sm.chat_id,
+                        sm.is_from_admin,
+                        sm.created_at,
+                        COALESCE(u.username, 'Поддержка') as sender_username,
+                        COALESCE(u.full_name, 'Поддержка Zeeptook') as sender_name,
+                        'support' as chat_type
                     FROM support_messages sm
                     LEFT JOIN users u ON sm.user_id = u.id
                     WHERE sm.chat_id = $1
@@ -1540,7 +1581,7 @@ app.get('/api/messages/chat/:chatId', authenticateToken, async (req, res) => {
                 return res.json(result.rows);
             }
         } else {
-            // Остальной код для обычных чатов остается без изменений...
+            // Обычный чат между пользователями
             const chatCheck = await pool.query(
                 'SELECT user1_id, user2_id FROM chats WHERE id = $1',
                 [chatId]
@@ -1551,18 +1592,29 @@ app.get('/api/messages/chat/:chatId', authenticateToken, async (req, res) => {
             }
 
             const chat = chatCheck.rows[0];
-            const otherUserId = chat.user1_id === user_id ? chat.user2_id : chat.user1_id;
+            
+            // Проверяем, что пользователь является участником чата
+            if (chat.user1_id !== parseInt(user_id) && chat.user2_id !== parseInt(user_id)) {
+                return res.status(403).json({ error: 'Access denied' });
+            }
+            
+            const otherUserId = chat.user1_id === parseInt(user_id) ? chat.user2_id : chat.user1_id;
 
             const result = await pool.query(`
                 SELECT 
-                    m.*,
-                    u.username as sender_username
+                    m.id,
+                    m.sender_id,
+                    m.content,
+                    m.created_at,
+                    u.username as sender_username,
+                    u.full_name as sender_name,
+                    'regular' as chat_type,
+                    false as is_from_admin
                 FROM messages m
                 LEFT JOIN users u ON m.sender_id = u.id
-                WHERE (m.sender_id = $1 AND m.receiver_id = $2)
-                   OR (m.sender_id = $2 AND m.receiver_id = $1)
+                WHERE m.chat_id = $1
                 ORDER BY m.created_at ASC
-            `, [user_id, otherUserId]);
+            `, [chatId]);
 
             res.json(result.rows);
         }
@@ -1605,11 +1657,18 @@ app.post('/api/messages/support', authenticateToken, async (req, res) => {
         }
 
         // 2. ЗАПИСЬ В НОВУЮ ТАБЛИЦУ support_messages
-        const dbResult = await pool.query(`
-            INSERT INTO support_messages (user_id, content, chat_id, is_from_admin)
-            VALUES ($1, $2, $3, false)
-            RETURNING *
-        `, [sender_id, finalContent, actualChatId]);
+const dbResult = await pool.query(`
+    INSERT INTO support_messages (user_id, content, chat_id, is_from_admin)
+    VALUES ($1, $2, $3, false)
+    RETURNING id, user_id as sender_id, content, chat_id, is_from_admin, created_at
+`, [sender_id, finalContent, actualChatId]);
+
+// Добавляем недостающие поля для фронтенда
+const messageWithDetails = {
+    ...dbResult.rows[0],
+    sender_name: user.full_name || user.username,
+    chat_type: 'support'
+};
 
         // 3. ОТПРАВКА В TELEGRAM
         const telegramSent = await sendToTelegram(finalContent, {
