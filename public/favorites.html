@@ -92,42 +92,272 @@
             flex: 1;
         }
 
-        /* Main Content */
-        .main-content {
-            padding: 0;
-        }
-
         /* Stats Bar */
         .stats-bar {
             background: var(--nav-bg);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 12px 16px;
+            padding: 16px;
             border-bottom: 1px solid var(--gray-dark);
             animation: fadeIn 0.5s ease-out;
         }
         
         .stats-title {
-            font-size: 15px;
-            font-weight: 500;
+            font-size: 16px;
+            font-weight: 600;
             color: var(--white);
         }
         
         .stats-count {
             font-size: 14px;
-            color: var(--gray-light);
+            color: var(--primary);
             background: rgba(0, 136, 204, 0.1);
-            padding: 4px 10px;
+            padding: 6px 12px;
             border-radius: 12px;
-            font-weight: 500;
+            font-weight: 600;
         }
 
-        /* Ads Container */
-        .ads-container {
-            padding: 0;
+        /* Ads Grid - ДВА РЯДА как на главной */
+        .ads-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            padding: 12px;
             background: var(--chat-bg);
-            min-height: calc(100vh - 120px);
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .ads-grid.loading {
+            opacity: 0.5;
+        }
+
+        /* Ad Card - Закругленный стиль как на главной */
+        .ad-card {
+            background: var(--nav-bg);
+            border-radius: var(--radius);
+            overflow: hidden;
+            cursor: pointer;
+            border: 1px solid var(--gray-dark);
+            display: flex;
+            flex-direction: column;
+            transform: translateY(0);
+            opacity: 1;
+            animation: cardAppear 0.2s ease-out forwards;
+            position: relative;
+        }
+        
+        @keyframes cardAppear {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .ad-card:active {
+            transform: scale(0.98);
+            transition: transform 0.1s ease;
+        }
+        
+        /* Favorite badge */
+        .favorite-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--accent);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            z-index: 2;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        /* Ad Image - раздельная загрузка */
+        .ad-image {
+            position: relative;
+            width: 100%;
+            height: 150px;
+            background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
+            overflow: hidden;
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+        
+        .ad-image-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity 0.3s ease;
+            border-radius: var(--radius) var(--radius) 0 0;
+            opacity: 0;
+        }
+        
+        .ad-image-img.loaded {
+            opacity: 1;
+            animation: imageFadeIn 0.3s ease;
+        }
+        
+        @keyframes imageFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .ad-image-placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--gray-light);
+            gap: 8px;
+            background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
+            border-radius: var(--radius) var(--radius) 0 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .ad-image-placeholder.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .ad-image-placeholder i {
+            font-size: 28px;
+            opacity: 0.5;
+        }
+        
+        .ad-image-placeholder span {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        
+        .image-loader {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-top: 2px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .image-loader.active {
+            opacity: 1;
+        }
+        
+        .ad-content {
+            padding: 12px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .ad-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        
+        .ad-category {
+            font-size: 11px;
+            background: rgba(0, 136, 204, 0.15);
+            padding: 4px 8px;
+            border-radius: 10px;
+            color: var(--primary);
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 70%;
+        }
+        
+        .ad-remove-btn {
+            color: var(--accent);
+            background: transparent;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+        
+        .ad-remove-btn:active {
+            transform: scale(0.9);
+            background: rgba(255, 107, 107, 0.1);
+        }
+        
+        .ad-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--white);
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 36px;
+        }
+        
+        .ad-description {
+            color: var(--gray-light);
+            margin-bottom: 10px;
+            font-size: 12px;
+            line-height: 1.4;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            flex: 1;
+        }
+        
+        .ad-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+        }
+        
+        .ad-price {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 15px;
+        }
+        
+        .ad-meta {
+            font-size: 11px;
+            color: var(--gray-light);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .ad-meta i {
+            font-size: 10px;
         }
 
         /* Empty State */
@@ -139,6 +369,7 @@
             border-radius: var(--radius);
             border: 1px solid var(--gray-dark);
             animation: fadeIn 0.6s ease-out;
+            grid-column: 1 / -1;
         }
         
         .empty-state i {
@@ -186,171 +417,13 @@
             transform: scale(0.97);
         }
 
-        /* Ad Card - Telegram стиль */
-        .ad-card {
-            background: var(--nav-bg);
-            border-bottom: 1px solid var(--gray-dark);
-            margin: 0;
-            cursor: pointer;
-            transition: background 0.2s ease;
-            opacity: 0;
-            transform: translateY(10px);
-        }
-        
-        .ad-card.show {
-            opacity: 1;
-            transform: translateY(0);
-            animation: slideUp 0.3s ease-out;
-        }
-        
-        .ad-card:active {
-            background: rgba(255, 255, 255, 0.05);
-        }
-        
-        /* Ad Image - УМЕНЬШЕННЫЙ РАЗМЕР */
-        .ad-image {
-            height: 140px;
-            background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-        
-        .ad-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-        }
-        
-        .ad-card:active .ad-image img {
-            transform: scale(1.05);
-        }
-        
-        .ad-image-placeholder {
-            color: var(--gray-light);
-            font-size: 14px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            width: 100%;
-            height: 100%;
-            justify-content: center;
-        }
-        
-        .ad-image-placeholder i {
-            font-size: 32px;
-            opacity: 0.5;
-        }
-        
-        .favorite-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 255, 255, 0.95);
-            color: var(--accent);
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            z-index: 1;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        
-        .ad-content {
-            padding: 12px 16px;
-        }
-        
-        .ad-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 8px;
-        }
-        
-        .ad-category {
-            font-size: 12px;
-            background: rgba(0, 136, 204, 0.15);
-            padding: 4px 10px;
-            border-radius: 12px;
-            color: var(--primary);
-            font-weight: 500;
-        }
-        
-        .ad-remove-btn {
-            color: var(--accent);
-            background: rgba(255, 107, 107, 0.1);
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .ad-remove-btn:active {
-            transform: scale(0.9);
-            background: rgba(255, 107, 107, 0.2);
-        }
-        
-        .ad-title {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 8px;
-            color: var(--white);
-            line-height: 1.3;
-        }
-        
-        .ad-description {
-            color: var(--gray-light);
-            margin-bottom: 12px;
-            font-size: 14px;
-            line-height: 1.4;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        
-        .ad-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .ad-price {
-            font-weight: 700;
-            color: var(--primary);
-            font-size: 16px;
-        }
-        
-        .ad-meta {
-            font-size: 12px;
-            color: var(--gray-light);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        
-        .ad-meta i {
-            font-size: 11px;
-        }
-
         /* Loading */
-        .loading {
+        .initial-loading {
             text-align: center;
             padding: 40px 20px;
             color: var(--gray-light);
+            grid-column: 1 / -1;
+            animation: fadeIn 0.3s ease;
         }
         
         .loading-spinner {
@@ -371,6 +444,7 @@
             margin: 12px;
             border-radius: var(--radius);
             border: 1px solid var(--gray-dark);
+            grid-column: 1 / -1;
         }
         
         .error-state i {
@@ -481,17 +555,6 @@
             }
         }
         
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -503,26 +566,49 @@
                 padding: 10px 12px;
             }
             
-            .ad-content {
-                padding: 10px 12px;
+            .stats-bar {
+                padding: 12px;
             }
             
-            .ad-title {
-                font-size: 15px;
-            }
-            
-            .ad-description {
-                font-size: 13px;
+            .ads-grid {
+                gap: 8px;
+                padding: 10px;
             }
             
             .ad-image {
-                height: 120px;
+                height: 130px;
+            }
+            
+            .ad-content {
+                padding: 10px;
+            }
+            
+            .ad-title {
+                font-size: 13px;
+            }
+            
+            .ad-description {
+                font-size: 11px;
             }
         }
         
         @media (min-width: 768px) {
+            .ads-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 15px;
+                padding: 16px;
+            }
+            
             .ad-image {
-                height: 160px;
+                height: 180px;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .ads-grid {
+                grid-template-columns: repeat(4, 1fr);
+                max-width: 1200px;
+                margin: 0 auto;
             }
         }
     </style>
@@ -536,17 +622,15 @@
             <div class="page-title">Избранное</div>
         </div>
         
-        <div class="main-content">
-            <div class="stats-bar">
-                <div class="stats-title">Сохраненные аккаунты</div>
-                <div class="stats-count" id="favorites-count">0</div>
-            </div>
-            
-            <div class="ads-container" id="ads-container">
-                <div class="loading">
-                    <div class="loading-spinner"></div>
-                    <div>Загрузка избранных...</div>
-                </div>
+        <div class="stats-bar">
+            <div class="stats-title">Сохраненные аккаунты</div>
+            <div class="stats-count" id="favorites-count">0</div>
+        </div>
+        
+        <div class="ads-grid" id="ads-container">
+            <div class="initial-loading">
+                <div class="loading-spinner"></div>
+                <div>Загрузка избранных...</div>
             </div>
         </div>
     </div>
@@ -577,6 +661,7 @@
     <script>
         // Переменные для управления избранными объявлениями
         let favoriteAds = [];
+        let imageLoadQueue = [];
         
         // Функция для загрузки избранных объявлений
         async function loadFavoriteAds() {
@@ -586,7 +671,7 @@
             try {
                 // Показываем загрузку
                 adsContainer.innerHTML = `
-                    <div class="loading">
+                    <div class="initial-loading">
                         <div class="loading-spinner"></div>
                         <div>Загрузка избранных...</div>
                     </div>
@@ -598,86 +683,32 @@
                 // Загружаем из localStorage
                 const savedFavorites = JSON.parse(localStorage.getItem('favorites') || '[]');
                 
-                // Если в localStorage пусто, создаем демо-данные
+                // Если в localStorage пусто, показываем пустое состояние
                 if (savedFavorites.length === 0) {
-                    // Создаем демо-данные
-                    favoriteAds = createDemoFavorites();
-                    
-                    // Сохраняем демо-данные в localStorage
-                    localStorage.setItem('favorites', JSON.stringify(favoriteAds));
-                } else {
-                    // Используем сохраненные данные
-                    favoriteAds = savedFavorites;
+                    favoriteAds = [];
+                    updateFavoritesCount();
+                    displayFavoriteAds();
+                    return;
                 }
+                
+                // Используем сохраненные данные
+                favoriteAds = savedFavorites;
                 
                 // Обновляем счетчик
                 updateFavoritesCount();
                 
-                // Отображаем объявления
-                displayFavoriteAds();
+                // СНАЧАЛА ОТОБРАЖАЕМ КАРТОЧКИ БЕЗ ИЗОБРАЖЕНИЙ
+                displayFavoriteAdsCards();
+                
+                // ЗАТЕМ ПОСТЕПЕННО ЗАГРУЖАЕМ ИЗОБРАЖЕНИЯ
+                setTimeout(() => {
+                    loadImagesForFavorites(favoriteAds);
+                }, 100);
                 
             } catch (error) {
                 console.error('Ошибка при загрузке избранных объявлений:', error);
                 showErrorState('Не удалось загрузить избранные объявления');
             }
-        }
-
-        // Функция для создания демо-избранных
-        function createDemoFavorites() {
-            const demoAds = [
-                {
-                    id: 1,
-                    title: "Аккаунт Fortnite Level 250+",
-                    description: "Полный доступ ко всем сезонам, много редких скинов и оружия",
-                    price: 4500,
-                    category: "Fortnite",
-                    created_at: new Date(Date.now() - 3600000).toISOString(),
-                    image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&h=300&fit=crop",
-                    is_urgent: false
-                },
-                {
-                    id: 2,
-                    title: "Steam аккаунт CS:GO Prime",
-                    description: "Prime статус, много скинов, высокая репутация, ранг Legendary Eagle",
-                    price: 3200,
-                    category: "CS:GO",
-                    created_at: new Date(Date.now() - 86400000).toISOString(),
-                    image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&h=300&fit=crop",
-                    is_urgent: false
-                },
-                {
-                    id: 3,
-                    title: "Аккаунт GTA 5 Online",
-                    description: "Много денег в игре, недвижимость, транспорт, полный доступ к DLC",
-                    price: 2500,
-                    category: "GTA 5",
-                    created_at: new Date(Date.now() - 172800000).toISOString(),
-                    image: "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=600&h=300&fit=crop",
-                    is_urgent: false
-                },
-                {
-                    id: 4,
-                    title: "World of Warcraft Shadowlands",
-                    description: "Максимальный уровень, экипировка, много достижений",
-                    price: 3800,
-                    category: "WoW",
-                    created_at: new Date(Date.now() - 259200000).toISOString(),
-                    image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&h=300&fit=crop",
-                    is_urgent: false
-                },
-                {
-                    id: 5,
-                    title: "PUBG Mobile премиум",
-                    description: "Много скинов, высокий ранг, редкие предметы",
-                    price: 1800,
-                    category: "PUBG Mobile",
-                    created_at: new Date(Date.now() - 432000000).toISOString(),
-                    image: "https://images.unsplash.com/photo-1579113800032-c38bd7635818?w=600&h=300&fit=crop",
-                    is_urgent: false
-                }
-            ];
-            
-            return demoAds;
         }
 
         // Функция для обновления счетчика избранных
@@ -688,8 +719,8 @@
             }
         }
 
-        // Функция для отображения избранных объявлений
-        function displayFavoriteAds() {
+        // Функция для ОТОБРАЖЕНИЯ КАРТОЧЕК БЕЗ ИЗОБРАЖЕНИЙ
+        function displayFavoriteAdsCards() {
             const adsContainer = document.getElementById('ads-container');
             
             if (!adsContainer) return;
@@ -708,23 +739,27 @@
             
             adsContainer.innerHTML = '';
             
+            // Создаем карточки с заглушками для изображений
             favoriteAds.forEach((ad, index) => {
-                // Создаем карточку
-                const adElement = createAdElement(ad, index);
+                const adElement = createAdCardWithoutImages(ad, index);
                 adsContainer.appendChild(adElement);
                 
-                // Анимация появления
+                // Анимация появления карточки
                 setTimeout(() => {
-                    adElement.classList.add('show');
-                }, index * 50);
+                    adElement.style.opacity = '1';
+                    adElement.style.transform = 'translateY(0)';
+                }, index * 30);
             });
         }
 
-        // Функция для создания элемента объявления С ФОТОГРАФИЕЙ
-        function createAdElement(ad, index) {
+        // Функция для создания карточки БЕЗ ИЗОБРАЖЕНИЙ (только заглушка)
+        function createAdCardWithoutImages(ad, index) {
             const adElement = document.createElement('div');
             adElement.className = 'ad-card';
             adElement.setAttribute('data-ad-id', ad.id);
+            adElement.style.opacity = '0';
+            adElement.style.transform = 'translateY(5px)';
+            adElement.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
             
             // Форматируем цену
             const priceFormatted = ad.price ? 
@@ -734,40 +769,18 @@
             // Форматируем время
             const timeAgo = ad.created_at ? formatTimeAgo(ad.created_at) : 'Недавно';
             
-            // Создаем HTML с изображением
-            let adHTML = '';
-            
-            // Добавляем изображение (если есть)
-            adHTML += `
-                <div class="ad-image">
-                    <div class="favorite-badge">
-                        <i class="fa fa-heart"></i>
-                    </div>
-            `;
-            
-            if (ad.image && ad.image.startsWith('http')) {
-                // Используем правильный URL для изображений Unsplash
-                const imageUrl = ad.image.includes('unsplash.com') ? 
-                    ad.image.replace('w=600&h=300', 'w=400&h=200') : 
-                    ad.image;
-                    
-                adHTML += `
-                    <img src="${imageUrl}" alt="${ad.title}" loading="lazy">
-                `;
-            } else {
-                // Заглушка если нет изображения
-                adHTML += `
+            // Создаем HTML с заглушкой для изображения
+            const adHTML = `
+                <div class="favorite-badge">
+                    <i class="fa fa-heart"></i>
+                </div>
+                <div class="ad-image" data-ad-id="${ad.id}">
                     <div class="ad-image-placeholder">
                         <i class="fa fa-gamepad"></i>
-                        <span>Изображение игры</span>
+                        <span>Загрузка...</span>
                     </div>
-                `;
-            }
-            
-            adHTML += `</div>`;
-            
-            // Добавляем контент
-            adHTML += `
+                    <div class="image-loader"></div>
+                </div>
                 <div class="ad-content">
                     <div class="ad-header">
                         <div class="ad-category">${ad.category || 'Игры'}</div>
@@ -780,8 +793,9 @@
                     <div class="ad-footer">
                         <div class="ad-price">${priceFormatted}</div>
                         <div class="ad-meta">
-                            <i class="fa fa-clock-o"></i>
-                            <span>${timeAgo}</span>
+                            <i class="fa fa-eye"></i>
+                            <span>${ad.views || 0}</span>
+                            <span style="margin-left: 8px;">${timeAgo}</span>
                         </div>
                     </div>
                 </div>
@@ -807,6 +821,143 @@
             return adElement;
         }
 
+        // Функция для ПОСТЕПЕННОЙ ЗАГРУЗКИ ИЗОБРАЖЕНИЙ для избранных
+        function loadImagesForFavorites(adsToLoad) {
+            // Очищаем очередь
+            imageLoadQueue = [];
+            
+            // Добавляем все объявления в очередь загрузки
+            adsToLoad.forEach((ad, index) => {
+                const imageContainer = document.querySelector(`.ad-image[data-ad-id="${ad.id}"]`);
+                if (imageContainer) {
+                    imageLoadQueue.push({
+                        adId: ad.id,
+                        ad: ad,
+                        container: imageContainer,
+                        index: index
+                    });
+                }
+            });
+            
+            // Запускаем загрузку с задержками
+            processFavoriteImageQueue();
+        }
+
+        // Функция для обработки очереди загрузки изображений для избранных
+        function processFavoriteImageQueue() {
+            if (imageLoadQueue.length === 0) return;
+            
+            // Берем первые 2-3 изображения для параллельной загрузки
+            const batchSize = Math.min(3, imageLoadQueue.length);
+            
+            for (let i = 0; i < batchSize; i++) {
+                const item = imageLoadQueue.shift();
+                if (item) {
+                    loadFavoriteSingleImage(item);
+                }
+            }
+            
+            // Продолжаем загрузку через небольшую задержку
+            setTimeout(() => {
+                if (imageLoadQueue.length > 0) {
+                    processFavoriteImageQueue();
+                }
+            }, 300);
+        }
+
+        // Функция для загрузки одного изображения для избранных
+        function loadFavoriteSingleImage({ adId, ad, container, index }) {
+            const placeholder = container.querySelector('.ad-image-placeholder');
+            const loader = container.querySelector('.image-loader');
+            
+            // Показываем лоадер
+            if (loader) {
+                loader.classList.add('active');
+            }
+            
+            // Получаем URL изображения
+            let imageUrl = getImageUrlFromAd(ad);
+            
+            if (!imageUrl) {
+                // Если нет изображения, оставляем заглушку
+                if (loader) loader.classList.remove('active');
+                if (placeholder) {
+                    placeholder.querySelector('span').textContent = 'Нет изображения';
+                }
+                return;
+            }
+            
+            // Создаем объект Image для предзагрузки
+            const img = new Image();
+            
+            img.onload = function() {
+                // Создаем элемент img для вставки
+                const imgElement = document.createElement('img');
+                imgElement.className = 'ad-image-img';
+                imgElement.src = imageUrl;
+                imgElement.alt = ad.title || 'Игровой аккаунт';
+                imgElement.loading = 'lazy';
+                
+                // Заменяем содержимое контейнера
+                container.innerHTML = '';
+                container.appendChild(imgElement);
+                
+                // Анимация появления
+                setTimeout(() => {
+                    imgElement.classList.add('loaded');
+                }, 50);
+            };
+            
+            img.onerror = function() {
+                // Ошибка загрузки - оставляем заглушку
+                if (loader) loader.classList.remove('active');
+                if (placeholder) {
+                    placeholder.querySelector('span').textContent = 'Ошибка загрузки';
+                    container.innerHTML = '';
+                    container.appendChild(placeholder);
+                }
+            };
+            
+            // Начинаем загрузку
+            img.src = imageUrl;
+        }
+
+        // Функция для получения URL изображения из объявления
+        function getImageUrlFromAd(ad) {
+            let imageUrl = '';
+            
+            // Если есть photos массив
+            if (ad.photos && ad.photos.length > 0) {
+                const firstPhoto = ad.photos[0];
+                if (firstPhoto.image_data) {
+                    // Если это base64 строка с префиксом
+                    if (firstPhoto.image_data.startsWith('data:image')) {
+                        imageUrl = firstPhoto.image_data;
+                    } 
+                    // Если это URL
+                    else if (firstPhoto.image_data.startsWith('http')) {
+                        imageUrl = firstPhoto.image_data;
+                    }
+                    // Если это просто строка base64 без префикса
+                    else if (firstPhoto.image_data.length > 100) {
+                        imageUrl = `data:image/jpeg;base64,${firstPhoto.image_data}`;
+                    }
+                }
+            }
+            // Если есть image поле в самом объявлении
+            else if (ad.image) {
+                if (ad.image.startsWith('data:image') || ad.image.startsWith('http')) {
+                    imageUrl = ad.image;
+                }
+                // Демо изображения
+                else if (ad.image.includes('unsplash.com')) {
+                    imageUrl = ad.image.replace('w=600&h=300', 'w=400&h=200');
+                }
+            }
+            
+            return imageUrl;
+        }
+
         // Функция для удаления из избранного
         function removeFromFavorites(adId, adElement) {
             try {
@@ -829,7 +980,15 @@
                     
                     // Если больше нет избранных, показываем пустое состояние
                     if (favoriteAds.length === 0) {
-                        displayFavoriteAds();
+                        const adsContainer = document.getElementById('ads-container');
+                        adsContainer.innerHTML = `
+                            <div class="empty-state">
+                                <i class="fa fa-heart-o"></i>
+                                <h3>Нет избранных аккаунтов</h3>
+                                <p>Сохраняйте понравившиеся игровые аккаунты, чтобы не потерять их</p>
+                                <a href="index.html" class="browse-btn">Найти аккаунты</a>
+                            </div>
+                        `;
                     }
                     
                     // Показываем уведомление
@@ -926,36 +1085,39 @@
                     from { transform: translateX(-50%) translateY(0); opacity: 1; }
                     to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
                 }
-                
-                /* Стили для плавной загрузки изображений */
-                .ad-image img {
-                    opacity: 0;
-                    transition: opacity 0.5s ease;
-                }
-                
-                .ad-image img.loaded {
-                    opacity: 1;
-                }
             `;
             document.head.appendChild(style);
             
             // Загружаем избранные объявления
             loadFavoriteAds();
-            
-            // Добавляем обработчик загрузки изображений
-            document.addEventListener('DOMContentLoaded', function() {
-                const images = document.querySelectorAll('.ad-image img');
-                images.forEach(img => {
-                    if (img.complete) {
-                        img.classList.add('loaded');
-                    } else {
-                        img.addEventListener('load', function() {
-                            this.classList.add('loaded');
-                        });
-                    }
-                });
-            });
         });
+
+        // Функция для синхронизации с сервером при авторизации
+        async function syncFavoritesWithServer() {
+            const token = localStorage.getItem('token');
+            if (!token) return;
+            
+            try {
+                const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+                if (favorites.length === 0) return;
+                
+                // Отправляем все избранные на сервер
+                const response = await fetch('/api/favorites/sync', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ favorites })
+                });
+                
+                if (response.ok) {
+                    console.log('Favorites synced with server');
+                }
+            } catch (error) {
+                console.error('Error syncing favorites:', error);
+            }
+        }
     </script>
 </body>
 </html>
