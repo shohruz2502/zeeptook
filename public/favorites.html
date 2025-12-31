@@ -207,6 +207,76 @@
             background: rgba(255, 255, 255, 0.05);
         }
         
+        /* Ad Image - УМЕНЬШЕННЫЙ РАЗМЕР */
+        .ad-image {
+            height: 140px; /* Уменьшил с 160px до 140px */
+            background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .ad-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+        
+        .ad-card:active .ad-image img {
+            transform: scale(1.05);
+        }
+        
+        .ad-image-placeholder {
+            color: var(--gray-light);
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            height: 100%;
+            justify-content: center;
+        }
+        
+        .ad-image-placeholder i {
+            font-size: 32px;
+            opacity: 0.5;
+        }
+        
+        .image-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            z-index: 1;
+        }
+        
+        .favorite-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            color: var(--accent);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            z-index: 1;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
         .ad-content {
             padding: 12px 16px;
         }
@@ -244,6 +314,7 @@
         
         .ad-remove-btn:active {
             transform: scale(0.9);
+            background: rgba(255, 107, 107, 0.2);
         }
         
         .ad-title {
@@ -287,71 +358,6 @@
         
         .ad-meta i {
             font-size: 11px;
-        }
-
-        /* Ad Image */
-        .ad-image {
-            height: 160px;
-            background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-        }
-        
-        .ad-image.loaded {
-            opacity: 1;
-        }
-        
-        .ad-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .ad-image-placeholder {
-            color: var(--gray-light);
-            font-size: 14px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .ad-image-placeholder i {
-            font-size: 24px;
-            opacity: 0.5;
-        }
-        
-        .image-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 500;
-            backdrop-filter: blur(10px);
-        }
-        
-        .favorite-badge {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(255, 255, 255, 0.9);
-            color: var(--accent);
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
         }
 
         /* Loading */
@@ -522,6 +528,16 @@
             .ad-description {
                 font-size: 13px;
             }
+            
+            .ad-image {
+                height: 120px; /* Еще меньше на маленьких экранах */
+            }
+        }
+        
+        @media (min-width: 768px) {
+            .ad-image {
+                height: 160px; /* Чуть больше на планшетах */
+            }
         }
     </style>
 </head>
@@ -590,14 +606,74 @@
                     </div>
                 `;
 
-                // Загружаем из localStorage
+                // Имитация загрузки для демонстрации
                 await new Promise(resolve => setTimeout(resolve, 500));
                 
-                // Загружаем данные из localStorage
-                const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+                // Загружаем из localStorage
+                const savedFavorites = JSON.parse(localStorage.getItem('favorites') || '[]');
                 
-                // Обновляем глобальную переменную
-                favoriteAds = favorites;
+                // Если в localStorage пусто, используем демо-данные
+                if (savedFavorites.length === 0) {
+                    // Демо-данные для примера
+                    favoriteAds = [
+                        {
+                            id: 1,
+                            title: "Аккаунт Fortnite Level 250+",
+                            description: "Полный доступ ко всем сезонам, много редких скинов и оружия",
+                            price: 4500,
+                            category: "Fortnite",
+                            created_at: new Date(Date.now() - 3600000).toISOString(),
+                            image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&h=300&fit=crop",
+                            is_urgent: true
+                        },
+                        {
+                            id: 2,
+                            title: "Steam аккаунт CS:GO Prime",
+                            description: "Prime статус, много скинов, высокая репутация, ранг Legendary Eagle",
+                            price: 3200,
+                            category: "CS:GO",
+                            created_at: new Date(Date.now() - 86400000).toISOString(),
+                            image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&h=300&fit=crop",
+                            is_urgent: false
+                        },
+                        {
+                            id: 3,
+                            title: "Аккаунт GTA 5 Online",
+                            description: "Много денег в игре, недвижимость, транспорт, полный доступ к DLC",
+                            price: 2500,
+                            category: "GTA 5",
+                            created_at: new Date(Date.now() - 172800000).toISOString(),
+                            image: "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=600&h=300&fit=crop",
+                            is_urgent: false
+                        },
+                        {
+                            id: 4,
+                            title: "World of Warcraft Shadowlands",
+                            description: "Максимальный уровень, экипировка, много достижений",
+                            price: 3800,
+                            category: "WoW",
+                            created_at: new Date(Date.now() - 259200000).toISOString(),
+                            image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&h=300&fit=crop",
+                            is_urgent: true
+                        },
+                        {
+                            id: 5,
+                            title: "PUBG Mobile премиум",
+                            description: "Много скинов, высокий ранг, редкие предметы",
+                            price: 1800,
+                            category: "PUBG Mobile",
+                            created_at: new Date(Date.now() - 432000000).toISOString(),
+                            image: "https://images.unsplash.com/photo-1579113800032-c38bd7635818?w=600&h=300&fit=crop",
+                            is_urgent: false
+                        }
+                    ];
+                    
+                    // Сохраняем демо-данные в localStorage
+                    localStorage.setItem('favorites', JSON.stringify(favoriteAds));
+                } else {
+                    // Используем сохраненные данные
+                    favoriteAds = savedFavorites;
+                }
                 
                 // Обновляем счетчик
                 updateFavoritesCount();
@@ -651,7 +727,7 @@
             });
         }
 
-        // Функция для создания элемента объявления
+        // Функция для создания элемента объявления С ФОТОГРАФИЕЙ
         function createAdElement(ad, index) {
             const adElement = document.createElement('div');
             adElement.className = 'ad-card';
@@ -665,8 +741,40 @@
             // Форматируем время
             const timeAgo = ad.created_at ? formatTimeAgo(ad.created_at) : 'Недавно';
             
-            // Создаем контент
-            adElement.innerHTML = `
+            // Создаем HTML с изображением
+            let adHTML = '';
+            
+            // Добавляем изображение (если есть)
+            if (ad.image && ad.image.startsWith('http')) {
+                adHTML += `
+                    <div class="ad-image">
+                        ${ad.is_urgent ? '<div class="image-badge">СРОЧНО</div>' : ''}
+                        <div class="favorite-badge">
+                            <i class="fa fa-heart"></i>
+                        </div>
+                        <img src="${ad.image}" alt="${ad.title}" loading="lazy" 
+                             onload="this.style.opacity='1'"
+                             onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\"ad-image-placeholder\"><i class=\"fa fa-gamepad\"></i><span>Нет изображения</span></div>';">
+                    </div>
+                `;
+            } else {
+                // Заглушка если нет изображения
+                adHTML += `
+                    <div class="ad-image">
+                        ${ad.is_urgent ? '<div class="image-badge">СРОЧНО</div>' : ''}
+                        <div class="favorite-badge">
+                            <i class="fa fa-heart"></i>
+                        </div>
+                        <div class="ad-image-placeholder">
+                            <i class="fa fa-gamepad"></i>
+                            <span>Изображение игры</span>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Добавляем контент
+            adHTML += `
                 <div class="ad-content">
                     <div class="ad-header">
                         <div class="ad-category">${ad.category || 'Игры'}</div>
@@ -685,6 +793,8 @@
                     </div>
                 </div>
             `;
+            
+            adElement.innerHTML = adHTML;
             
             // Добавляем обработчик клика на объявление
             adElement.addEventListener('click', (e) => {
@@ -822,6 +932,16 @@
                 @keyframes slideUp {
                     from { transform: translateX(-50%) translateY(0); opacity: 1; }
                     to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+                }
+                
+                /* Стили для плавной загрузки изображений */
+                .ad-image img {
+                    opacity: 0;
+                    transition: opacity 0.3s ease;
+                }
+                
+                .ad-image img[src]:not([src=""]) {
+                    opacity: 1;
                 }
             `;
             document.head.appendChild(style);
