@@ -209,7 +209,7 @@
         
         /* Ad Image - УМЕНЬШЕННЫЙ РАЗМЕР */
         .ad-image {
-            height: 140px; /* Уменьшил с 160px до 140px */
+            height: 140px;
             background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
             position: relative;
             display: flex;
@@ -244,20 +244,6 @@
         .ad-image-placeholder i {
             font-size: 32px;
             opacity: 0.5;
-        }
-        
-        .image-badge {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-            font-weight: 500;
-            backdrop-filter: blur(10px);
-            z-index: 1;
         }
         
         .favorite-badge {
@@ -530,13 +516,13 @@
             }
             
             .ad-image {
-                height: 120px; /* Еще меньше на маленьких экранах */
+                height: 120px;
             }
         }
         
         @media (min-width: 768px) {
             .ad-image {
-                height: 160px; /* Чуть больше на планшетах */
+                height: 160px;
             }
         }
     </style>
@@ -606,67 +592,16 @@
                     </div>
                 `;
 
-                // Имитация загрузки для демонстрации
-                await new Promise(resolve => setTimeout(resolve, 500));
+                // Имитация загрузки
+                await new Promise(resolve => setTimeout(resolve, 300));
                 
                 // Загружаем из localStorage
                 const savedFavorites = JSON.parse(localStorage.getItem('favorites') || '[]');
                 
-                // Если в localStorage пусто, используем демо-данные
+                // Если в localStorage пусто, создаем демо-данные
                 if (savedFavorites.length === 0) {
-                    // Демо-данные для примера
-                    favoriteAds = [
-                        {
-                            id: 1,
-                            title: "Аккаунт Fortnite Level 250+",
-                            description: "Полный доступ ко всем сезонам, много редких скинов и оружия",
-                            price: 4500,
-                            category: "Fortnite",
-                            created_at: new Date(Date.now() - 3600000).toISOString(),
-                            image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&h=300&fit=crop",
-                            is_urgent: true
-                        },
-                        {
-                            id: 2,
-                            title: "Steam аккаунт CS:GO Prime",
-                            description: "Prime статус, много скинов, высокая репутация, ранг Legendary Eagle",
-                            price: 3200,
-                            category: "CS:GO",
-                            created_at: new Date(Date.now() - 86400000).toISOString(),
-                            image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&h=300&fit=crop",
-                            is_urgent: false
-                        },
-                        {
-                            id: 3,
-                            title: "Аккаунт GTA 5 Online",
-                            description: "Много денег в игре, недвижимость, транспорт, полный доступ к DLC",
-                            price: 2500,
-                            category: "GTA 5",
-                            created_at: new Date(Date.now() - 172800000).toISOString(),
-                            image: "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=600&h=300&fit=crop",
-                            is_urgent: false
-                        },
-                        {
-                            id: 4,
-                            title: "World of Warcraft Shadowlands",
-                            description: "Максимальный уровень, экипировка, много достижений",
-                            price: 3800,
-                            category: "WoW",
-                            created_at: new Date(Date.now() - 259200000).toISOString(),
-                            image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&h=300&fit=crop",
-                            is_urgent: true
-                        },
-                        {
-                            id: 5,
-                            title: "PUBG Mobile премиум",
-                            description: "Много скинов, высокий ранг, редкие предметы",
-                            price: 1800,
-                            category: "PUBG Mobile",
-                            created_at: new Date(Date.now() - 432000000).toISOString(),
-                            image: "https://images.unsplash.com/photo-1579113800032-c38bd7635818?w=600&h=300&fit=crop",
-                            is_urgent: false
-                        }
-                    ];
+                    // Создаем демо-данные
+                    favoriteAds = createDemoFavorites();
                     
                     // Сохраняем демо-данные в localStorage
                     localStorage.setItem('favorites', JSON.stringify(favoriteAds));
@@ -685,6 +620,64 @@
                 console.error('Ошибка при загрузке избранных объявлений:', error);
                 showErrorState('Не удалось загрузить избранные объявления');
             }
+        }
+
+        // Функция для создания демо-избранных
+        function createDemoFavorites() {
+            const demoAds = [
+                {
+                    id: 1,
+                    title: "Аккаунт Fortnite Level 250+",
+                    description: "Полный доступ ко всем сезонам, много редких скинов и оружия",
+                    price: 4500,
+                    category: "Fortnite",
+                    created_at: new Date(Date.now() - 3600000).toISOString(),
+                    image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=600&h=300&fit=crop",
+                    is_urgent: false
+                },
+                {
+                    id: 2,
+                    title: "Steam аккаунт CS:GO Prime",
+                    description: "Prime статус, много скинов, высокая репутация, ранг Legendary Eagle",
+                    price: 3200,
+                    category: "CS:GO",
+                    created_at: new Date(Date.now() - 86400000).toISOString(),
+                    image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=600&h=300&fit=crop",
+                    is_urgent: false
+                },
+                {
+                    id: 3,
+                    title: "Аккаунт GTA 5 Online",
+                    description: "Много денег в игре, недвижимость, транспорт, полный доступ к DLC",
+                    price: 2500,
+                    category: "GTA 5",
+                    created_at: new Date(Date.now() - 172800000).toISOString(),
+                    image: "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=600&h=300&fit=crop",
+                    is_urgent: false
+                },
+                {
+                    id: 4,
+                    title: "World of Warcraft Shadowlands",
+                    description: "Максимальный уровень, экипировка, много достижений",
+                    price: 3800,
+                    category: "WoW",
+                    created_at: new Date(Date.now() - 259200000).toISOString(),
+                    image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&h=300&fit=crop",
+                    is_urgent: false
+                },
+                {
+                    id: 5,
+                    title: "PUBG Mobile премиум",
+                    description: "Много скинов, высокий ранг, редкие предметы",
+                    price: 1800,
+                    category: "PUBG Mobile",
+                    created_at: new Date(Date.now() - 432000000).toISOString(),
+                    image: "https://images.unsplash.com/photo-1579113800032-c38bd7635818?w=600&h=300&fit=crop",
+                    is_urgent: false
+                }
+            ];
+            
+            return demoAds;
         }
 
         // Функция для обновления счетчика избранных
@@ -745,33 +738,33 @@
             let adHTML = '';
             
             // Добавляем изображение (если есть)
-            if (ad.image && ad.image.startsWith('http')) {
-                adHTML += `
-                    <div class="ad-image">
-                        ${ad.is_urgent ? '<div class="image-badge">СРОЧНО</div>' : ''}
-                        <div class="favorite-badge">
-                            <i class="fa fa-heart"></i>
-                        </div>
-                        <img src="${ad.image}" alt="${ad.title}" loading="lazy" 
-                             onload="this.style.opacity='1'"
-                             onerror="this.onerror=null; this.src=''; this.parentElement.innerHTML='<div class=\"ad-image-placeholder\"><i class=\"fa fa-gamepad\"></i><span>Нет изображения</span></div>';">
+            adHTML += `
+                <div class="ad-image">
+                    <div class="favorite-badge">
+                        <i class="fa fa-heart"></i>
                     </div>
+            `;
+            
+            if (ad.image && ad.image.startsWith('http')) {
+                // Используем правильный URL для изображений Unsplash
+                const imageUrl = ad.image.includes('unsplash.com') ? 
+                    ad.image.replace('w=600&h=300', 'w=400&h=200') : 
+                    ad.image;
+                    
+                adHTML += `
+                    <img src="${imageUrl}" alt="${ad.title}" loading="lazy">
                 `;
             } else {
                 // Заглушка если нет изображения
                 adHTML += `
-                    <div class="ad-image">
-                        ${ad.is_urgent ? '<div class="image-badge">СРОЧНО</div>' : ''}
-                        <div class="favorite-badge">
-                            <i class="fa fa-heart"></i>
-                        </div>
-                        <div class="ad-image-placeholder">
-                            <i class="fa fa-gamepad"></i>
-                            <span>Изображение игры</span>
-                        </div>
+                    <div class="ad-image-placeholder">
+                        <i class="fa fa-gamepad"></i>
+                        <span>Изображение игры</span>
                     </div>
                 `;
             }
+            
+            adHTML += `</div>`;
             
             // Добавляем контент
             adHTML += `
@@ -937,10 +930,10 @@
                 /* Стили для плавной загрузки изображений */
                 .ad-image img {
                     opacity: 0;
-                    transition: opacity 0.3s ease;
+                    transition: opacity 0.5s ease;
                 }
                 
-                .ad-image img[src]:not([src=""]) {
+                .ad-image img.loaded {
                     opacity: 1;
                 }
             `;
@@ -948,6 +941,20 @@
             
             // Загружаем избранные объявления
             loadFavoriteAds();
+            
+            // Добавляем обработчик загрузки изображений
+            document.addEventListener('DOMContentLoaded', function() {
+                const images = document.querySelectorAll('.ad-image img');
+                images.forEach(img => {
+                    if (img.complete) {
+                        img.classList.add('loaded');
+                    } else {
+                        img.addEventListener('load', function() {
+                            this.classList.add('loaded');
+                        });
+                    }
+                });
+            });
         });
     </script>
 </body>
