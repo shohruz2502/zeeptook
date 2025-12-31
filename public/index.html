@@ -6,93 +6,106 @@
     <title>Zeeptook - Игровой маркетплейс</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
+        /* Telegram-подобные стили */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         
         :root {
-            --primary: #00f2fe;
-            --primary-dark: #4facfe;
-            --secondary: #0f172a;
+            --primary: #0088cc;
+            --primary-dark: #0077b3;
+            --secondary: #18222d;
             --accent: #ff6b6b;
-            --google: #4285f4;
-            --dark: #1e293b;
-            --darker: #0f172a;
-            --light: #f8fafc;
-            --gray: #64748b;
-            --gray-light: #cbd5e1;
+            --gray-dark: #2a2f36;
+            --gray-medium: #3c4350;
+            --gray-light: #8e98a3;
             --white: #ffffff;
+            --message-out: #2b5278;
+            --message-in: #182533;
+            --chat-bg: #0e1621;
+            --input-bg: #242f3d;
+            --nav-bg: #17212b;
             --gradient: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            --gradient-dark: linear-gradient(135deg, var(--secondary) 0%, #1e3a8a 100%);
-            --shadow: 0 8px 32px rgba(0, 242, 254, 0.15);
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
             --radius: 12px;
-            --radius-sm: 10px;
+            --radius-sm: 8px;
+            --radius-xs: 6px;
         }
         
         body {
-            background: var(--gradient-dark);
+            background: var(--chat-bg);
             color: var(--white);
             min-height: 100vh;
-            padding-bottom: 70px;
+            overflow-x: hidden;
+            font-size: 15px;
         }
 
         .app-container {
-            width: 100%;
+            background: var(--chat-bg);
+            min-height: 100vh;
+            padding-bottom: 70px;
             max-width: 100%;
-            margin: 0 auto;
         }
-        
+
+        /* Header - Telegram стиль */
         .header {
-            background: rgba(30, 41, 59, 0.9);
-            backdrop-filter: blur(10px);
+            background: var(--nav-bg);
             color: var(--white);
-            padding: 10px 12px;
+            padding: 10px 16px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            box-shadow: var(--shadow);
+            justify-content: space-between;
             position: sticky;
             top: 0;
             z-index: 1000;
-            border-bottom: 1px solid rgba(0, 242, 254, 0.1);
+            height: 60px;
+            border-bottom: 1px solid var(--gray-dark);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
         
         .logo {
             font-size: 17px;
-            font-weight: 700;
+            font-weight: 600;
+            color: var(--white);
             display: flex;
             align-items: center;
-            color: var(--white);
+            gap: 8px;
         }
         
         .logo i {
-            margin-right: 6px;
+            color: var(--primary);
             font-size: 20px;
-            background: var(--gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
         }
         
         .profile-status {
             display: flex;
             align-items: center;
             font-size: 11px;
-            background: rgba(15, 23, 42, 0.6);
-            padding: 5px 10px;
-            border-radius: 16px;
+            background: rgba(0, 136, 204, 0.1);
+            padding: 4px 10px;
+            border-radius: 12px;
             font-weight: 500;
-            border: 1px solid rgba(0, 242, 254, 0.1);
+            border: 1px solid rgba(0, 136, 204, 0.2);
         }
         
         .status-indicator {
-            width: 7px;
-            height: 7px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             margin-right: 5px;
+        }
+        
+        .connected {
+            background-color: #4caf50;
             animation: pulse 2s infinite;
+        }
+        
+        .disconnected {
+            background-color: var(--accent);
         }
         
         @keyframes pulse {
@@ -100,17 +113,12 @@
             50% { opacity: 0.5; }
             100% { opacity: 1; }
         }
-        
-        .connected {
-            background-color: var(--primary);
-        }
-        
-        .disconnected {
-            background-color: var(--accent);
-        }
-        
+
+        /* Search Section - Telegram стиль */
         .search-section {
-            padding: 12px 12px 10px;
+            padding: 12px 16px;
+            background: var(--nav-bg);
+            border-bottom: 1px solid var(--gray-dark);
         }
         
         .search-container {
@@ -120,32 +128,35 @@
         .search-box {
             display: flex;
             width: 100%;
-            border-radius: var(--radius);
+            border-radius: 21px;
             overflow: hidden;
-            box-shadow: var(--shadow);
-            background: rgba(30, 41, 59, 0.9);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(0, 242, 254, 0.1);
+            background: var(--input-bg);
+            border: 1px solid var(--gray-dark);
+            transition: all 0.2s ease;
+        }
+        
+        .search-box:focus-within {
+            border-color: var(--primary);
         }
         
         .search-box input {
             flex-grow: 1;
-            padding: 12px 14px;
+            padding: 12px 16px;
             border: none;
             background: transparent;
-            font-size: 14px;
+            font-size: 15px;
             outline: none;
             color: var(--white);
         }
         
         .search-box input::placeholder {
-            color: var(--gray);
+            color: var(--gray-light);
             font-size: 14px;
         }
         
         .search-box button {
-            background: var(--gradient);
-            color: white;
+            background: transparent;
+            color: var(--gray-light);
             border: none;
             padding: 0 16px;
             cursor: pointer;
@@ -156,12 +167,15 @@
         .search-box button:active {
             transform: scale(0.95);
         }
-        
+
+        /* Categories - Telegram стиль */
         .categories-scroll {
             display: flex;
             overflow-x: auto;
-            padding: 10px 12px;
-            gap: 6px;
+            padding: 12px 16px;
+            gap: 8px;
+            background: var(--nav-bg);
+            border-bottom: 1px solid var(--gray-dark);
             scrollbar-width: none;
             -ms-overflow-style: none;
         }
@@ -172,16 +186,14 @@
         
         .category {
             flex: 0 0 auto;
-            padding: 6px 12px;
-            background: rgba(30, 41, 59, 0.9);
+            padding: 6px 14px;
+            background: var(--input-bg);
             border-radius: 16px;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 500;
             white-space: nowrap;
             transition: all 0.2s ease;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(0, 242, 254, 0.1);
-            box-shadow: 0 2px 6px rgba(0, 242, 254, 0.1);
+            border: 1px solid var(--gray-dark);
             cursor: pointer;
             color: var(--gray-light);
         }
@@ -189,330 +201,407 @@
         .category.active {
             background: var(--gradient);
             color: white;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 242, 254, 0.4);
+            border-color: var(--primary);
         }
         
+        .category:active {
+            transform: scale(0.95);
+        }
+
+        /* Main Content */
         .main-content {
-            padding: 0 6px 12px; /* Уменьшили боковые отступы */
+            padding: 0;
         }
-        
-        .content-section {
-            background: rgba(30, 41, 59, 0.9);
-            backdrop-filter: blur(10px);
-            border-radius: var(--radius);
-            margin-bottom: 12px;
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(0, 242, 254, 0.1);
-            overflow: hidden;
-        }
-        
+
+        /* Section Header */
         .section-header {
-            padding: 12px 14px;
+            padding: 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid rgba(0, 242, 254, 0.1);
+            background: var(--nav-bg);
+            border-bottom: 1px solid var(--gray-dark);
         }
         
         .section-title {
-            font-size: 15px;
-            font-weight: 700;
+            font-size: 16px;
+            font-weight: 600;
             color: var(--white);
         }
         
         .view-all {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--primary);
             font-weight: 500;
             text-decoration: none;
         }
         
-        .ads-grid {
-            padding: 8px 6px; /* Уменьшили отступы внутри */
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
+        .view-all:active {
+            opacity: 0.7;
         }
-        
+
+        /* Ads Grid - Telegram стиль список */
+        .ads-grid {
+            padding: 0;
+            background: var(--chat-bg);
+        }
+
+        /* Ad Card - Telegram стиль (сначала текст) */
         .ad-card {
-            background: rgba(15, 23, 42, 0.6);
-            border-radius: var(--radius-sm);
-            box-shadow: 0 2px 8px rgba(0, 242, 254, 0.08);
-            transition: all 0.2s ease;
-            border: 1px solid rgba(0, 242, 254, 0.05);
-            overflow: hidden;
+            background: var(--nav-bg);
+            border-bottom: 1px solid var(--gray-dark);
+            margin: 0;
             cursor: pointer;
-            animation: fadeInUp 0.5s ease-out;
-            display: flex;
-            flex-direction: column;
+            transition: background 0.2s ease;
+            animation: slideUp 0.3s ease-out;
+            animation-fill-mode: forwards;
+            opacity: 0;
         }
         
         .ad-card:active {
-            transform: scale(0.98);
-        }
-        
-        .ad-image {
-            height: 140px; /* Увеличили высоту фото */
-            background: linear-gradient(135deg, #1e293b, #334155);
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            flex-shrink: 0;
-        }
-        
-        .ad-badge {
-            position: absolute;
-            top: 6px;
-            left: 6px;
-            background: var(--accent);
-            color: white;
-            padding: 2px 6px;
-            border-radius: 8px;
-            font-size: 9px;
-            font-weight: 600;
-            z-index: 1;
+            background: rgba(255, 255, 255, 0.05);
         }
         
         .ad-content {
-            padding: 8px;
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
+            padding: 12px 16px;
         }
         
         .ad-header {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
         
         .ad-category {
-            font-size: 9px;
-            background: rgba(0, 242, 254, 0.1);
-            padding: 2px 6px;
-            border-radius: 8px;
+            font-size: 12px;
+            background: rgba(0, 136, 204, 0.15);
+            padding: 4px 10px;
+            border-radius: 12px;
             color: var(--primary);
             font-weight: 500;
         }
         
         .ad-favorite {
             color: var(--gray-light);
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 14px;
-            transition: all 0.2s ease;
             cursor: pointer;
-            flex-shrink: 0;
+            transition: all 0.2s ease;
         }
         
         .ad-favorite.active {
             color: var(--accent);
-            transform: scale(1.1);
+            background: rgba(255, 107, 107, 0.1);
+        }
+        
+        .ad-favorite:active {
+            transform: scale(0.9);
         }
         
         .ad-title {
-            font-size: 13px;
+            font-size: 16px;
             font-weight: 600;
+            margin-bottom: 8px;
             color: var(--white);
+            line-height: 1.3;
+        }
+        
+        .ad-description {
+            color: var(--gray-light);
+            margin-bottom: 12px;
+            font-size: 14px;
             line-height: 1.4;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            margin-bottom: 8px;
-            flex-grow: 1;
-            min-height: 36px;
         }
         
-        .ad-price-container {
+        .ad-footer {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: auto;
         }
         
         .ad-price {
             font-weight: 700;
             color: var(--primary);
-            font-size: 15px;
-            display: flex;
-            align-items: center;
-        }
-        
-        .ad-price .currency {
-            font-size: 11px;
-            margin-left: 2px;
-            opacity: 0.9;
+            font-size: 16px;
         }
         
         .ad-meta {
-            font-size: 10px;
-            color: var(--gray);
+            font-size: 12px;
+            color: var(--gray-light);
             display: flex;
             align-items: center;
+            gap: 4px;
         }
         
         .ad-meta i {
-            margin-right: 2px;
-            font-size: 9px;
+            font-size: 11px;
+        }
+
+        /* Ad Image - появляется после текста (как в телеграме) */
+        .ad-image {
+            height: 200px;
+            background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            opacity: 0;
+            transition: opacity 0.5s ease;
         }
         
-        .bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: #18222d;
-    display: flex;
-    justify-content: space-around;
-    padding: 8px 0 10px;
-    border-top: 1px solid #2a2f36;
-    z-index: 1000;
-    height: 60px;
-}
-
-.nav-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-decoration: none;
-    color: #8e98a3;
-    font-size: 10px;
-    padding: 6px 4px;
-    transition: all 0.2s ease;
-    flex: 1;
-    position: relative;
-}
-
-.nav-btn i {
-    font-size: 20px;
-    margin-bottom: 2px;
-    transition: all 0.2s ease;
-}
-
-.nav-btn span {
-    font-weight: 500;
-    letter-spacing: 0.3px;
-}
-
-.nav-btn.active {
-    color: #0088cc;
-}
-
-.nav-btn.active i {
-    transform: translateY(-1px);
-}
-
-.nav-btn:active {
-    transform: scale(0.95);
-    background: rgba(255, 255, 255, 0.05);
-}
-
-/* Индикатор активной вкладки (точка сверху) */
-.nav-btn.active::after {
-    content: '';
-    position: absolute;
-    top: -4px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 4px;
-    height: 4px;
-    background: #0088cc;
-    border-radius: 50%;
-}
-
-/* Адаптивность для планшетов */
-@media (min-width: 768px) {
-    .bottom-nav {
-        max-width: 500px;
-        left: 50%;
-        transform: translateX(-50%);
-        border-radius: 20px 20px 0 0;
-        border: 1px solid #2a2f36;
-        border-bottom: none;
-    }
-}
+        .ad-image.loaded {
+            opacity: 1;
+        }
         
+        .ad-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .ad-image-placeholder {
+            color: var(--gray-light);
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .ad-image-placeholder i {
+            font-size: 32px;
+            opacity: 0.5;
+        }
+        
+        .image-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: var(--nav-bg);
+            margin: 12px;
+            border-radius: var(--radius);
+            border: 1px solid var(--gray-dark);
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        .empty-state i {
+            font-size: 48px;
+            color: var(--gray-light);
+            margin-bottom: 20px;
+            opacity: 0.6;
+        }
+        
+        .empty-state h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: var(--white);
+            font-weight: 500;
+        }
+        
+        .empty-state p {
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 25px;
+            max-width: 280px;
+            margin-left: auto;
+            margin-right: auto;
+            color: var(--gray-light);
+        }
+
+        /* Loading */
         .loading {
             text-align: center;
-            padding: 20px 12px;
-            color: var(--gray);
-            grid-column: 1 / -1;
+            padding: 40px 20px;
+            color: var(--gray-light);
         }
         
         .loading-spinner {
-            width: 30px;
-            height: 30px;
-            border: 2px solid rgba(0, 242, 254, 0.2);
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(0, 136, 204, 0.2);
             border-top: 2px solid var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 10px;
+            margin: 0 auto 15px;
         }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
+
+        /* Load More Button */
         .load-more {
             text-align: center;
-            padding: 12px;
-            grid-column: 1 / -1;
+            padding: 20px 16px;
+            background: var(--nav-bg);
         }
         
-        .load-more button {
-            background: var(--gradient);
-            color: white;
-            border: none;
-            padding: 10px 25px;
-            border-radius: 18px;
-            font-size: 13px;
-            font-weight: 600;
+        .load-more-btn {
+            padding: 12px 24px;
+            border: 1px solid var(--primary);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 3px 12px rgba(0, 242, 254, 0.3);
+            background: transparent;
+            color: var(--primary);
+            width: 100%;
+            max-width: 200px;
         }
         
-        .load-more button:active {
-            transform: scale(0.95);
+        .load-more-btn:active {
+            transform: scale(0.97);
+            background: rgba(0, 136, 204, 0.1);
         }
         
-        .load-more button:disabled {
-            background: var(--gray);
+        .load-more-btn:disabled {
+            opacity: 0.5;
             cursor: not-allowed;
             transform: none;
         }
-        
-        .error-message {
+
+        /* Error State */
+        .error-state {
             text-align: center;
-            padding: 20px 12px;
-            color: var(--accent);
-            grid-column: 1 / -1;
+            padding: 40px 20px;
+            background: var(--nav-bg);
+            margin: 12px;
+            border-radius: var(--radius);
+            border: 1px solid var(--gray-dark);
         }
         
-        .error-message i {
-            font-size: 35px;
-            margin-bottom: 10px;
+        .error-state i {
+            font-size: 48px;
             color: var(--accent);
+            margin-bottom: 15px;
+            opacity: 0.7;
+        }
+        
+        .error-state h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: var(--white);
+            font-weight: 500;
+        }
+        
+        .error-state p {
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+            color: var(--gray-light);
         }
         
         .retry-btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 8px 18px;
-            border-radius: 18px;
-            font-size: 12px;
-            font-weight: 600;
+            padding: 12px 20px;
+            border: 1px solid var(--primary);
+            border-radius: 25px;
+            font-size: 15px;
+            font-weight: 500;
             cursor: pointer;
-            margin-top: 10px;
+            transition: all 0.2s ease;
+            background: transparent;
+            color: var(--primary);
+            width: 100%;
+            max-width: 200px;
         }
         
-        /* Анимации */
-        @keyframes fadeInUp {
+        .retry-btn:active {
+            transform: scale(0.97);
+            background: rgba(0, 136, 204, 0.1);
+        }
+
+        /* Bottom Navigation - Telegram стиль */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--nav-bg);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0 10px;
+            border-top: 1px solid var(--gray-dark);
+            z-index: 1000;
+            height: 60px;
+        }
+        
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: var(--gray-light);
+            font-size: 10px;
+            padding: 6px 4px;
+            transition: all 0.2s ease;
+            flex: 1;
+            position: relative;
+        }
+        
+        .nav-btn i {
+            font-size: 20px;
+            margin-bottom: 2px;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-btn.active {
+            color: var(--primary);
+        }
+        
+        .nav-btn.active i {
+            transform: translateY(-1px);
+        }
+        
+        .nav-btn.active::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+        
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideUp {
             from {
                 opacity: 0;
                 transform: translateY(10px);
@@ -523,80 +612,85 @@
             }
         }
         
-        /* Адаптивность для очень маленьких экранов */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Placeholder для загрузки */
+        .ad-card.placeholder {
+            animation: none;
+        }
+        
+        .ad-card.placeholder .ad-category {
+            background: var(--gray-dark);
+            color: transparent;
+            width: 60px;
+        }
+        
+        .ad-card.placeholder .ad-title {
+            background: var(--gray-dark);
+            color: transparent;
+            border-radius: 4px;
+            height: 18px;
+            width: 80%;
+            margin-bottom: 8px;
+        }
+        
+        .ad-card.placeholder .ad-description {
+            background: var(--gray-dark);
+            color: transparent;
+            border-radius: 4px;
+            height: 14px;
+            width: 100%;
+            margin-bottom: 12px;
+        }
+        
+        .ad-card.placeholder .ad-price {
+            background: var(--gray-dark);
+            color: transparent;
+            border-radius: 4px;
+            height: 16px;
+            width: 60px;
+        }
+        
+        .ad-card.placeholder .ad-meta {
+            background: var(--gray-dark);
+            color: transparent;
+            border-radius: 4px;
+            height: 14px;
+            width: 50px;
+        }
+
+        /* Responsive */
         @media (max-width: 360px) {
             .header {
-                padding: 8px 10px;
-            }
-            
-            .logo {
-                font-size: 15px;
+                padding: 10px 12px;
             }
             
             .search-section {
-                padding: 10px 10px 8px;
+                padding: 10px 12px;
             }
             
-            .ads-grid {
-                gap: 6px;
-                padding: 6px 4px;
-            }
-            
-            .ad-image {
-                height: 130px;
+            .categories-scroll {
+                padding: 10px 12px;
             }
             
             .ad-content {
-                padding: 6px;
-            }
-        }
-        
-        /* Адаптивность для планшетов */
-        @media (min-width: 768px) {
-            .app-container {
-                max-width: 750px;
-                margin: 0 auto;
+                padding: 10px 12px;
             }
             
-            .ads-grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 10px;
+            .ad-title {
+                font-size: 15px;
+            }
+            
+            .ad-description {
+                font-size: 13px;
             }
             
             .ad-image {
-                height: 160px;
+                height: 180px;
             }
-        }
-        
-        /* Адаптивность для десктопов */
-        @media (min-width: 1024px) {
-            .app-container {
-                max-width: 900px;
-            }
-            
-            .ads-grid {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
-
-        /* Улучшения для iOS */
-        @supports (-webkit-touch-callout: none) {
-            body {
-                background-attachment: fixed;
-            }
-        }
-        
-        /* Стиль как в TaoBao - переменная высота карточек */
-        .ad-card.variant-a {
-            /* Первый вариант - нормальная высота */
-        }
-        
-        .ad-card.variant-b {
-            /* Второй вариант - чуть выше */
-        }
-        
-        .ad-card.variant-b .ad-title {
-            min-height: 30px;
         }
     </style>
 </head>
@@ -616,7 +710,7 @@
         <div class="search-section">
             <div class="search-container">
                 <div class="search-box">
-                    <input type="text" id="search-input" placeholder="🔍 Поиск игровых аккаунтов...">
+                    <input type="text" id="search-input" placeholder="Поиск игровых аккаунтов...">
                     <button id="search-btn">
                         <i class="fa fa-search"></i>
                     </button>
@@ -630,20 +724,20 @@
         </div>
         
         <div class="main-content">
-            <div class="content-section">
-                <div class="section-header">
-                    <div class="section-title">Рекомендуемые аккаунты</div>
-                    <a href="#" class="view-all">Все</a>
+            <div class="section-header">
+                <div class="section-title">Игровые аккаунты</div>
+                <a href="#" class="view-all">Все</a>
+            </div>
+            
+            <div class="ads-grid" id="ads-container">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>Загрузка объявлений...</div>
                 </div>
-                <div class="ads-grid" id="ads-container">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <div>Загрузка объявлений...</div>
-                    </div>
-                </div>
-                <div class="load-more">
-                    <button id="load-more-btn" style="display: none;">Показать ещё</button>
-                </div>
+            </div>
+            
+            <div class="load-more">
+                <button class="load-more-btn" id="load-more-btn" style="display: none;">Показать ещё</button>
             </div>
         </div>
     </div>
@@ -679,9 +773,13 @@
         let currentSearch = '';
         let isLoading = false;
         let token = localStorage.getItem('token');
+        
+        // Для последовательной загрузки изображений
+        let imagesLoading = new Set();
+        let imagesLoaded = new Set();
 
         // API базовый URL
-        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
+        const API_BASE = '/api';
 
         // Функция для проверки подключения к БД
         async function checkDBConnection() {
@@ -707,7 +805,7 @@
             }
         }
 
-        // Функция для загрузки категорий с сервера
+        // Функция для загрузки категорий
         async function loadCategories() {
             try {
                 const response = await fetch(`${API_BASE}/categories`);
@@ -747,8 +845,8 @@
             const gameCategories = [
                 'PUBG Mobile',
                 'Free Fire',
-                'World of Tanks Blitz',
-                'Call of Duty Mobile',
+                'World of Tanks',
+                'Call of Duty',
                 'Genshin Impact',
                 'Mobile Legends',
                 'Clash of Clans',
@@ -794,15 +892,13 @@
                 }
 
                 // Формируем URL для запроса
-                let url = `${API_BASE}/ads?page=${page}&limit=6`;
+                let url = `${API_BASE}/ads?page=${page}&limit=10`;
                 if (category !== 'all') {
                     url += `&category=${encodeURIComponent(category)}`;
                 }
                 if (search) {
                     url += `&search=${encodeURIComponent(search)}`;
                 }
-
-                console.log('🔍 Fetching ads from:', url);
 
                 const options = {
                     method: 'GET',
@@ -822,14 +918,17 @@
 
                 const data = await response.json();
                 
-                console.log('📊 Received ads:', data.ads);
-
                 // Обновляем информацию о пагинации
                 currentPage = data.page;
                 totalPages = data.totalPages;
                 
-                // Отображаем объявления
+                // Отображаем объявления (только текст)
                 displayAds(data.ads, page === 1);
+                
+                // Начинаем загрузку изображений
+                if (data.ads.length > 0) {
+                    loadImagesSequentially(data.ads);
+                }
                 
                 // Управляем кнопкой "Загрузить еще"
                 if (currentPage < totalPages) {
@@ -847,8 +946,90 @@
                 isLoading = false;
             }
         }
-        
-        // Функция для отображения объявлений
+
+        // Функция для последовательной загрузки изображений
+        async function loadImagesSequentially(ads) {
+            for (let i = 0; i < ads.length; i++) {
+                // Проверяем, загружается ли уже это изображение
+                if (imagesLoading.has(ads[i].id) || imagesLoaded.has(ads[i].id)) {
+                    continue;
+                }
+                
+                // Помечаем как загружающееся
+                imagesLoading.add(ads[i].id);
+                
+                // Загружаем изображение для этого объявления
+                await loadImageForAd(i, ads[i]);
+                
+                // Помечаем как загруженное
+                imagesLoaded.add(ads[i].id);
+                imagesLoading.delete(ads[i].id);
+                
+                // Небольшая задержка между загрузками для плавности
+                await new Promise(resolve => setTimeout(resolve, 50));
+            }
+        }
+
+        // Функция загрузки изображения для конкретного объявления
+        async function loadImageForAd(index, ad) {
+            return new Promise((resolve) => {
+                const adCard = document.querySelectorAll('.ad-card')[index];
+                if (!adCard) {
+                    resolve();
+                    return;
+                }
+
+                const hasImage = ad.image && ad.image.startsWith('http');
+                
+                // Создаем контейнер для изображения
+                const imageContainer = document.createElement('div');
+                imageContainer.className = 'ad-image';
+                
+                if (hasImage) {
+                    const img = new Image();
+                    
+                    // Слушаем события загрузки
+                    img.onload = () => {
+                        imageContainer.innerHTML = `
+                            ${ad.isUrgent ? '<div class="image-badge">СРОЧНО</div>' : ''}
+                            <img src="${ad.image}" alt="${ad.title}" loading="lazy">
+                        `;
+                        imageContainer.classList.add('loaded');
+                        resolve();
+                    };
+                    
+                    img.onerror = () => {
+                        showFallbackImage(imageContainer);
+                        resolve();
+                    };
+                    
+                    // Начинаем загрузку
+                    img.src = ad.image;
+                } else {
+                    showFallbackImage(imageContainer);
+                    resolve();
+                }
+                
+                // Вставляем изображение ПЕРЕД контентом (как в телеграме)
+                const adContent = adCard.querySelector('.ad-content');
+                if (adContent) {
+                    adCard.insertBefore(imageContainer, adContent);
+                }
+            });
+        }
+
+        // Функция для показа заглушки изображения
+        function showFallbackImage(container) {
+            container.innerHTML = `
+                <div class="ad-image-placeholder">
+                    <i class="fa fa-gamepad"></i>
+                    <span>Изображение игры</span>
+                </div>
+            `;
+            container.classList.add('loaded');
+        }
+
+        // Функция для отображения объявлений (ТОЛЬКО ТЕКСТ)
         function displayAds(ads, clearContainer = true) {
             const adsContainer = document.getElementById('ads-container');
             
@@ -858,55 +1039,54 @@
             
             if (ads.length === 0 && clearContainer) {
                 adsContainer.innerHTML = `
-                    <div class="loading">
-                        <i class="fa fa-inbox" style="font-size: 35px; margin-bottom: 10px; color: var(--gray-light);"></i>
-                        <div>Объявления не найдены</div>
+                    <div class="empty-state">
+                        <i class="fa fa-inbox"></i>
+                        <h3>Объявления не найдены</h3>
+                        <p>Попробуйте изменить параметры поиска</p>
                     </div>
                 `;
                 return;
             }
             
             ads.forEach((ad, index) => {
-                const adElement = createAdElement(ad, index);
+                // Создаем карточку БЕЗ изображения
+                const adElement = createTextOnlyAdElement(ad, index);
                 adsContainer.appendChild(adElement);
+                
+                // Анимация появления
+                setTimeout(() => {
+                    adElement.style.opacity = '1';
+                }, index * 50);
             });
         }
-        
-        // Функция для создания элемента объявления
-        function createAdElement(ad, index) {
+
+        // Функция для создания ТОЛЬКО ТЕКСТОВОГО элемента объявления
+        function createTextOnlyAdElement(ad, index) {
             const adElement = document.createElement('div');
             adElement.className = 'ad-card';
-            adElement.dataset.adId = ad.id;
+            adElement.setAttribute('data-ad-id', ad.id);
+            adElement.style.animationDelay = `${index * 0.05}s`;
             
-            // Чередуем варианты высоты как в TaoBao
-            const variantClass = index % 2 === 0 ? 'variant-a' : 'variant-b';
-            adElement.classList.add(variantClass);
-            
-            // Форматируем цену красиво
+            // Форматируем цену
             const priceFormatted = ad.price ? 
-                new Intl.NumberFormat('ru-RU').format(ad.price) : 
-                'Цена не указана';
+                new Intl.NumberFormat('ru-RU').format(ad.price) + ' ₽' : 
+                'Договорная';
             
-            // Используем реальное изображение если есть, иначе заглушку
-            const imageHtml = ad.image ? 
-                `<img src="${ad.image}" alt="${ad.title}" style="width: 100%; height: 100%; object-fit: cover;">` :
-                `<i class="fa fa-gamepad" style="font-size: 24px; opacity: 0.7;"></i>`;
+            // Форматируем время
+            const timeAgo = ad.created_at ? formatTimeAgo(ad.created_at) : 'Недавно';
             
             adElement.innerHTML = `
-                <div class="ad-image">
-                    ${ad.isUrgent ? '<div class="ad-badge">СРОЧНО</div>' : ''}
-                    ${imageHtml}
-                </div>
                 <div class="ad-content">
                     <div class="ad-header">
                         <div class="ad-category">${ad.category || 'Игры'}</div>
-                        <div class="ad-favorite">
+                        <button class="ad-favorite">
                             <i class="fa fa-heart"></i>
-                        </div>
+                        </button>
                     </div>
                     <div class="ad-title">${ad.title || 'Игровой аккаунт'}</div>
-                    <div class="ad-price-container">
-                        <div class="ad-price">${priceFormatted}<span class="currency"> ₽</span></div>
+                    <div class="ad-description">${ad.description || 'Описание отсутствует'}</div>
+                    <div class="ad-footer">
+                        <div class="ad-price">${priceFormatted}</div>
                         <div class="ad-meta">
                             <i class="fa fa-eye"></i>
                             <span>${ad.views || 0}</span>
@@ -915,7 +1095,7 @@
                 </div>
             `;
             
-            // Восстанавливаем состояние избранного из localStorage
+            // Восстанавливаем состояние избранного
             const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
             const favoriteIds = favorites.map(fav => fav.id);
             if (favoriteIds.includes(ad.id)) {
@@ -935,7 +1115,7 @@
             
             return adElement;
         }
-        
+
         // Функция для добавления/удаления из избранного
         async function toggleFavorite(adId, favoriteBtn, ad) {
             // Сохраняем в localStorage независимо от авторизации
@@ -954,11 +1134,7 @@
                     description: ad.description,
                     price: ad.price,
                     category: ad.category,
-                    location: ad.location,
-                    isUrgent: ad.isUrgent,
-                    seller: ad.seller,
                     image: ad.image,
-                    time: ad.time,
                     views: ad.views
                 };
                 favorites.push(favoriteAd);
@@ -988,12 +1164,12 @@
                 }
             }
         }
-        
+
         // Функция для открытия деталей объявления
         function openAdDetails(adId) {
             window.location.href = `ad-details.html?id=${adId}`;
         }
-        
+
         // Функция для поиска
         function setupSearch() {
             const searchInput = document.getElementById('search-input');
@@ -1012,17 +1188,8 @@
                     performSearch();
                 }
             });
-            
-            // Очистка поиска при клике на крестик (в мобильных браузерах)
-            searchInput.addEventListener('input', function() {
-                if (this.value === '') {
-                    currentSearch = '';
-                    currentPage = 1;
-                    fetchAds(1, currentCategory, '');
-                }
-            });
         }
-        
+
         // Функция для настройки категорий
         function setupCategories() {
             const categories = document.querySelectorAll('.category');
@@ -1039,67 +1206,65 @@
                 });
             });
         }
-        
+
         // Функция для показа ошибок
         function showError(message) {
             const adsContainer = document.getElementById('ads-container');
             adsContainer.innerHTML = `
-                <div class="error-message">
+                <div class="error-state">
                     <i class="fa fa-exclamation-triangle"></i>
-                    <div>${message}</div>
+                    <h3>Ошибка загрузки</h3>
+                    <p>${message}</p>
                     <button class="retry-btn" onclick="fetchAds(1, currentCategory, currentSearch)">Попробовать снова</button>
                 </div>
             `;
         }
-        
+
+        // Вспомогательная функция для форматирования времени
+        function formatTimeAgo(dateString) {
+            const now = new Date();
+            const date = new Date(dateString);
+            const diffMs = now - date;
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return 'только что';
+            if (diffMins < 60) return `${diffMins} мин`;
+            if (diffHours < 24) return `${diffHours} ч`;
+            if (diffDays < 7) return `${diffDays} д`;
+            return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+        }
+
         // Функция для показа уведомлений
-        function showNotification(message, type = 'success') {
-            // Создаем элемент уведомления
+        function showNotification(message) {
             const notification = document.createElement('div');
             notification.style.cssText = `
                 position: fixed;
-                top: 15px;
+                top: 20px;
                 left: 50%;
                 transform: translateX(-50%);
-                background: ${type === 'error' ? 'var(--accent)' : 'var(--primary)'};
+                background: #0088cc;
                 color: white;
-                padding: 10px 18px;
-                border-radius: 20px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                padding: 12px 20px;
+                border-radius: 25px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
                 z-index: 10000;
                 font-weight: 500;
                 animation: slideDown 0.3s ease-out;
-                font-size: 13px;
+                max-width: 90%;
+                text-align: center;
             `;
             notification.textContent = message;
             
             document.body.appendChild(notification);
             
-            // Удаляем уведомление через 3 секунды
             setTimeout(() => {
                 notification.style.animation = 'slideUp 0.3s ease-in';
-                setTimeout(() => {
-                    if (notification.parentNode) {
-                        notification.parentNode.removeChild(notification);
-                    }
-                }, 300);
+                setTimeout(() => notification.remove(), 300);
             }, 3000);
         }
-        
-        // Добавляем стили для анимации уведомлений
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideDown {
-                from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
-                to { transform: translateX(-50%) translateY(0); opacity: 1; }
-            }
-            @keyframes slideUp {
-                from { transform: translateX(-50%) translateY(0); opacity: 1; }
-                to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
-            }
-        `;
-        document.head.appendChild(style);
-        
+
         // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Initializing Zeeptook app...');
@@ -1116,64 +1281,46 @@
                 });
             }
             
-            // Pull-to-refresh
-            let startY;
-            document.addEventListener('touchstart', (e) => {
-                startY = e.touches[0].clientY;
-            });
-            
-            document.addEventListener('touchmove', (e) => {
-                if (!startY) return;
-                
-                const currentY = e.touches[0].clientY;
-                const diff = currentY - startY;
-                
-                if (diff > 100 && window.scrollY === 0) {
-                    // Пользователь потянул вниз для обновления
-                    currentPage = 1;
-                    fetchAds(1, currentCategory, currentSearch);
-                    startY = null;
+            // Добавляем стили для анимации уведомлений
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideDown {
+                    from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+                    to { transform: translateX(-50%) translateY(0); opacity: 1; }
                 }
-            });
-            
-            // Отладочная информация
-            console.log('✅ App initialized successfully');
-            console.log('🔑 Token exists:', !!token);
-            console.log('🌐 API Base:', API_BASE);
+                @keyframes slideUp {
+                    from { transform: translateX(-50%) translateY(0); opacity: 1; }
+                    to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
         });
-    </script>
-    <script>
-    // Обработка Google OAuth callback на главной странице
-    function checkForGoogleCallback() {
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get('code');
-        const state = params.get('state');
-        const error = params.get('error');
 
-        if (code && state) {
-            // Проверяем, что это Google OAuth, а не другой сервис
-            const savedState = sessionStorage.getItem('google_oauth_state');
-            if (state === savedState) {
-                sessionStorage.removeItem('google_oauth_state');
-                
-                // Сохраняем код для обработки
-                sessionStorage.setItem('google_auth_code', code);
-                sessionStorage.setItem('google_auth_state', state);
-                
-                // Перенаправляем на страницу регистрации
-                window.location.href = 'register.html';
-                return;
+        // Обработка Google OAuth callback на главной странице
+        function checkForGoogleCallback() {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+            const state = params.get('state');
+            const error = params.get('error');
+
+            if (code && state) {
+                const savedState = sessionStorage.getItem('google_oauth_state');
+                if (state === savedState) {
+                    sessionStorage.removeItem('google_oauth_state');
+                    sessionStorage.setItem('google_auth_code', code);
+                    sessionStorage.setItem('google_auth_state', state);
+                    window.location.href = 'register.html';
+                    return;
+                }
+            }
+
+            if (error) {
+                console.error('Google auth error:', error);
             }
         }
 
-        if (error) {
-            console.error('Google auth error:', error);
-            // Можно показать уведомление об ошибке
-        }
-    }
-
-    // Проверяем при загрузке главной страницы
-    document.addEventListener('DOMContentLoaded', checkForGoogleCallback);
+        // Проверяем при загрузке главной страницы
+        document.addEventListener('DOMContentLoaded', checkForGoogleCallback);
     </script>
 </body>
 </html>
