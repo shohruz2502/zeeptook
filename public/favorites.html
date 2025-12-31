@@ -193,8 +193,14 @@
             margin: 0;
             cursor: pointer;
             transition: background 0.2s ease;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        
+        .ad-card.show {
+            opacity: 1;
+            transform: translateY(0);
             animation: slideUp 0.3s ease-out;
-            animation-fill-mode: forwards;
         }
         
         .ad-card:active {
@@ -283,7 +289,7 @@
             font-size: 11px;
         }
 
-        /* Ad Image - появляется после текста */
+        /* Ad Image */
         .ad-image {
             height: 160px;
             background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
@@ -499,51 +505,6 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Placeholder для загрузки */
-        .ad-card.placeholder {
-            animation: none;
-        }
-        
-        .ad-card.placeholder .ad-category {
-            background: var(--gray-dark);
-            color: transparent;
-            width: 60px;
-        }
-        
-        .ad-card.placeholder .ad-title {
-            background: var(--gray-dark);
-            color: transparent;
-            border-radius: 4px;
-            height: 18px;
-            width: 80%;
-            margin-bottom: 8px;
-        }
-        
-        .ad-card.placeholder .ad-description {
-            background: var(--gray-dark);
-            color: transparent;
-            border-radius: 4px;
-            height: 14px;
-            width: 100%;
-            margin-bottom: 12px;
-        }
-        
-        .ad-card.placeholder .ad-price {
-            background: var(--gray-dark);
-            color: transparent;
-            border-radius: 4px;
-            height: 16px;
-            width: 60px;
-        }
-        
-        .ad-card.placeholder .ad-meta {
-            background: var(--gray-dark);
-            color: transparent;
-            border-radius: 4px;
-            height: 14px;
-            width: 50px;
-        }
-
         /* Responsive */
         @media (max-width: 360px) {
             .header {
@@ -614,13 +575,7 @@
     <script>
         // Переменные для управления избранными объявлениями
         let favoriteAds = [];
-        let imagesLoading = new Set();
-        let imagesLoaded = new Set();
         
-        // API базовый URL
-        const API_BASE = '/api';
-        let token = localStorage.getItem('token');
-
         // Функция для загрузки избранных объявлений
         async function loadFavoriteAds() {
             const adsContainer = document.getElementById('ads-container');
@@ -635,53 +590,20 @@
                     </div>
                 `;
 
-                // Загружаем данные (имитация)
-                await new Promise(resolve => setTimeout(resolve, 800));
+                // Загружаем из localStorage
+                await new Promise(resolve => setTimeout(resolve, 500));
                 
-                // Пример данных для демонстрации
-                favoriteAds = [
-                    {
-                        id: 1,
-                        title: "Аккаунт Fortnite Level 250+",
-                        description: "Полный доступ ко всем сезонам, много скинов",
-                        price: 4500,
-                        category: "Fortnite",
-                        created_at: new Date(Date.now() - 3600000).toISOString(),
-                        image: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400&h=200&fit=crop",
-                        is_urgent: false
-                    },
-                    {
-                        id: 2,
-                        title: "Steam аккаунт CS:GO Prime",
-                        description: "Prime статус, много скинов, высокая репутация",
-                        price: 3200,
-                        category: "CS:GO",
-                        created_at: new Date(Date.now() - 86400000).toISOString(),
-                        image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=200&fit=crop",
-                        is_urgent: true
-                    },
-                    {
-                        id: 3,
-                        title: "Аккаунт GTA 5 Online",
-                        description: "Много денег в игре, недвижимость, транспорт",
-                        price: 2500,
-                        category: "GTA 5",
-                        created_at: new Date(Date.now() - 172800000).toISOString(),
-                        image: "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=400&h=200&fit=crop",
-                        is_urgent: false
-                    }
-                ];
+                // Загружаем данные из localStorage
+                const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+                
+                // Обновляем глобальную переменную
+                favoriteAds = favorites;
                 
                 // Обновляем счетчик
                 updateFavoritesCount();
                 
-                // Отображаем объявления (только текст)
+                // Отображаем объявления
                 displayFavoriteAds();
-                
-                // Начинаем поочередную загрузку изображений
-                if (favoriteAds.length > 0) {
-                    loadImagesSequentially();
-                }
                 
             } catch (error) {
                 console.error('Ошибка при загрузке избранных объявлений:', error);
@@ -689,101 +611,19 @@
             }
         }
 
-        // Функция для последовательной загрузки изображений
-        async function loadImagesSequentially() {
-            for (let i = 0; i < favoriteAds.length; i++) {
-                // Проверяем, загружается ли уже это изображение
-                if (imagesLoading.has(favoriteAds[i].id) || imagesLoaded.has(favoriteAds[i].id)) {
-                    continue;
-                }
-                
-                // Помечаем как загружающееся
-                imagesLoading.add(favoriteAds[i].id);
-                
-                // Загружаем изображение для этого объявления
-                await loadImageForAd(i, favoriteAds[i]);
-                
-                // Помечаем как загруженное
-                imagesLoaded.add(favoriteAds[i].id);
-                imagesLoading.delete(favoriteAds[i].id);
-                
-                // Небольшая задержка между загрузками для плавности
-                // (если интернет быстрый, задержка не будет заметна)
-                await new Promise(resolve => setTimeout(resolve, 100));
-            }
-        }
-
-        // Функция загрузки изображения для конкретного объявления
-        async function loadImageForAd(index, ad) {
-            return new Promise((resolve) => {
-                const adCard = document.querySelectorAll('.ad-card')[index];
-                if (!adCard) {
-                    resolve();
-                    return;
-                }
-
-                const hasImage = ad.image && ad.image.startsWith('http');
-                
-                // Создаем контейнер для изображения
-                const imageContainer = document.createElement('div');
-                imageContainer.className = 'ad-image';
-                
-                if (hasImage) {
-                    const img = new Image();
-                    
-                    // Слушаем события загрузки
-                    img.onload = () => {
-                        imageContainer.innerHTML = `
-                            ${ad.is_urgent ? '<div class="image-badge">СРОЧНО</div>' : ''}
-                            <div class="favorite-badge">
-                                <i class="fa fa-heart"></i>
-                            </div>
-                            <img src="${ad.image}" alt="${ad.title}" loading="lazy">
-                        `;
-                        imageContainer.classList.add('loaded');
-                        resolve();
-                    };
-                    
-                    img.onerror = () => {
-                        showFallbackImage(imageContainer);
-                        resolve();
-                    };
-                    
-                    // Начинаем загрузку
-                    img.src = ad.image;
-                } else {
-                    showFallbackImage(imageContainer);
-                    resolve();
-                }
-                
-                // Вставляем изображение ПЕРЕД контентом (как в телеграме)
-                const adContent = adCard.querySelector('.ad-content');
-                if (adContent) {
-                    adCard.insertBefore(imageContainer, adContent);
-                }
-            });
-        }
-
-        // Функция для показа заглушки изображения
-        function showFallbackImage(container) {
-            container.innerHTML = `
-                <div class="ad-image-placeholder">
-                    <i class="fa fa-gamepad"></i>
-                    <span>Изображение игры</span>
-                </div>
-            `;
-            container.classList.add('loaded');
-        }
-
         // Функция для обновления счетчика избранных
         function updateFavoritesCount() {
             const favoritesCount = document.getElementById('favorites-count');
-            favoritesCount.textContent = favoriteAds.length;
+            if (favoritesCount) {
+                favoritesCount.textContent = favoriteAds.length;
+            }
         }
 
-        // Функция для отображения избранных объявлений (ТОЛЬКО ТЕКСТ)
+        // Функция для отображения избранных объявлений
         function displayFavoriteAds() {
             const adsContainer = document.getElementById('ads-container');
+            
+            if (!adsContainer) return;
             
             if (favoriteAds.length === 0) {
                 adsContainer.innerHTML = `
@@ -800,14 +640,19 @@
             adsContainer.innerHTML = '';
             
             favoriteAds.forEach((ad, index) => {
-                // Создаем карточку БЕЗ изображения
-                const adElement = createTextOnlyAdElement(ad, index);
+                // Создаем карточку
+                const adElement = createAdElement(ad, index);
                 adsContainer.appendChild(adElement);
+                
+                // Анимация появления
+                setTimeout(() => {
+                    adElement.classList.add('show');
+                }, index * 50);
             });
         }
 
-        // Функция для создания ТОЛЬКО ТЕКСТОВОГО элемента объявления (как в телеграме)
-        function createTextOnlyAdElement(ad, index) {
+        // Функция для создания элемента объявления
+        function createAdElement(ad, index) {
             const adElement = document.createElement('div');
             adElement.className = 'ad-card';
             adElement.setAttribute('data-ad-id', ad.id);
@@ -820,12 +665,12 @@
             // Форматируем время
             const timeAgo = ad.created_at ? formatTimeAgo(ad.created_at) : 'Недавно';
             
-            // ТОЛЬКО ТЕКСТОВЫЙ КОНТЕНТ (без изображения)
+            // Создаем контент
             adElement.innerHTML = `
                 <div class="ad-content">
                     <div class="ad-header">
                         <div class="ad-category">${ad.category || 'Игры'}</div>
-                        <button class="ad-remove-btn" onclick="removeFromFavorites(${ad.id}, event)">
+                        <button class="ad-remove-btn" data-ad-id="${ad.id}">
                             <i class="fa fa-trash-o"></i>
                         </button>
                     </div>
@@ -848,48 +693,45 @@
                 }
             });
             
+            // Добавляем обработчик для кнопки удаления
+            const removeBtn = adElement.querySelector('.ad-remove-btn');
+            removeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                removeFromFavorites(ad.id, adElement);
+            });
+            
             return adElement;
         }
 
         // Функция для удаления из избранного
-        async function removeFromFavorites(adId, event) {
-            if (event) {
-                event.stopPropagation();
-                event.preventDefault();
-            }
-            
+        function removeFromFavorites(adId, adElement) {
             try {
                 // Анимация удаления
-                const adElement = document.querySelector(`[data-ad-id="${adId}"]`);
-                if (adElement) {
-                    adElement.style.opacity = '0';
-                    adElement.style.transform = 'translateX(-20px)';
-                    setTimeout(() => {
-                        adElement.remove();
-                        
-                        // Удаляем из массива
-                        favoriteAds = favoriteAds.filter(ad => ad.id !== adId);
-                        
-                        // Обновляем счетчик
-                        updateFavoritesCount();
-                        
-                        // Обновляем localStorage
-                        localStorage.setItem('favorites', JSON.stringify(favoriteAds));
-                    }, 300);
-                }
+                adElement.style.transition = 'all 0.3s ease';
+                adElement.style.opacity = '0';
+                adElement.style.transform = 'translateX(-100%)';
                 
-                // Удаляем с сервера (если авторизован)
-                if (token) {
-                    await fetch(`${API_BASE}/favorites/${adId}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-                }
-                
-                // Показываем уведомление
-                showNotification('Аккаунт удален из избранного');
+                setTimeout(() => {
+                    adElement.remove();
+                    
+                    // Удаляем из массива
+                    favoriteAds = favoriteAds.filter(ad => ad.id !== adId);
+                    
+                    // Обновляем счетчик
+                    updateFavoritesCount();
+                    
+                    // Обновляем localStorage
+                    localStorage.setItem('favorites', JSON.stringify(favoriteAds));
+                    
+                    // Если больше нет избранных, показываем пустое состояние
+                    if (favoriteAds.length === 0) {
+                        displayFavoriteAds();
+                    }
+                    
+                    // Показываем уведомление
+                    showNotification('Аккаунт удален из избранного');
+                }, 300);
                 
             } catch (error) {
                 console.error('Ошибка при удалении из избранного:', error);
@@ -905,6 +747,8 @@
         // Функция для показа состояния ошибки
         function showErrorState(message) {
             const adsContainer = document.getElementById('ads-container');
+            if (!adsContainer) return;
+            
             adsContainer.innerHTML = `
                 <div class="error-state">
                     <i class="fa fa-exclamation-triangle"></i>
@@ -917,18 +761,22 @@
 
         // Вспомогательная функция для форматирования времени
         function formatTimeAgo(dateString) {
-            const now = new Date();
-            const date = new Date(dateString);
-            const diffMs = now - date;
-            const diffMins = Math.floor(diffMs / 60000);
-            const diffHours = Math.floor(diffMs / 3600000);
-            const diffDays = Math.floor(diffMs / 86400000);
+            try {
+                const now = new Date();
+                const date = new Date(dateString);
+                const diffMs = now - date;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+                const diffDays = Math.floor(diffMs / 86400000);
 
-            if (diffMins < 1) return 'только что';
-            if (diffMins < 60) return `${diffMins} мин`;
-            if (diffHours < 24) return `${diffHours} ч`;
-            if (diffDays < 7) return `${diffDays} д`;
-            return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+                if (diffMins < 1) return 'только что';
+                if (diffMins < 60) return `${diffMins} мин`;
+                if (diffHours < 24) return `${diffHours} ч`;
+                if (diffDays < 7) return `${diffDays} д`;
+                return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+            } catch (e) {
+                return 'Недавно';
+            }
         }
 
         // Функция для показа уведомлений
@@ -963,7 +811,6 @@
         // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Loading favorites page...');
-            loadFavoriteAds();
             
             // Добавляем стили для анимации уведомлений
             const style = document.createElement('style');
@@ -978,6 +825,9 @@
                 }
             `;
             document.head.appendChild(style);
+            
+            // Загружаем избранные объявления
+            loadFavoriteAds();
         });
     </script>
 </body>
