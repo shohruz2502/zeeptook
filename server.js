@@ -1976,73 +1976,9 @@ app.get('/api/profile/ads', authenticateToken, async (req, res) => {
 
 
 
-function connectWebSocket() {
-    if (ws && ws.readyState === WebSocket.OPEN) return;
-    
-    const userId = getCurrentUserId();
-    if (!userId) {
-        console.error('❌ Не удалось получить userId для WebSocket');
-        return;
-    }
-    
-    // Используем тот же домен, что и для API запросов
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/ws?serverId=${serverId}&userId=${userId}`;
-    
-    console.log('🔗 Подключение WebSocket:', wsUrl);
-    
-    try {
-        ws = new WebSocket(wsUrl);
-        
-        ws.onopen = () => {
-            console.log('✅ WebSocket подключен');
-            // Отправляем ping для проверки соединения
-            ws.send(JSON.stringify({ type: 'ping' }));
-        };
-        
-        ws.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                handleWebSocketMessage(data);
-            } catch (error) {
-                console.error('❌ Ошибка парсинга WebSocket сообщения:', error);
-            }
-        };
-        
-        ws.onclose = (event) => {
-            console.log('🔗 WebSocket отключен:', event.code, event.reason);
-            ws = null;
-            
-            // Пытаемся переподключиться только если это была неожиданная ошибка
-            if (event.code !== 1000 && event.code !== 1001) {
-                console.log('🔄 Попытка переподключения через 3 секунды...');
-                setTimeout(connectWebSocket, 3000);
-            }
-        };
-        
-        ws.onerror = (error) => {
-            console.error('❌ WebSocket ошибка:', error);
-        };
-        
-    } catch (error) {
-        console.error('❌ Ошибка создания WebSocket:', error);
-    }
-}
 
-const http = require('http');
-const { setupWebSocketServer } = require('./путь/к/вашему/файлу/с/серверами');
 
-// Создаем HTTP сервер
-const server = http.createServer(app);
 
-// Настраиваем WebSocket сервер
-setupWebSocketServer(server);
-
-// Запускаем сервер
-server.listen(PORT, () => {
-    console.log(`🚀 Сервер запущен на порту ${PORT}`);
-});
 
 // ================== СЕРВЕРЫ ==================
 
