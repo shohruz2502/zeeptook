@@ -1983,7 +1983,6 @@ app.get('/api/profile/ads', authenticateToken, async (req, res) => {
 // ================== СЕРВЕРЫ ==================
 
 const crypto = require('crypto');
-const WebSocket = require('ws');
 
 // Функция для генерации уникальной ссылки
 function generateInviteLink(name) {
@@ -1993,116 +1992,6 @@ function generateInviteLink(name) {
         .substring(0, 30);
     const randomSuffix = crypto.randomBytes(4).toString('hex');
     return `${baseSlug}-${randomSuffix}`;
-}
-
-// ========== WebSocket для серверов ==========
-
-// Глобальная переменная для WebSocket сервера
-let wss = null;
-
-// Функция для установки WebSocket сервера
-function setupWebSocketServer(server) {
-    wss = new WebSocket.Server({ 
-        server,
-        path: '/ws',
-        clientTracking: true
-    });
-
-    wss.on('connection', (ws, request) => {
-        try {
-            const url = new URL(request.url, `http://${request.headers.host}`);
-            const serverId = url.searchParams.get('serverId');
-            const userId = url.searchParams.get('userId');
-
-            console.log(`🔗 WebSocket подключение:`, { 
-                serverId, 
-                userId, 
-                url: request.url 
-            });
-
-            if (!serverId || !userId) {
-                console.error('❌ Отсутствуют обязательные параметры serverId или userId');
-                ws.close(1008, 'Missing serverId or userId');
-                return;
-            }
-
-            // Сохраняем информацию о подключении
-            ws.serverId = serverId;
-            ws.userId = userId;
-
-            // Отправляем подтверждение подключения
-            ws.send(JSON.stringify({
-                type: 'connection_established',
-                message: 'WebSocket подключен успешно',
-                timestamp: new Date().toISOString()
-            }));
-
-            console.log(`✅ WebSocket подключен: сервер ${serverId}, пользователь ${userId}`);
-
-            ws.on('message', async (message) => {
-                try {
-                    const data = JSON.parse(message.toString());
-                    
-                    console.log('📨 WebSocket сообщение получено:', data.type);
-
-                    if (data.type === 'typing') {
-                        // Пользователь печатает
-                        const typingEvent = {
-                            type: 'user_typing',
-                            server_id: ws.serverId,
-                            user_id: ws.userId,
-                            username: data.username || 'Пользователь',
-                            timestamp: new Date().toISOString()
-                        };
-
-                        console.log(`✍️ Пользователь печатает:`, typingEvent);
-
-                        // Рассылаем другим участникам сервера
-                        wss.clients.forEach(client => {
-                            if (client !== ws && 
-                                client.serverId === ws.serverId && 
-                                client.readyState === WebSocket.OPEN) {
-                                client.send(JSON.stringify(typingEvent));
-                            }
-                        });
-                    } else if (data.type === 'ping') {
-                        // Ответ на ping
-                        ws.send(JSON.stringify({
-                            type: 'pong',
-                            timestamp: new Date().toISOString()
-                        }));
-                    }
-                } catch (error) {
-                    console.error('❌ Ошибка обработки WebSocket сообщения:', error);
-                }
-            });
-
-            ws.on('close', (code, reason) => {
-                console.log(`🔗 WebSocket отключен: сервер ${ws.serverId}, пользователь ${ws.userId}`, { code, reason });
-            });
-
-            ws.on('error', (error) => {
-                console.error(`❌ WebSocket ошибка: сервер ${ws.serverId}, пользователь ${ws.userId}`, error);
-            });
-
-            // Отправляем ping каждые 30 секунд для поддержания соединения
-            const pingInterval = setInterval(() => {
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.ping();
-                }
-            }, 30000);
-
-            ws.on('close', () => {
-                clearInterval(pingInterval);
-            });
-
-        } catch (error) {
-            console.error('❌ Ошибка подключения WebSocket:', error);
-            ws.close(1011, 'Internal server error');
-        }
-    });
-
-    console.log('✅ WebSocket сервер запущен');
 }
 
 // ========== API для мобильных серверов (server-page.html) ==========
@@ -3051,14 +2940,62 @@ app.get('/api/server/my', authenticateToken, async (req, res) => {
     }
 });
 
-// Экспорт функции для установки WebSocket
-module.exports = {
-    setupWebSocketServer,
-    wss
-};
+// ========== WebSocket для серверов ==========
+
+if (wss) {
+    wss.on('connection', (ws, request) => {
+        try {
+            const url = new URL(request.url, `http://${request.headers.host}`);
+            const serverId = url.searchParams.get('serverId');
+            const userId = url.searchParams.get('userId');
+
+            if (serverId && userId) {
+                console.log(`🔗 WebSocket подключен: сервер ${serverId}, пользователь ${userId}`);
+
+                // Сохраняем информацию о подключении
+                ws.serverId = serverId;
+                ws.userId = userId;
+
+                ws.on('message', async (message) => {
+                    try {
+                        const data = JSON.parse(message);
+                        
+                        if (data.type === 'typing') {
+                            // Пользователь печатает
+                            const typingEvent = {
+                                type: 'user_typing',
+                                server_id: serverId,
+                                user_id: userId,
+                                username: data.username,
+                                timestamp: new Date().toISOString()
+                            };
+
+                            // Рассылаем другим участникам сервера
+                            wss.clients.forEach(client => {
+                                if (client !== ws && 
+                                    client.serverId === serverId && 
+                                    client.readyState === WebSocket.OPEN) {
+                                    client.send(JSON.stringify(typingEvent));
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        console.error('WebSocket ошибка:', error);
+                    }
+                });
+
+                ws.on('close', () => {
+                    console.log(`🔗 WebSocket отключен: сервер ${serverId}, пользователь ${userId}`);
+                });
+            }
+        } catch (error) {
+            console.error('Ошибка подключения WebSocket:', error);
+        }
+    });
+}
+
 
 // ================== СЕРВЕРЫ ==================
-
 
 
 
