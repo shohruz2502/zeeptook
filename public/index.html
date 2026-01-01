@@ -42,6 +42,19 @@
             min-height: 100vh;
             overflow-x: hidden;
             font-size: 15px;
+            opacity: 0;
+            animation: pageFadeIn 0.6s ease forwards;
+        }
+
+        @keyframes pageFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .app-container {
@@ -51,7 +64,7 @@
             max-width: 100%;
         }
 
-        /* Header - Telegram стиль */
+        /* Header - Telegram стиль с Instagram-like индикатором */
         .header {
             background: var(--nav-bg);
             color: var(--white);
@@ -81,7 +94,14 @@
             font-size: 20px;
         }
         
-        .profile-status {
+        /* Instagram-like статус загрузки вместо онлайн статуса */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .loading-indicator {
             display: flex;
             align-items: center;
             font-size: 11px;
@@ -90,22 +110,30 @@
             border-radius: 12px;
             font-weight: 500;
             border: 1px solid rgba(0, 136, 204, 0.2);
+            color: var(--primary);
         }
         
-        .status-indicator {
-            width: 6px;
-            height: 6px;
+        .loading-dots {
+            display: inline-flex;
+            margin-left: 4px;
+        }
+        
+        .loading-dots span {
+            width: 4px;
+            height: 4px;
+            background-color: var(--primary);
             border-radius: 50%;
-            margin-right: 5px;
+            margin: 0 1px;
+            animation: loadingDots 1.5s infinite ease-in-out;
         }
         
-        .connected {
-            background-color: #4caf50;
-            animation: pulse 2s infinite;
-        }
+        .loading-dots span:nth-child(1) { animation-delay: 0s; }
+        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
         
-        .disconnected {
-            background-color: var(--accent);
+        @keyframes loadingDots {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
         }
         
         @keyframes pulse {
@@ -119,6 +147,18 @@
             padding: 12px 16px;
             background: var(--nav-bg);
             border-bottom: 1px solid var(--gray-dark);
+            animation: slideDown 0.4s ease 0.2s both;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .search-container {
@@ -178,6 +218,7 @@
             border-bottom: 1px solid var(--gray-dark);
             scrollbar-width: none;
             -ms-overflow-style: none;
+            animation: slideDown 0.4s ease 0.3s both;
         }
         
         .categories-scroll::-webkit-scrollbar {
@@ -211,6 +252,12 @@
         /* Main Content */
         .main-content {
             padding: 0;
+            animation: fadeIn 0.4s ease 0.4s both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         /* Section Header */
@@ -265,14 +312,14 @@
             display: flex;
             flex-direction: column;
             transform: translateY(0);
-            opacity: 1;
-            animation: cardAppear 0.2s ease-out forwards;
+            opacity: 0;
+            animation: cardAppear 0.3s ease-out forwards;
         }
         
         @keyframes cardAppear {
             from {
                 opacity: 0;
-                transform: translateY(5px);
+                transform: translateY(10px);
             }
             to {
                 opacity: 1;
@@ -606,7 +653,7 @@
             background: rgba(0, 136, 204, 0.1);
         }
 
-        /* Bottom Navigation - Telegram стиль */
+        /* Bottom Navigation - Telegram стиль, 5 кнопок как в server-page */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -743,9 +790,13 @@
                 <i class="fa fa-diamond"></i>
                 <span>Zeeptook</span>
             </div>
-            <div class="profile-status">
-                <div class="status-indicator connected" id="db-status"></div>
-                <span id="status-text">Онлайн</span>
+            <div class="header-actions">
+                <div class="loading-indicator" id="loading-status">
+                    Загрузка
+                    <span class="loading-dots">
+                        <span></span><span></span><span></span>
+                    </span>
+                </div>
             </div>
         </div>
         
@@ -784,22 +835,23 @@
         </div>
     </div>
     
+    <!-- Нижняя навигация с 5 кнопками как в server-page.html -->
     <div class="bottom-nav">
         <a href="index.html" class="nav-btn active">
             <i class="fa fa-home"></i>
             <span>Главная</span>
         </a>
-        <a href="favorites.html" class="nav-btn">
-            <i class="fa fa-heart"></i>
-            <span>Избранное</span>
+        <a href="messages.html" class="nav-btn">
+            <i class="fa fa-comment"></i>
+            <span>Чаты</span>
         </a>
         <a href="add-ad.html" class="nav-btn">
             <i class="fa fa-plus"></i>
             <span>Добавить</span>
         </a>
-        <a href="messages.html" class="nav-btn">
-            <i class="fa fa-comment"></i>
-            <span>Чаты</span>
+        <a href="server-page.html" class="nav-btn">
+            <i class="fa fa-gamepad"></i>
+            <span>Серверы</span>
         </a>
         <a href="profile.html" class="nav-btn">
             <i class="fa fa-user"></i>
@@ -821,32 +873,29 @@
         // API базовый URL
         const API_BASE = '/api';
 
-        // Функция для проверки подключения к БД
-        async function checkDBConnection() {
-            try {
-                const response = await fetch(`${API_BASE}/health`);
-                const data = await response.json();
-                
-                const statusIndicator = document.getElementById('db-status');
-                const statusText = document.getElementById('status-text');
-                
-                if (data.status === 'OK') {
-                    statusIndicator.className = 'status-indicator connected';
-                    statusText.textContent = 'Онлайн';
-                } else {
-                    statusIndicator.className = 'status-indicator disconnected';
-                    statusText.textContent = 'Офлайн';
-                }
-            } catch (error) {
-                const statusIndicator = document.getElementById('db-status');
-                const statusText = document.getElementById('status-text');
-                statusIndicator.className = 'status-indicator disconnected';
-                statusText.textContent = 'Офлайн';
+        // Функция для обновления статуса загрузки (Instagram-like)
+        function updateLoadingStatus(text = 'Загрузка') {
+            const loadingStatus = document.getElementById('loading-status');
+            if (loadingStatus) {
+                const textElement = loadingStatus.childNodes[0];
+                textElement.nodeValue = text + ' ';
+            }
+        }
+
+        // Функция для завершения загрузки
+        function completeLoading() {
+            const loadingStatus = document.getElementById('loading-status');
+            if (loadingStatus) {
+                loadingStatus.innerHTML = 'Готово';
+                setTimeout(() => {
+                    loadingStatus.style.opacity = '0.7';
+                }, 1000);
             }
         }
 
         // Функция для загрузки категорий
         async function loadCategories() {
+            updateLoadingStatus('Загрузка категорий');
             try {
                 const response = await fetch(`${API_BASE}/categories`);
                 if (!response.ok) throw new Error('Failed to load categories');
@@ -920,6 +969,7 @@
             try {
                 // Показываем индикатор загрузки только при первой загрузке
                 if (page === 1) {
+                    updateLoadingStatus('Загрузка объявлений');
                     adsContainer.innerHTML = `
                         <div class="initial-loading">
                             <div class="loading-spinner"></div>
@@ -987,9 +1037,16 @@
                     loadMoreBtn.style.display = 'none';
                 }
                 
+                // Обновляем статус загрузки
+                if (page === 1) {
+                    updateLoadingStatus('Готово');
+                    setTimeout(completeLoading, 500);
+                }
+                
             } catch (error) {
                 console.error('Ошибка при загрузке объявлений:', error);
                 showError('Не удалось загрузить объявления. Проверьте подключение к интернету.');
+                updateLoadingStatus('Ошибка загрузки');
             } finally {
                 isLoading = false;
                 adsContainer.classList.remove('loading');
@@ -1402,7 +1459,10 @@
                 return;
             }
             
-            checkDBConnection();
+            // Обновляем статус загрузки
+            updateLoadingStatus('Инициализация');
+            
+            // Загружаем данные
             loadCategories();
             fetchAds();
             setupSearch();
