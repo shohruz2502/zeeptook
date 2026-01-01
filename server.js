@@ -1971,6 +1971,260 @@ app.get('/api/profile/ads', authenticateToken, async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 });
+
+
+
+
+
+// ================== СЕРВЕРЫ ПОЛЬЗОВАТЕЛЕЙ ==================
+
+
+// Добавьте в начало файла server.js после других импортов
+const crypto = require('crypto');
+
+// Функция для генерации уникальной ссылки
+function generateInviteLink(name) {
+    const baseSlug = name.toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .substring(0, 30);
+    const randomSuffix = crypto.randomBytes(4).toString('hex');
+    return `${baseSlug}-${randomSuffix}`;
+}
+
+// ========== API для серверов ==========
+
+// Создание сервера
+app.post('/api/server/create', authenticateToken, async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        const userId = req.user.id;
+
+        // Проверка, есть ли уже сервер у пользователя
+        const existingServer = await pool.query(
+            'SELECT * FROM user_servers WHERE user_id = $1',
+            [userId]
+        );
+
+        if (existingServer.rows.length > 0) {
+            return res.status(400).json({ 
+                error: 'У вас уже есть сервер. Можно создать только один сервер.' 
+            });
+        }
+
+        // Генерация уникальной ссылки
+        let inviteLink;
+        let isUnique = false;
+        let attempts = 0;
+
+        while (!isUnique && attempts < 5) {
+            inviteLink = generateInviteLink(name);
+            const checkLink = await pool.query(
+                'SELECT * FROM user_servers WHERE invite_link = $1',
+                [inviteLink]
+            );
+            if (checkLink.rows.length === 0) {
+                isUnique = true;
+            }
+            attempts++;
+        }
+
+        if (!isUnique) {
+            inviteLink = `${name.toLowerCase().replace(/\s/g, '-')}-${crypto.randomBytes(8).toString('hex')}`;
+        }
+
+        // Создание сервера
+        const newServer = await pool.query(
+            `INSERT INTO user_servers (user_id, name, description, invite_link) 
+             VALUES ($1, $2, $3, $4) 
+             RETURNING id, name, description, invite_link, created_at`,
+            [userId, name, description, inviteLink]
+        );
+
+        res.json({
+            success: true,
+            server: newServer.rows[0]
+        });
+
+    } catch (err) {
+        console.error('Ошибка создания сервера:', err);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// Получение сервера текущего пользователя
+app.get('/api/server/my', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const server = await pool.query(
+            `SELECT us.*, u.username as owner_username 
+             FROM user_servers us 
+             JOIN users u ON us.user_id = u.id 
+             WHERE us.user_id = $1`,
+            [userId]
+        );
+
+        if (server.rows.length === 0) {
+            return res.json({ hasServer: false });
+        }
+
+        res.json({
+            hasServer: true,
+            server: server.rows[0]
+        });
+
+    } catch (err) {
+        console.error('Ошибка получения сервера:', err);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// Получение сервера по invite_link
+app.get('/api/server/:invite_link', async (req, res) => {
+    try {
+        const { invite_link } = req.params;
+
+        const server = await pool.query(
+            `SELECT us.*, u.username as owner_username 
+             FROM user_servers us 
+             JOIN users u ON us.user_id = u.id 
+             WHERE us.invite_link = $1`,
+            [invite_link]
+        );
+
+        if (server.rows.length === 0) {
+            return res.status(404).json({ error: 'Сервер не найден' });
+        }
+
+        res.json({
+            success: true,
+            server: server.rows[0]
+        });
+
+    } catch (err) {
+        console.error('Ошибка получения сервера:', err);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// Получение сообщений чата
+app.get('/api/server/:server_id/messages', authenticateToken, async (req, res) => {
+    try {
+        const { server_id } = req.params;
+        const limit = parseInt(req.query.limit) || 50;
+        const offset = parseInt(req.query.offset) || 0;
+
+        const messages = await pool.query(
+            `SELECT sc.*, u.username, u.avatar 
+             FROM server_chats sc 
+             JOIN users u ON sc.user_id = u.id 
+             WHERE sc.server_id = $1 
+             ORDER BY sc.created_at DESC 
+             LIMIT $2 OFFSET $3`,
+            [server_id, limit, offset]
+        );
+
+        const total = await pool.query(
+            'SELECT COUNT(*) FROM server_chats WHERE server_id = $1',
+            [server_id]
+        );
+
+        res.json({
+            messages: messages.rows.reverse(), // чтобы старые были первыми
+            total: parseInt(total.rows[0].count)
+        });
+
+    } catch (err) {
+        console.error('Ошибка получения сообщений:', err);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// Отправка сообщения в чат
+app.post('/api/server/:server_id/messages', authenticateToken, async (req, res) => {
+    try {
+        const { server_id } = req.params;
+        const { content } = req.body;
+        const userId = req.user.id;
+
+        if (!content || content.trim().length === 0) {
+            return res.status(400).json({ error: 'Сообщение не может быть пустым' });
+        }
+
+        if (content.length > 2000) {
+            return res.status(400).json({ error: 'Сообщение слишком длинное' });
+        }
+
+        // Проверка существования сервера
+        const serverCheck = await pool.query(
+            'SELECT id FROM user_servers WHERE id = $1',
+            [server_id]
+        );
+
+        if (serverCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Сервер не найден' });
+        }
+
+        const newMessage = await pool.query(
+            `INSERT INTO server_chats (server_id, user_id, content) 
+             VALUES ($1, $2, $3) 
+             RETURNING id, server_id, user_id, content, created_at`,
+            [server_id, userId, content.trim()]
+        );
+
+        // Получаем полные данные сообщения
+        const messageWithUser = await pool.query(
+            `SELECT sc.*, u.username, u.avatar 
+             FROM server_chats sc 
+             JOIN users u ON sc.user_id = u.id 
+             WHERE sc.id = $1`,
+            [newMessage.rows[0].id]
+        );
+
+        // Отправка через WebSocket (если он настроен)
+        if (req.app.get('io')) {
+            req.app.get('io').to(`server_${server_id}`).emit('new_message', messageWithUser.rows[0]);
+        }
+
+        res.json({
+            success: true,
+            message: messageWithUser.rows[0]
+        });
+
+    } catch (err) {
+        console.error('Ошибка отправки сообщения:', err);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// Эндпоинт для проверки участников (опционально)
+app.get('/api/server/:server_id/members', async (req, res) => {
+    try {
+        const { server_id } = req.params;
+
+        const members = await pool.query(
+            `SELECT DISTINCT u.id, u.username, u.avatar 
+             FROM server_chats sc 
+             JOIN users u ON sc.user_id = u.id 
+             WHERE sc.server_id = $1 
+             ORDER BY u.username`,
+            [server_id]
+        );
+
+        res.json(members.rows);
+
+    } catch (err) {
+        console.error('Ошибка получения участников:', err);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+
+// ================== СЕРВЕРЫ ПОЛЬЗОВАТЕЛЕЙ ==================
+
+
+
  
 
 // ============================================
