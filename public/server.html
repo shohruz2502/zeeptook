@@ -863,12 +863,17 @@
             <button class="back-button" onclick="showChoiceScreen()">
                 ←
             </button>
-            <div class="chat-title" id="chatTitle"></div>
+            <div class="chat-title" id="chatTitle">Загрузка...</div>
         </header>
 
         <!-- Экран выбора -->
         <div class="choice-screen" id="choiceScreen">
-            <div class="server-info" id="serverInfo">
+            <div class="loading" id="loadingScreen">
+                <div class="spinner"></div>
+                <div>Загрузка сервера...</div>
+            </div>
+            
+            <div class="server-info" id="serverInfo" style="display: none;">
                 <div class="server-avatar-large" id="serverAvatar">S</div>
                 <h1 class="server-name-large" id="serverName">Сервер</h1>
                 <div class="server-meta" id="serverMeta">
@@ -882,7 +887,7 @@
                 <!-- Будет заполнено через JS -->
             </div>
 
-            <button class="subscribe-button" id="subscribeButton" onclick="subscribeToServer()">
+            <button class="subscribe-button" id="subscribeButton" style="display: none;" onclick="subscribeToServer()">
                 Подписаться
             </button>
         </div>
@@ -1031,54 +1036,8 @@
 
         function getAvatarColor(userId) {
             const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe'];
-            return colors[(parseInt(userId) || 0) % colors.length];
-        }
-
-        // Загрузка данных сервера
-        async function loadServerInfo() {
-            try {
-                showLoading();
-                
-                const response = await fetch(`/api/server/${serverId}/info`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    currentServer = data.server;
-                    userRole = data.user_role;
-                    isSubscribed = data.server.is_subscribed;
-                    isBanned = data.is_banned;
-                    
-                    renderServerInfo();
-                    setupChoices();
-                } else {
-                    const error = await response.json();
-                    showError(error.error || 'Ошибка загрузки сервера');
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки сервера:', error);
-                showError('Не удалось загрузить информацию о сервере');
-            }
-        }
-
-        function renderServerInfo() {
-            document.getElementById('serverName').textContent = currentServer.name;
-            document.getElementById('serverAvatar').textContent = currentServer.name.charAt(0).toUpperCase();
-            document.getElementById('serverAvatar').style.background = getAvatarColor(currentServer.id);
-            
-            if (currentServer.avatar) {
-                document.getElementById('serverAvatar').innerHTML = 
-                    `<img src="${escapeHtml(currentServer.avatar)}" alt="${escapeHtml(currentServer.name)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
-            }
-            
-            document.getElementById('memberCount').textContent = 
-                `${currentServer.member_count} ${getPluralForm(currentServer.member_count, ['участник', 'участника', 'участников'])}`;
-            
-            document.getElementById('messageCount').textContent = 
-                `${currentServer.message_count} ${getPluralForm(currentServer.message_count, ['сообщение', 'сообщения', 'сообщений'])}`;
-            
-            document.getElementById('chatTitle').textContent = currentServer.name;
+            const num = (parseInt(userId) || 0) % colors.length;
+            return colors[num];
         }
 
         function getPluralForm(number, forms) {
@@ -1091,10 +1050,117 @@
             return forms[2];
         }
 
+        // Загрузка данных сервера
+        async function loadServerInfo() {
+            try {
+                console.log('🔄 Загрузка информации о сервере ID:', serverId);
+                
+                // Показываем экран загрузки
+                document.getElementById('loadingScreen').style.display = 'flex';
+                document.getElementById('serverInfo').style.display = 'none';
+                document.getElementById('choicesContainer').innerHTML = '';
+                document.getElementById('subscribeButton').style.display = 'none';
+                
+                const response = await fetch(`/api/server/${serverId}/info`, {
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('📡 Статус ответа:', response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Данные сервера получены:', data);
+                    
+                    if (!data.server) {
+                        throw new Error('Сервер не найден в ответе');
+                    }
+                    
+                    currentServer = data.server;
+                    userRole = data.user_role || 'member';
+                    isSubscribed = data.server.is_subscribed || false;
+                    isBanned = data.is_banned || false;
+                    
+                    console.log('📊 Статус:', {
+                        name: currentServer.name,
+                        userRole,
+                        isSubscribed,
+                        isBanned
+                    });
+                    
+                    // Скрываем экран загрузки, показываем информацию
+                    document.getElementById('loadingScreen').style.display = 'none';
+                    document.getElementById('serverInfo').style.display = 'block';
+                    
+                    renderServerInfo();
+                    setupChoices();
+                    
+                } else {
+                    const error = await response.json().catch(() => ({ error: 'Ошибка сервера' }));
+                    console.error('❌ Ошибка API:', error);
+                    showError(error.error || 'Ошибка загрузки сервера');
+                }
+            } catch (error) {
+                console.error('❌ Ошибка загрузки сервера:', error);
+                showError('Не удалось загрузить информацию о сервере. Проверьте подключение.');
+            }
+        }
+
+        function renderServerInfo() {
+            try {
+                const serverNameEl = document.getElementById('serverName');
+                const serverAvatarEl = document.getElementById('serverAvatar');
+                const memberCountEl = document.getElementById('memberCount');
+                const messageCountEl = document.getElementById('messageCount');
+                const chatTitleEl = document.getElementById('chatTitle');
+                
+                if (!currentServer) {
+                    console.error('❌ currentServer не определен');
+                    return;
+                }
+                
+                // Безопасно устанавливаем значения
+                if (serverNameEl) serverNameEl.textContent = currentServer.name || 'Сервер';
+                if (chatTitleEl) chatTitleEl.textContent = currentServer.name || 'Сервер';
+                
+                if (serverAvatarEl) {
+                    serverAvatarEl.textContent = (currentServer.name || 'S').charAt(0).toUpperCase();
+                    serverAvatarEl.style.background = getAvatarColor(currentServer.id);
+                    
+                    if (currentServer.avatar) {
+                        serverAvatarEl.innerHTML = 
+                            `<img src="${escapeHtml(currentServer.avatar)}" alt="${escapeHtml(currentServer.name)}" 
+                             style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+                    }
+                }
+                
+                if (memberCountEl) {
+                    memberCountEl.textContent = 
+                        `${currentServer.member_count || 0} ${getPluralForm(currentServer.member_count || 0, ['участник', 'участника', 'участников'])}`;
+                }
+                
+                if (messageCountEl) {
+                    messageCountEl.textContent = 
+                        `${currentServer.message_count || 0} ${getPluralForm(currentServer.message_count || 0, ['сообщение', 'сообщения', 'сообщений'])}`;
+                }
+                
+                console.log('✅ Информация о сервере отрендерена');
+            } catch (error) {
+                console.error('❌ Ошибка в renderServerInfo:', error);
+            }
+        }
+
         // Настройка экрана выбора
         function setupChoices() {
             const container = document.getElementById('choicesContainer');
             const subscribeBtn = document.getElementById('subscribeButton');
+            
+            if (!container || !subscribeBtn) {
+                console.error('❌ Не найден контейнер выбора или кнопка подписки');
+                return;
+            }
             
             if (isBanned) {
                 container.innerHTML = `
@@ -1102,7 +1168,7 @@
                         Вы забанены на этом сервере и не можете присоединиться
                     </div>
                 `;
-                subscribeBtn.classList.add('hidden');
+                subscribeBtn.style.display = 'none';
                 return;
             }
             
@@ -1112,11 +1178,11 @@
                         Подпишитесь на сервер, чтобы получить доступ к чату и обменам
                     </div>
                 `;
-                subscribeBtn.classList.remove('hidden');
+                subscribeBtn.style.display = 'block';
                 return;
             }
             
-            subscribeBtn.classList.add('hidden');
+            subscribeBtn.style.display = 'none';
             
             container.innerHTML = `
                 <div class="choice-button" onclick="openGeneralChat()">
@@ -1140,31 +1206,44 @@
         // Подписка на сервер
         async function subscribeToServer() {
             const button = document.getElementById('subscribeButton');
+            if (!button) return;
+            
             const originalText = button.textContent;
             
             try {
                 button.textContent = 'Подписка...';
                 button.disabled = true;
                 
+                console.log('📝 Отправка запроса на подписку...');
+                
                 const response = await fetch(`/api/server/${serverId}/subscribe`, {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
                 });
+                
+                console.log('📡 Ответ на подписку:', response.status);
                 
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('✅ Подписка успешна:', data);
+                    
                     isSubscribed = true;
                     setupChoices();
                     
                     // Показываем уведомление
-                    showSuccess(data.message);
+                    showSuccess(data.message || 'Вы успешно подписались');
+                    
                 } else {
-                    const error = await response.json();
-                    showError(error.error);
+                    const error = await response.json().catch(() => ({ error: 'Ошибка сервера' }));
+                    console.error('❌ Ошибка подписки:', error);
+                    showErrorInChoices(error.error || 'Ошибка подписки');
                 }
             } catch (error) {
-                console.error('Ошибка подписки:', error);
-                showError('Ошибка соединения с сервером');
+                console.error('❌ Ошибка сети при подписке:', error);
+                showErrorInChoices('Ошибка соединения с сервером');
             } finally {
                 button.textContent = originalText;
                 button.disabled = false;
@@ -1172,24 +1251,31 @@
         }
 
         // Открытие общего чата
-        function openGeneralChat() {
-            document.getElementById('choiceScreen').classList.add('hidden');
-            document.getElementById('chatScreen').classList.add('visible');
-            document.getElementById('chatHeader').classList.add('visible');
-            
-            // Загружаем сообщения
-            loadChatMessages();
-            
-            // Подключаем WebSocket
-            connectWebSocket();
-            
-            // Автофокус на поле ввода
-            setTimeout(() => {
-                document.getElementById('chatInput').focus();
-            }, 300);
+        async function openGeneralChat() {
+            try {
+                document.getElementById('choiceScreen').classList.add('hidden');
+                document.getElementById('chatScreen').classList.add('visible');
+                document.getElementById('chatHeader').classList.add('visible');
+                
+                // Загружаем сообщения
+                await loadChatMessages();
+                
+                // Подключаем WebSocket
+                connectWebSocket();
+                
+                // Автофокус на поле ввода
+                setTimeout(() => {
+                    const input = document.getElementById('chatInput');
+                    if (input) input.focus();
+                }, 300);
+                
+            } catch (error) {
+                console.error('❌ Ошибка открытия чата:', error);
+                showErrorInChat('Не удалось открыть чат');
+            }
         }
 
-        // Открытие чата обмена (заглушка)
+        // Открытие чата обмена
         function openExchangeChat() {
             alert('Функция обмена в разработке');
         }
@@ -1204,32 +1290,53 @@
             disconnectWebSocket();
             
             // Очищаем чат
-            document.getElementById('chatMessages').innerHTML = '';
+            const chatMessages = document.getElementById('chatMessages');
+            if (chatMessages) chatMessages.innerHTML = '';
         }
 
         // Загрузка сообщений чата
         async function loadChatMessages() {
             try {
+                const container = document.getElementById('chatMessages');
+                if (!container) return;
+                
+                container.innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <div>Загрузка сообщений...</div>
+                    </div>
+                `;
+                
+                console.log('📨 Загрузка сообщений для сервера:', serverId);
+                
                 const response = await fetch(`/api/server/${serverId}/messages?limit=50`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
                 });
+                
+                console.log('📡 Ответ сообщений:', response.status);
                 
                 if (response.ok) {
                     const data = await response.json();
-                    renderMessages(data.messages);
+                    console.log('✅ Сообщений загружено:', data.messages?.length || 0);
                     
-                    if (data.messages.length > 0) {
+                    renderMessages(data.messages || []);
+                    
+                    if (data.messages && data.messages.length > 0) {
                         lastMessageId = data.messages[data.messages.length - 1].id;
                     }
                     
                     // Скроллим вниз
                     setTimeout(scrollToBottom, 100);
                 } else {
-                    const error = await response.json();
-                    showErrorInChat(error.error);
+                    const error = await response.json().catch(() => ({ error: 'Ошибка загрузки' }));
+                    console.error('❌ Ошибка загрузки сообщений:', error);
+                    showErrorInChat(error.error || 'Ошибка загрузки сообщений');
                 }
             } catch (error) {
-                console.error('Ошибка загрузки сообщений:', error);
+                console.error('❌ Ошибка сети при загрузке сообщений:', error);
                 showErrorInChat('Не удалось загрузить сообщения');
             }
         }
@@ -1237,7 +1344,9 @@
         // Рендер сообщений
         function renderMessages(messages) {
             const container = document.getElementById('chatMessages');
-            const currentUserId = JSON.parse(atob(token.split('.')[1])).userId;
+            if (!container) return;
+            
+            const currentUserId = getCurrentUserId();
             
             if (!messages || messages.length === 0) {
                 container.innerHTML = `
@@ -1255,27 +1364,29 @@
                 const isSent = msg.user_id == currentUserId;
                 const isDeleted = msg.deleted || msg.safe_content === '[Сообщение удалено]';
                 const avatarClass = getAvatarClass(msg.sender_role);
+                const displayName = msg.username || 'Пользователь';
+                const avatarLetter = displayName.charAt(0).toUpperCase();
                 
                 return `
                     <div class="message ${isSent ? 'sent' : ''}" data-id="${msg.id}">
                         ${!isSent ? `
                             <div class="message-avatar ${avatarClass}" 
                                  style="background: ${getAvatarColor(msg.user_id)}"
-                                 onclick="showUserActions(${msg.user_id}, '${escapeHtml(msg.username)}', '${msg.sender_role}')">
-                                ${msg.username?.charAt(0)?.toUpperCase() || '?'}
+                                 onclick="showUserActions(${msg.user_id}, '${escapeHtml(displayName)}', '${msg.sender_role}')">
+                                ${avatarLetter}
                             </div>
                         ` : ''}
                         
                         <div class="message-content">
                             ${!isSent ? `
                                 <div class="message-header">
-                                    <span class="message-username">${escapeHtml(msg.username)}</span>
+                                    <span class="message-username">${escapeHtml(displayName)}</span>
                                     <span class="message-time">${formatShortTime(msg.created_at)}</span>
                                 </div>
                             ` : ''}
                             
                             <div class="message-text ${isDeleted ? 'message-deleted' : ''}">
-                                ${escapeHtml(isDeleted ? '[Сообщение удалено]' : msg.content)}
+                                ${escapeHtml(isDeleted ? '[Сообщение удалено]' : (msg.content || msg.safe_content || ''))}
                             </div>
                             
                             ${isSent && !isDeleted ? `
@@ -1290,7 +1401,7 @@
                         ${isSent ? `
                             <div class="message-avatar" 
                                  style="background: ${getAvatarColor(msg.user_id)}">
-                                ${msg.username?.charAt(0)?.toUpperCase() || '?'}
+                                ${avatarLetter}
                             </div>
                         ` : ''}
                     </div>
@@ -1298,7 +1409,18 @@
             }).join('');
         }
 
+        function getCurrentUserId() {
+            try {
+                if (!token) return null;
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.userId || payload.id;
+            } catch {
+                return null;
+            }
+        }
+
         function getAvatarClass(role) {
+            if (!role) return '';
             switch (role) {
                 case 'owner': return 'owner';
                 case 'global_admin':
@@ -1310,11 +1432,20 @@
         // Отправка сообщения
         async function sendMessage() {
             const input = document.getElementById('chatInput');
+            const button = document.getElementById('sendButton');
+            
+            if (!input || !button) return;
+            
             const message = input.value.trim();
             
             if (!message) return;
             
             try {
+                button.disabled = true;
+                button.textContent = '...';
+                
+                console.log('📤 Отправка сообщения:', message.substring(0, 50) + '...');
+                
                 const response = await fetch(`/api/server/${serverId}/messages`, {
                     method: 'POST',
                     headers: {
@@ -1324,17 +1455,25 @@
                     body: JSON.stringify({ content: message })
                 });
                 
+                console.log('📡 Ответ отправки:', response.status);
+                
                 if (response.ok) {
                     input.value = '';
                     autoResize(input);
-                    await loadChatMessages(); // Перезагружаем сообщения
+                    
+                    // Перезагружаем сообщения
+                    await loadChatMessages();
                 } else {
-                    const error = await response.json();
-                    showErrorInChat(error.error);
+                    const error = await response.json().catch(() => ({ error: 'Ошибка отправки' }));
+                    console.error('❌ Ошибка отправки:', error);
+                    showErrorInChat(error.error || 'Ошибка отправки сообщения');
                 }
             } catch (error) {
-                console.error('Ошибка отправки сообщения:', error);
-                showErrorInChat('Ошибка отправки сообщения');
+                console.error('❌ Ошибка сети при отправке:', error);
+                showErrorInChat('Ошибка соединения с сервером');
+            } finally {
+                button.disabled = false;
+                button.textContent = '→';
             }
         }
 
@@ -1343,13 +1482,20 @@
             if (!confirm('Удалить это сообщение?')) return;
             
             try {
+                console.log('🗑️ Удаление сообщения:', messageId);
+                
                 const response = await fetch(`/api/server/messages/${messageId}`, {
                     method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
                 });
                 
+                console.log('📡 Ответ удаления:', response.status);
+                
                 if (response.ok) {
-                    // Удаляем из интерфейса
+                    // Обновляем интерфейс
                     const messageElement = document.querySelector(`.message[data-id="${messageId}"]`);
                     if (messageElement) {
                         const textElement = messageElement.querySelector('.message-text');
@@ -1359,12 +1505,12 @@
                         }
                     }
                 } else {
-                    const error = await response.json();
-                    alert(error.error);
+                    const error = await response.json().catch(() => ({ error: 'Ошибка удаления' }));
+                    alert(error.error || 'Ошибка удаления сообщения');
                 }
             } catch (error) {
-                console.error('Ошибка удаления сообщения:', error);
-                alert('Ошибка удаления сообщения');
+                console.error('❌ Ошибка сети при удалении:', error);
+                alert('Ошибка соединения с сервером');
             }
         }
 
@@ -1372,13 +1518,22 @@
         function connectWebSocket() {
             if (ws) return;
             
-            const userId = JSON.parse(atob(token.split('.')[1])).userId;
-            const wsUrl = `ws://${window.location.host}?serverId=${serverId}&userId=${userId}`;
+            const userId = getCurrentUserId();
+            if (!userId) {
+                console.error('❌ Не удалось получить userId для WebSocket');
+                return;
+            }
+            
+            // Определяем URL WebSocket
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws?serverId=${serverId}&userId=${userId}`;
+            
+            console.log('🔗 Подключение WebSocket:', wsUrl);
             
             ws = new WebSocket(wsUrl);
             
             ws.onopen = () => {
-                console.log('WebSocket подключен');
+                console.log('✅ WebSocket подключен');
             };
             
             ws.onmessage = (event) => {
@@ -1386,19 +1541,19 @@
                     const data = JSON.parse(event.data);
                     handleWebSocketMessage(data);
                 } catch (error) {
-                    console.error('Ошибка парсинга WebSocket сообщения:', error);
+                    console.error('❌ Ошибка парсинга WebSocket сообщения:', error);
                 }
             };
             
             ws.onclose = () => {
-                console.log('WebSocket отключен');
+                console.log('🔗 WebSocket отключен');
                 ws = null;
                 // Пытаемся переподключиться через 5 секунд
                 setTimeout(connectWebSocket, 5000);
             };
             
             ws.onerror = (error) => {
-                console.error('WebSocket ошибка:', error);
+                console.error('❌ WebSocket ошибка:', error);
             };
         }
 
@@ -1411,6 +1566,8 @@
 
         // Обработка WebSocket сообщений
         function handleWebSocketMessage(data) {
+            console.log('📨 WebSocket сообщение:', data.type);
+            
             switch (data.type) {
                 case 'new_message':
                     handleNewMessage(data.message);
@@ -1431,39 +1588,42 @@
         }
 
         function handleNewMessage(message) {
-            // Добавляем сообщение в чат
             const container = document.getElementById('chatMessages');
-            const currentUserId = JSON.parse(atob(token.split('.')[1])).userId;
+            if (!container) return;
+            
+            const currentUserId = getCurrentUserId();
             const isSent = message.user_id == currentUserId;
             const avatarClass = getAvatarClass(message.sender_role);
+            const displayName = message.username || 'Пользователь';
+            const avatarLetter = displayName.charAt(0).toUpperCase();
             
             const messageHtml = `
                 <div class="message ${isSent ? 'sent' : ''}" data-id="${message.id}">
                     ${!isSent ? `
                         <div class="message-avatar ${avatarClass}" 
                              style="background: ${getAvatarColor(message.user_id)}"
-                             onclick="showUserActions(${message.user_id}, '${escapeHtml(message.username)}', '${message.sender_role}')">
-                            ${message.username?.charAt(0)?.toUpperCase() || '?'}
+                             onclick="showUserActions(${message.user_id}, '${escapeHtml(displayName)}', '${message.sender_role}')">
+                            ${avatarLetter}
                         </div>
                     ` : ''}
                     
                     <div class="message-content">
                         ${!isSent ? `
                             <div class="message-header">
-                                <span class="message-username">${escapeHtml(message.username)}</span>
+                                <span class="message-username">${escapeHtml(displayName)}</span>
                                 <span class="message-time">${formatShortTime(message.created_at)}</span>
                             </div>
                         ` : ''}
                         
                         <div class="message-text">
-                            ${escapeHtml(message.content)}
+                            ${escapeHtml(message.content || '')}
                         </div>
                     </div>
                     
                     ${isSent ? `
                         <div class="message-avatar" 
                              style="background: ${getAvatarColor(message.user_id)}">
-                            ${message.username?.charAt(0)?.toUpperCase() || '?'}
+                            ${avatarLetter}
                         </div>
                     ` : ''}
                 </div>
@@ -1494,8 +1654,9 @@
         }
 
         function handleModerationEvent(data) {
-            // Обновляем интерфейс при модерационных действиях
-            if (data.target_user_id === JSON.parse(atob(token.split('.')[1])).userId) {
+            // Проверяем, относится ли действие к текущему пользователю
+            const currentUserId = getCurrentUserId();
+            if (data.target_user_id === currentUserId) {
                 if (data.action === 'ban' || data.action === 'kick') {
                     alert('Вы были исключены из сервера');
                     window.location.reload();
@@ -1526,7 +1687,9 @@
 
         function showTypingIndicator(username) {
             const indicator = document.getElementById('typingIndicator');
-            indicator.textContent = `${username} печатает...`;
+            if (!indicator) return;
+            
+            indicator.textContent = `${username || 'Кто-то'} печатает...`;
             indicator.classList.add('visible');
             
             setTimeout(() => {
@@ -1537,21 +1700,32 @@
         // Action Sheet для модерации
         function showUserActions(userId, username, role) {
             selectedUserForAction = userId;
-            selectedUserRole = role;
+            selectedUserRole = role || 'member';
             
-            const currentUserId = JSON.parse(atob(token.split('.')[1])).userId;
+            const currentUserId = getCurrentUserId();
             
             // Не показываем действия для себя
             if (userId === currentUserId) return;
             
-            document.getElementById('actionUserName').textContent = username;
-            document.getElementById('actionUserRole').textContent = getRoleName(role);
-            
+            const actionUserName = document.getElementById('actionUserName');
+            const actionUserRole = document.getElementById('actionUserRole');
             const actionList = document.getElementById('actionList');
+            
+            if (!actionUserName || !actionUserRole || !actionList) return;
+            
+            actionUserName.textContent = username || 'Пользователь';
+            actionUserRole.textContent = getRoleName(selectedUserRole);
+            
             actionList.innerHTML = '';
             
             // Определяем доступные действия
-            const actions = getAvailableActions(role);
+            const actions = getAvailableActions(selectedUserRole);
+            
+            if (actions.length === 0) {
+                actionList.innerHTML = '<div style="padding: 16px; text-align: center; color: #888;">Нет доступных действий</div>';
+                showActionSheet();
+                return;
+            }
             
             actions.forEach(action => {
                 const button = document.createElement('button');
@@ -1569,6 +1743,7 @@
         }
 
         function getRoleName(role) {
+            if (!role) return 'Участник';
             switch (role) {
                 case 'owner': return 'Владелец';
                 case 'global_admin': return 'Глобальный админ';
@@ -1629,6 +1804,8 @@
 
         async function performModerationAction(actionType, reason = null, duration = null) {
             try {
+                console.log('⚙️ Выполнение модерации:', { actionType, target_user_id: selectedUserForAction });
+                
                 const response = await fetch('/api/server/moderate', {
                     method: 'POST',
                     headers: {
@@ -1644,66 +1821,78 @@
                     })
                 });
                 
+                console.log('📡 Ответ модерации:', response.status);
+                
                 if (response.ok) {
                     const data = await response.json();
-                    showSuccess(data.message);
-                    
-                    // Обновляем список участников если нужно
-                    if (actionType === 'ban' || actionType === 'kick' || actionType === 'make_admin' || actionType === 'remove_admin') {
-                        // Можно обновить интерфейс здесь
-                    }
+                    showSuccess(data.message || 'Действие выполнено');
                 } else {
-                    const error = await response.json();
-                    showError(error.error);
+                    const error = await response.json().catch(() => ({ error: 'Ошибка выполнения' }));
+                    showErrorInChoices(error.error || 'Ошибка выполнения действия');
                 }
             } catch (error) {
-                console.error('Ошибка модерации:', error);
-                showError('Ошибка выполнения действия');
+                console.error('❌ Ошибка модерации:', error);
+                showErrorInChoices('Ошибка соединения с сервером');
             }
         }
 
         // Управление Action Sheet
         function showActionSheet() {
-            document.getElementById('actionOverlay').classList.add('visible');
-            document.getElementById('actionSheet').classList.add('visible');
+            const overlay = document.getElementById('actionOverlay');
+            const sheet = document.getElementById('actionSheet');
+            
+            if (overlay) overlay.classList.add('visible');
+            if (sheet) sheet.classList.add('visible');
         }
 
         function hideActionSheet() {
-            document.getElementById('actionOverlay').classList.remove('visible');
-            document.getElementById('actionSheet').classList.remove('visible');
+            const overlay = document.getElementById('actionOverlay');
+            const sheet = document.getElementById('actionSheet');
+            
+            if (overlay) overlay.classList.remove('visible');
+            if (sheet) sheet.classList.remove('visible');
         }
 
         // Управление модальным окном бана
         function showBanModal() {
-            document.getElementById('banOverlay').classList.add('visible');
-            document.getElementById('banModal').classList.add('visible');
+            const overlay = document.getElementById('banOverlay');
+            const modal = document.getElementById('banModal');
+            
+            if (overlay) overlay.classList.add('visible');
+            if (modal) modal.classList.add('visible');
         }
 
         function hideBanModal() {
-            document.getElementById('banOverlay').classList.remove('visible');
-            document.getElementById('banModal').classList.remove('visible');
+            const overlay = document.getElementById('banOverlay');
+            const modal = document.getElementById('banModal');
+            
+            if (overlay) overlay.classList.remove('visible');
+            if (modal) modal.classList.remove('visible');
             currentBanDuration = null;
         }
 
         function setBanDuration(hours) {
             currentBanDuration = hours;
-            document.querySelectorAll('.duration-btn').forEach(btn => btn.classList.remove('active'));
+            const buttons = document.querySelectorAll('.duration-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
             event.target.classList.add('active');
             
             if (hours === null) {
-                document.getElementById('customDuration').value = '';
+                const customInput = document.getElementById('customDuration');
+                if (customInput) customInput.value = '';
             }
         }
 
         function confirmBan() {
             let duration = currentBanDuration;
-            const customDuration = document.getElementById('customDuration').value;
+            const customInput = document.getElementById('customDuration');
             
-            if (customDuration) {
-                duration = parseInt(customDuration);
+            if (customInput && customInput.value) {
+                duration = parseInt(customInput.value);
             }
             
-            const reason = document.getElementById('banReason').value.trim();
+            const reasonInput = document.getElementById('banReason');
+            const reason = reasonInput ? reasonInput.value.trim() : '';
             
             performModerationAction('ban', reason || null, duration);
             hideBanModal();
@@ -1711,6 +1900,7 @@
 
         // Вспомогательные функции
         function autoResize(textarea) {
+            if (!textarea) return;
             textarea.style.height = 'auto';
             textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
         }
@@ -1724,79 +1914,97 @@
 
         function scrollToBottom() {
             const container = document.getElementById('chatMessages');
-            container.scrollTop = container.scrollHeight;
-            isScrolledToBottom = true;
-            hideNewMessageIndicator();
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+                isScrolledToBottom = true;
+                hideNewMessageIndicator();
+            }
         }
 
         function showNewMessageIndicator() {
             if (!hasNewMessages) {
                 hasNewMessages = true;
-                document.getElementById('newMessageIndicator').classList.add('visible');
+                const indicator = document.getElementById('newMessageIndicator');
+                if (indicator) indicator.classList.add('visible');
             }
         }
 
         function hideNewMessageIndicator() {
             if (hasNewMessages) {
                 hasNewMessages = false;
-                document.getElementById('newMessageIndicator').classList.remove('visible');
+                const indicator = document.getElementById('newMessageIndicator');
+                if (indicator) indicator.classList.remove('visible');
             }
         }
 
         // Отслеживание скролла
-        document.getElementById('chatMessages').addEventListener('scroll', () => {
-            const container = document.getElementById('chatMessages');
-            isScrolledToBottom = 
-                container.scrollHeight - container.clientHeight <= container.scrollTop + 100;
-            
-            if (isScrolledToBottom) {
-                hideNewMessageIndicator();
+        const chatMessagesEl = document.getElementById('chatMessages');
+        if (chatMessagesEl) {
+            chatMessagesEl.addEventListener('scroll', () => {
+                isScrolledToBottom = 
+                    chatMessagesEl.scrollHeight - chatMessagesEl.clientHeight <= chatMessagesEl.scrollTop + 100;
+                
+                if (isScrolledToBottom) {
+                    hideNewMessageIndicator();
+                }
+            });
+        }
+
+        function showErrorInChoices(message) {
+            const container = document.getElementById('choicesContainer');
+            if (container) {
+                container.innerHTML = `
+                    <div class="error-message">
+                        ${escapeHtml(message)}
+                    </div>
+                `;
             }
-        });
-
-        function showLoading() {
-            document.getElementById('choiceScreen').innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <div>Загрузка сервера...</div>
-                </div>
-            `;
-        }
-
-        function showError(message) {
-            document.getElementById('choiceScreen').innerHTML = `
-                <div class="error-message">
-                    ${escapeHtml(message)}
-                </div>
-                <button class="subscribe-button" onclick="window.location.href='/server-page.html'">
-                    ← Назад к серверам
-                </button>
-            `;
-        }
-
-        function showErrorInChat(message) {
-            const container = document.getElementById('chatMessages');
-            container.innerHTML += `
-                <div class="error-message">
-                    ${escapeHtml(message)}
-                </div>
-            `;
         }
 
         function showSuccess(message) {
             const container = document.getElementById('choicesContainer');
+            if (!container) return;
+            
             const successElement = document.createElement('div');
             successElement.className = 'success-message';
             successElement.textContent = message;
             container.prepend(successElement);
             
             setTimeout(() => {
-                successElement.remove();
+                if (successElement.parentNode) {
+                    successElement.remove();
+                }
             }, 3000);
+        }
+
+        function showErrorInChat(message) {
+            const container = document.getElementById('chatMessages');
+            if (container) {
+                container.innerHTML += `
+                    <div class="error-message">
+                        ${escapeHtml(message)}
+                    </div>
+                `;
+            }
         }
 
         // Инициализация
         document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 DOM загружен, начинаем инициализацию...');
+            
+            // Проверяем наличие токена
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            // Проверяем serverId
+            if (!serverId) {
+                window.location.href = '/server-page.html';
+                return;
+            }
+            
+            // Загружаем информацию о сервере
             await loadServerInfo();
             
             // Получаем данные текущего пользователя
@@ -1808,9 +2016,12 @@
                 if (response.ok) {
                     const data = await response.json();
                     currentUser = data.user;
+                    console.log('✅ Данные пользователя загружены:', currentUser?.username);
+                } else {
+                    console.warn('⚠️ Не удалось загрузить данные профиля');
                 }
             } catch (error) {
-                console.error('Ошибка загрузки профиля:', error);
+                console.error('❌ Ошибка загрузки профиля:', error);
             }
         });
 
