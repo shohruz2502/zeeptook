@@ -1976,10 +1976,12 @@ app.get('/api/profile/ads', authenticateToken, async (req, res) => {
 
 
 
-// ================== СЕРВЕРЫ ПОЛЬЗОВАТЕЛЕЙ ==================
 
 
-// Добавьте в начало файла server.js после других импортов
+
+
+// ================== СЕРВЕРЫ ==================
+
 const crypto = require('crypto');
 
 // Функция для генерации уникальной ссылки
@@ -1992,85 +1994,936 @@ function generateInviteLink(name) {
     return `${baseSlug}-${randomSuffix}`;
 }
 
-// ========== API для серверов ==========
+// ========== API для мобильных серверов (server-page.html) ==========
 
-// Создание сервера
-app.post('/api/server/create', authenticateToken, async (req, res) => {
+// Получение списка серверов с фильтрацией (для server-page.html)
+app.get('/api/servers', authenticateToken, async (req, res) => {
     try {
-        console.log('🚀 Creating server...', req.body);
-        const { name, description } = req.body;
-        const userId = req.user.userId; // ИСПРАВЛЕНО: было req.user.id
+        const { filter = 'subscriptions', page = 1, limit = 20 } = req.query;
+        const userId = req.user.userId;
+        const offset = (page - 1) * limit;
 
-        // Проверка, есть ли уже сервер у пользователя
-        const existingServer = await pool.query(
-            'SELECT * FROM user_servers WHERE user_id = $1',
-            [userId]
-        );
+        console.log(`📱 Получение серверов: фильтр=${filter}, userId=${userId}`);
 
-        if (existingServer.rows.length > 0) {
-            return res.status(400).json({ 
-                error: 'У вас уже есть сервер. Можно создать только один сервер.' 
-            });
+        let query;
+        let params = [];
+        let totalQuery;
+        let totalParams = [];
+
+        switch (filter) {
+            case 'subscriptions':
+                // Серверы, на которые подписан пользователь
+                query = `
+                    SELECT 
+                        s.*,
+                        u.username as owner_username,
+                        u.avatar_url as owner_avatar,
+                        TRUE as is_subscribed,
+                        s.owner_id = $1 as is_owner,
+                        (SELECT COUNT(*) FROM server_subscriptions ss WHERE ss.server_id = s.id) as member_count,
+                        (SELECT COUNT(*) FROM server_messages sm WHERE sm.server_id = s.id) as message_count,
+                        (SELECT content FROM server_messages sm WHERE sm.server_id = s.id ORDER BY created_at DESC LIMIT 1) as last_message,
+                        (SELECT created_at FROM server_messages sm WHERE sm.server_id = s.id ORDER BY created_at DESC LIMIT 1) as last_activity
+                    FROM servers s
+                    JOIN users u ON s.owner_id = u.id
+                    WHERE EXISTS(
+                        SELECT 1 FROM server_subscriptions ss 
+                        WHERE ss.server_id = s.id AND ss.user_id = $1
+                    ) 
+                    AND s.is_active = TRUE
+                    ORDER BY s.updated_at DESC
+                    LIMIT $2 OFFSET $3
+                `;
+                params = [userId, parseInt(limit), offset];
+                
+                totalQuery = `
+                    SELECT COUNT(*) 
+                    FROM servers s
+                    WHERE EXISTS(
+                        SELECT 1 FROM server_subscriptions ss 
+                        WHERE ss.server_id = s.id AND ss.user_id = $1
+                    ) 
+                    AND s.is_active = TRUE
+                `;
+                totalParams = [userId];
+                break;
+
+            case 'new':
+                // Новые серверы (последние созданные)
+                query = `
+                    SELECT 
+                        s.*,
+                        u.username as owner_username,
+                        u.avatar_url as owner_avatar,
+                        EXISTS(
+                            SELECT 1 FROM server_subscriptions ss 
+                            WHERE ss.server_id = s.id AND ss.user_id = $1
+                        ) as is_subscribed,
+                        s.owner_id = $1 as is_owner,
+                        (SELECT COUNT(*) FROM server_subscriptions ss WHERE ss.server_id = s.id) as member_count,
+                        (SELECT COUNT(*) FROM server_messages sm WHERE sm.server_id = s.id) as message_count,
+                        (SELECT content FROM server_messages sm WHERE sm.server_id = s.id ORDER BY created_at DESC LIMIT 1) as last_message,
+                        (SELECT created_at FROM server_messages sm WHERE sm.server_id = s.id ORDER BY created_at DESC LIMIT 1) as last_activity
+                    FROM servers s
+                    JOIN users u ON s.owner_id = u.id
+                    WHERE s.is_active = TRUE
+                    ORDER BY s.created_at DESC
+                    LIMIT $2 OFFSET $3
+                `;
+                params = [userId, parseInt(limit), offset];
+                
+                totalQuery = 'SELECT COUNT(*) FROM servers WHERE is_active = TRUE';
+                totalParams = [];
+                break;
+
+            case 'popular':
+                // Популярные серверы (по количеству участников)
+                query = `
+                    SELECT 
+                        s.*,
+                        u.username as owner_username,
+                        u.avatar_url as owner_avatar,
+                        EXISTS(
+                            SELECT 1 FROM server_subscriptions ss 
+                            WHERE ss.server_id = s.id AND ss.user_id = $1
+                        ) as is_subscribed,
+                        s.owner_id = $1 as is_owner,
+                        (SELECT COUNT(*) FROM server_subscriptions ss WHERE ss.server_id = s.id) as member_count,
+                        (SELECT COUNT(*) FROM server_messages sm WHERE sm.server_id = s.id) as message_count,
+                        (SELECT content FROM server_messages sm WHERE sm.server_id = s.id ORDER BY created_at DESC LIMIT 1) as last_message,
+                        (SELECT created_at FROM server_messages sm WHERE sm.server_id = s.id ORDER BY created_at DESC LIMIT 1) as last_activity
+                    FROM servers s
+                    JOIN users u ON s.owner_id = u.id
+                    WHERE s.is_active = TRUE
+                    ORDER BY s.member_count DESC, s.message_count DESC
+                    LIMIT $2 OFFSET $3
+                `;
+                params = [userId, parseInt(limit), offset];
+                
+                totalQuery = 'SELECT COUNT(*) FROM servers WHERE is_active = TRUE';
+                totalParams = [];
+                break;
+
+            default:
+                return res.status(400).json({ error: 'Неверный фильтр' });
         }
 
-        if (!name || name.trim().length === 0) {
-            return res.status(400).json({ error: 'Название сервера обязательно' });
-        }
-
-        // Генерация уникальной ссылки
-        let inviteLink;
-        let isUnique = false;
-        let attempts = 0;
-
-        while (!isUnique && attempts < 5) {
-            inviteLink = generateInviteLink(name);
-            const checkLink = await pool.query(
-                'SELECT * FROM user_servers WHERE invite_link = $1',
-                [inviteLink]
-            );
-            if (checkLink.rows.length === 0) {
-                isUnique = true;
-            }
-            attempts++;
-        }
-
-        if (!isUnique) {
-            inviteLink = `${name.toLowerCase().replace(/\s/g, '-')}-${crypto.randomBytes(8).toString('hex')}`;
-        }
-
-        // Создание сервера
-        const newServer = await pool.query(
-            `INSERT INTO user_servers (user_id, name, description, invite_link) 
-             VALUES ($1, $2, $3, $4) 
-             RETURNING id, name, description, invite_link, created_at`,
-            [userId, name, description, inviteLink]
-        );
-
-        console.log('✅ Server created:', newServer.rows[0]);
+        const servers = await pool.query(query, params);
+        const totalResult = await pool.query(totalQuery, totalParams);
+        const total = parseInt(totalResult.rows[0].count);
 
         res.json({
             success: true,
-            server: newServer.rows[0]
+            servers: servers.rows,
+            pagination: {
+                page: parseInt(page),
+                limit: parseInt(limit),
+                total,
+                total_pages: Math.ceil(total / limit)
+            }
         });
 
     } catch (err) {
-        console.error('❌ Ошибка создания сервера:', err);
+        console.error('❌ Ошибка получения серверов:', err);
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 });
 
+// Создание сервера (для server-page.html)
+app.post('/api/servers/create', authenticateToken, async (req, res) => {
+    try {
+        const { name, description, avatar } = req.body;
+        const userId = req.user.userId;
+
+        console.log('🚀 Создание сервера:', { name, userId });
+
+        // Проверка на лимит (1 сервер на пользователя)
+        const existingServer = await pool.query(
+            'SELECT id FROM servers WHERE owner_id = $1',
+            [userId]
+        );
+
+        if (existingServer.rows.length > 0) {
+            return res.status(400).json({
+                error: 'У вас уже есть сервер. Можно создать только один сервер.'
+            });
+        }
+
+        // Валидация
+        if (!name || name.trim().length === 0) {
+            return res.status(400).json({ error: 'Название сервера обязательно' });
+        }
+
+        if (name.length > 50) {
+            return res.status(400).json({ error: 'Название не должно превышать 50 символов' });
+        }
+
+        if (description && description.length > 500) {
+            return res.status(400).json({ error: 'Описание не должно превышать 500 символов' });
+        }
+
+        // Генерация уникальной ссылки-приглашения
+        const baseSlug = name.toLowerCase()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .substring(0, 30);
+        const randomSuffix = crypto.randomBytes(4).toString('hex');
+        const inviteLink = `${baseSlug}-${randomSuffix}`;
+
+        // Создание сервера в транзакции
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            // Создаем сервер
+            const newServer = await client.query(`
+                INSERT INTO servers (owner_id, name, avatar, description, invite_link)
+                VALUES ($1, $2, $3, $4, $5)
+                RETURNING id, name, avatar, description, invite_link, created_at, updated_at
+            `, [userId, name.trim(), avatar || null, description?.trim() || null, inviteLink]);
+
+            const server = newServer.rows[0];
+
+            // Создаем первое приветственное сообщение
+            await client.query(`
+                INSERT INTO server_messages (server_id, user_id, content)
+                VALUES ($1, $2, $3)
+            `, [server.id, userId, `👋 Добро пожаловать в сервер "${name}"!`]);
+
+            // Обновляем счетчик сообщений
+            await client.query(
+                'UPDATE servers SET message_count = 1 WHERE id = $1',
+                [server.id]
+            );
+
+            // Создаем статистику
+            await client.query(`
+                INSERT INTO server_stats (server_id, join_count)
+                VALUES ($1, 1)
+            `, [server.id]);
+
+            await client.query('COMMIT');
+
+            console.log('✅ Сервер создан:', server.id);
+
+            // Получаем username создателя
+            const userResult = await pool.query(
+                'SELECT username FROM users WHERE id = $1',
+                [userId]
+            );
+            const username = userResult.rows[0]?.username || 'Пользователь';
+
+            res.json({
+                success: true,
+                server: {
+                    ...server,
+                    is_owner: true,
+                    is_subscribed: true,
+                    member_count: 1,
+                    message_count: 1,
+                    owner_username: username,
+                    last_message: `👋 Добро пожаловать в сервер "${name}"!`,
+                    last_activity: new Date().toISOString()
+                }
+            });
+
+        } catch (err) {
+            await client.query('ROLLBACK');
+            console.error('❌ Ошибка транзакции:', err);
+            
+            // Проверяем на дублирование invite_link
+            if (err.code === '23505') {
+                return res.status(400).json({ error: 'Попробуйте создать сервер с другим названием' });
+            }
+            
+            res.status(500).json({ error: 'Ошибка создания сервера' });
+        } finally {
+            client.release();
+        }
+
+    } catch (err) {
+        console.error('❌ Ошибка создания сервера:', err);
+        res.status(500).json({ error: 'Ошибка создания сервера' });
+    }
+});
+
+// Получение информации о сервере для server.html
+app.get('/api/server/:server_id/info', authenticateToken, async (req, res) => {
+    try {
+        const { server_id } = req.params;
+        const userId = req.user.userId;
+
+        console.log(`ℹ️ Получение информации о сервере ${server_id} для пользователя ${userId}`);
+
+        // Получаем основную информацию о сервере
+        const serverInfo = await pool.query(`
+            SELECT 
+                s.*,
+                u.username as owner_username,
+                u.avatar_url as owner_avatar,
+                (SELECT COUNT(*) FROM server_subscriptions ss WHERE ss.server_id = s.id) as member_count,
+                (SELECT COUNT(*) FROM server_messages sm WHERE sm.server_id = s.id) as message_count
+            FROM servers s
+            JOIN users u ON s.owner_id = u.id
+            WHERE s.id = $1 AND s.is_active = TRUE
+        `, [server_id]);
+
+        if (serverInfo.rows.length === 0) {
+            return res.status(404).json({ error: 'Сервер не найден' });
+        }
+
+        const server = serverInfo.rows[0];
+
+        // Проверяем подписку пользователя
+        const subscriptionCheck = await pool.query(
+            'SELECT 1 FROM server_subscriptions WHERE user_id = $1 AND server_id = $2',
+            [userId, server_id]
+        );
+
+        // Проверяем бан пользователя
+        const banCheck = await pool.query(`
+            SELECT 1 FROM server_bans 
+            WHERE server_id = $1 AND user_id = $2 
+            AND (expires_at IS NULL OR expires_at > NOW())
+        `, [server_id, userId]);
+
+        // Определяем роль пользователя
+        let userRole = 'member';
+        const roleCheck = await pool.query(`
+            SELECT 
+                CASE 
+                    WHEN s.owner_id = $2 THEN 'owner'
+                    WHEN EXISTS(
+                        SELECT 1 FROM server_admins sa 
+                        WHERE sa.server_id = $1 
+                        AND sa.user_id = $2 
+                        AND sa.role = 'global_admin'
+                    ) THEN 'global_admin'
+                    WHEN EXISTS(
+                        SELECT 1 FROM server_admins sa 
+                        WHERE sa.server_id = $1 
+                        AND sa.user_id = $2 
+                        AND sa.role = 'admin'
+                    ) THEN 'admin'
+                    ELSE 'member'
+                END as role
+            FROM servers s
+            WHERE s.id = $1
+        `, [server_id, userId]);
+
+        if (roleCheck.rows.length > 0) {
+            userRole = roleCheck.rows[0].role;
+        }
+
+        res.json({
+            success: true,
+            server: {
+                ...server,
+                is_subscribed: subscriptionCheck.rows.length > 0,
+                is_owner: server.owner_id === userId
+            },
+            user_role: userRole,
+            is_banned: banCheck.rows.length > 0,
+            can_join: banCheck.rows.length === 0
+        });
+
+    } catch (err) {
+        console.error('❌ Ошибка получения информации о сервере:', err);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// Подписка на сервер (для server.html)
+app.post('/api/server/:server_id/subscribe', authenticateToken, async (req, res) => {
+    try {
+        const { server_id } = req.params;
+        const userId = req.user.userId;
+
+        console.log(`📝 Подписка пользователя ${userId} на сервер ${server_id}`);
+
+        // Проверяем бан
+        const isBanned = await pool.query(`
+            SELECT 1 FROM server_bans 
+            WHERE server_id = $1 AND user_id = $2 
+            AND (expires_at IS NULL OR expires_at > NOW())
+        `, [server_id, userId]);
+
+        if (isBanned.rows.length > 0) {
+            return res.status(403).json({ error: 'Вы забанены на этом сервере' });
+        }
+
+        // Проверяем существование сервера
+        const serverExists = await pool.query(
+            'SELECT id, owner_id FROM servers WHERE id = $1 AND is_active = TRUE',
+            [server_id]
+        );
+
+        if (serverExists.rows.length === 0) {
+            return res.status(404).json({ error: 'Сервер не найден' });
+        }
+
+        const server = serverExists.rows[0];
+
+        // Нельзя подписаться на свой собственный сервер (но владелец уже считается участником)
+        if (server.owner_id === userId) {
+            return res.status(400).json({ error: 'Вы уже являетесь владельцем этого сервера' });
+        }
+
+        // Проверяем, подписан ли уже
+        const existingSub = await pool.query(
+            'SELECT id FROM server_subscriptions WHERE user_id = $1 AND server_id = $2',
+            [userId, server_id]
+        );
+
+        if (existingSub.rows.length > 0) {
+            return res.status(400).json({ error: 'Вы уже подписаны на этот сервер' });
+        }
+
+        // Добавляем подписку
+        await pool.query(
+            'INSERT INTO server_subscriptions (user_id, server_id) VALUES ($1, $2)',
+            [userId, server_id]
+        );
+
+        // Обновляем счетчик участников
+        await pool.query(
+            'UPDATE servers SET member_count = member_count + 1 WHERE id = $1',
+            [server_id]
+        );
+
+        // Обновляем статистику
+        await pool.query(`
+            INSERT INTO server_stats (server_id, join_count)
+            VALUES ($1, 1)
+            ON CONFLICT (server_id) DO UPDATE
+            SET join_count = server_stats.join_count + 1
+        `, [server_id]);
+
+        console.log(`✅ Пользователь ${userId} подписался на сервер ${server_id}`);
+
+        res.json({
+            success: true,
+            message: 'Вы успешно подписались на сервер',
+            subscribed: true
+        });
+
+    } catch (err) {
+        console.error('❌ Ошибка подписки:', err);
+        
+        // Если уже подписан (уникальное ограничение)
+        if (err.code === '23505') {
+            return res.status(400).json({ error: 'Вы уже подписаны на этот сервер' });
+        }
+        
+        res.status(500).json({ error: 'Ошибка подписки' });
+    }
+});
+
+// Получение сообщений чата сервера
+app.get('/api/server/:server_id/messages', authenticateToken, async (req, res) => {
+    try {
+        const { server_id } = req.params;
+        const limit = parseInt(req.query.limit) || 50;
+        const before = req.query.before; // ID сообщения, после которого загружать
+        const userId = req.user.userId;
+
+        console.log(`💬 Получение сообщений для сервера ${server_id}`);
+
+        // Проверяем подписку
+        const isSubscribed = await pool.query(`
+            SELECT 1 FROM server_subscriptions WHERE user_id = $1 AND server_id = $2
+            UNION
+            SELECT 1 FROM servers WHERE id = $2 AND owner_id = $1
+        `, [userId, server_id]);
+
+        if (isSubscribed.rows.length === 0) {
+            return res.status(403).json({ error: 'Вы не подписаны на этот сервер' });
+        }
+
+        // Проверяем бан
+        const isBanned = await pool.query(`
+            SELECT 1 FROM server_bans 
+            WHERE server_id = $1 AND user_id = $2 
+            AND (expires_at IS NULL OR expires_at > NOW())
+        `, [server_id, userId]);
+
+        if (isBanned.rows.length > 0) {
+            return res.status(403).json({ error: 'Вы забанены на этом сервере' });
+        }
+
+        let query = `
+            SELECT 
+                sm.id,
+                sm.server_id,
+                sm.user_id,
+                sm.content,
+                sm.deleted,
+                sm.created_at,
+                u.username,
+                u.avatar_url,
+                CASE 
+                    WHEN sm.deleted = TRUE THEN '[Сообщение удалено]'
+                    ELSE sm.content
+                END as safe_content,
+                CASE 
+                    WHEN s.owner_id = sm.user_id THEN 'owner'
+                    WHEN EXISTS(
+                        SELECT 1 FROM server_admins sa 
+                        WHERE sa.server_id = sm.server_id 
+                        AND sa.user_id = sm.user_id 
+                        AND sa.role = 'global_admin'
+                    ) THEN 'global_admin'
+                    WHEN EXISTS(
+                        SELECT 1 FROM server_admins sa 
+                        WHERE sa.server_id = sm.server_id 
+                        AND sa.user_id = sm.user_id 
+                        AND sa.role = 'admin'
+                    ) THEN 'admin'
+                    ELSE 'member'
+                END as sender_role
+            FROM server_messages sm
+            JOIN users u ON sm.user_id = u.id
+            JOIN servers s ON sm.server_id = s.id
+            WHERE sm.server_id = $1
+        `;
+
+        let params = [server_id];
+        let paramCount = 1;
+
+        if (before) {
+            query += ` AND sm.id < $${++paramCount}`;
+            params.push(parseInt(before));
+        }
+
+        query += ` ORDER BY sm.created_at DESC LIMIT $${++paramCount}`;
+        params.push(limit);
+
+        const messages = await pool.query(query, params);
+
+        // Общее количество сообщений
+        const totalResult = await pool.query(
+            'SELECT COUNT(*) FROM server_messages WHERE server_id = $1',
+            [server_id]
+        );
+
+        res.json({
+            success: true,
+            messages: messages.rows.reverse(), // возвращаем в правильном порядке
+            total: parseInt(totalResult.rows[0].count)
+        });
+
+    } catch (err) {
+        console.error('❌ Ошибка получения сообщений:', err);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// Отправка сообщения в чат
+app.post('/api/server/:server_id/messages', authenticateToken, async (req, res) => {
+    try {
+        const { server_id } = req.params;
+        const { content } = req.body;
+        const userId = req.user.userId;
+
+        console.log(`📤 Отправка сообщения в сервер ${server_id} от пользователя ${userId}`);
+
+        // Проверяем подписку
+        const isSubscribed = await pool.query(`
+            SELECT 1 FROM server_subscriptions WHERE user_id = $1 AND server_id = $2
+            UNION
+            SELECT 1 FROM servers WHERE id = $2 AND owner_id = $1
+        `, [userId, server_id]);
+
+        if (isSubscribed.rows.length === 0) {
+            return res.status(403).json({ error: 'Вы не подписаны на этот сервер' });
+        }
+
+        // Проверяем бан
+        const isBanned = await pool.query(`
+            SELECT 1 FROM server_bans 
+            WHERE server_id = $1 AND user_id = $2 
+            AND (expires_at IS NULL OR expires_at > NOW())
+        `, [server_id, userId]);
+
+        if (isBanned.rows.length > 0) {
+            return res.status(403).json({ error: 'Вы забанены на этом сервере' });
+        }
+
+        if (!content || content.trim().length === 0) {
+            return res.status(400).json({ error: 'Сообщение не может быть пустым' });
+        }
+
+        if (content.length > 2000) {
+            return res.status(400).json({ error: 'Сообщение слишком длинное' });
+        }
+
+        // Добавляем сообщение
+        const result = await pool.query(`
+            INSERT INTO server_messages (server_id, user_id, content)
+            VALUES ($1, $2, $3)
+            RETURNING id, server_id, user_id, content, created_at
+        `, [server_id, userId, content.trim()]);
+
+        // Обновляем счетчик сообщений
+        await pool.query(
+            'UPDATE servers SET message_count = message_count + 1 WHERE id = $1',
+            [server_id]
+        );
+
+        // Получаем полную информацию о сообщении
+        const messageWithUser = await pool.query(`
+            SELECT 
+                sm.id,
+                sm.server_id,
+                sm.user_id,
+                sm.content,
+                sm.created_at,
+                u.username,
+                u.avatar_url,
+                CASE 
+                    WHEN s.owner_id = sm.user_id THEN 'owner'
+                    WHEN EXISTS(
+                        SELECT 1 FROM server_admins sa 
+                        WHERE sa.server_id = sm.server_id 
+                        AND sa.user_id = sm.user_id 
+                        AND sa.role = 'global_admin'
+                    ) THEN 'global_admin'
+                    WHEN EXISTS(
+                        SELECT 1 FROM server_admins sa 
+                        WHERE sa.server_id = sm.server_id 
+                        AND sa.user_id = sm.user_id 
+                        AND sa.role = 'admin'
+                    ) THEN 'admin'
+                    ELSE 'member'
+                END as sender_role
+            FROM server_messages sm
+            JOIN users u ON sm.user_id = u.id
+            JOIN servers s ON sm.server_id = s.id
+            WHERE sm.id = $1
+        `, [result.rows[0].id]);
+
+        const message = messageWithUser.rows[0];
+
+        // Отправляем через WebSocket
+        if (wss) {
+            const wsMessage = {
+                type: 'new_message',
+                server_id,
+                message: message,
+                timestamp: new Date().toISOString()
+            };
+
+            wss.clients.forEach(client => {
+                if (client.readyState === WebSocket.OPEN && 
+                    client.serverId === server_id.toString()) {
+                    client.send(JSON.stringify(wsMessage));
+                }
+            });
+        }
+
+        res.json({
+            success: true,
+            message: message
+        });
+
+    } catch (err) {
+        console.error('❌ Ошибка отправки сообщения:', err);
+        res.status(500).json({ error: 'Ошибка отправки сообщения' });
+    }
+});
+
+// Удаление сообщения
+app.delete('/api/server/messages/:message_id', authenticateToken, async (req, res) => {
+    try {
+        const { message_id } = req.params;
+        const userId = req.user.userId;
+
+        console.log(`🗑️ Удаление сообщения ${message_id} пользователем ${userId}`);
+
+        // Получаем информацию о сообщении
+        const messageInfo = await pool.query(`
+            SELECT sm.*, s.owner_id, s.id as server_id
+            FROM server_messages sm
+            JOIN servers s ON sm.server_id = s.id
+            WHERE sm.id = $1
+        `, [message_id]);
+
+        if (messageInfo.rows.length === 0) {
+            return res.status(404).json({ error: 'Сообщение не найдено' });
+        }
+
+        const message = messageInfo.rows[0];
+
+        // Проверяем права
+        // 1. Владелец сервера может удалять любые сообщения
+        // 2. Автор может удалять свои сообщения
+        // 3. Админы могут удалять сообщения других участников
+        
+        const userRole = await getUserServerRole(message.server_id, userId);
+        const isOwner = message.owner_id === userId;
+        const isAuthor = message.user_id === userId;
+        
+        let canDelete = false;
+        
+        if (userRole.role === 'owner' || userRole.role === 'global_admin') {
+            canDelete = true;
+        } else if (userRole.role === 'admin' && !isOwner) {
+            // Админ может удалять сообщения не-владельцев
+            canDelete = message.user_id !== message.owner_id;
+        } else if (isAuthor) {
+            canDelete = true;
+        }
+
+        if (!canDelete) {
+            return res.status(403).json({ error: 'Недостаточно прав для удаления сообщения' });
+        }
+
+        // Мягкое удаление
+        await pool.query(`
+            UPDATE server_messages 
+            SET deleted = TRUE, deleted_by = $1, deleted_at = NOW()
+            WHERE id = $2
+        `, [userId, message_id]);
+
+        // Отправляем уведомление через WebSocket
+        if (wss) {
+            const deleteEvent = {
+                type: 'message_deleted',
+                server_id: message.server_id,
+                message_id: message_id,
+                timestamp: new Date().toISOString()
+            };
+
+            wss.clients.forEach(client => {
+                if (client.readyState === WebSocket.OPEN && 
+                    client.serverId === message.server_id.toString()) {
+                    client.send(JSON.stringify(deleteEvent));
+                }
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Сообщение удалено'
+        });
+
+    } catch (err) {
+        console.error('❌ Ошибка удаления сообщения:', err);
+        res.status(500).json({ error: 'Ошибка удаления сообщения' });
+    }
+});
+
+// Модерация сервера
+app.post('/api/server/moderate', authenticateToken, async (req, res) => {
+    try {
+        const { server_id, target_user_id, action, reason, duration_hours } = req.body;
+        const moderator_id = req.user.userId;
+
+        console.log('⚙️ Модерация:', { server_id, target_user_id, action, moderator_id });
+
+        // Получаем роли
+        const moderatorRole = await getUserServerRole(server_id, moderator_id);
+        const targetRole = await getUserServerRole(server_id, target_user_id);
+
+        // Проверяем права
+        if (!hasModerationPermission(moderatorRole.role, targetRole.role)) {
+            return res.status(403).json({ error: 'Недостаточно прав для выполнения этого действия' });
+        }
+
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            switch (action) {
+                case 'ban':
+                    // Бан пользователя
+                    let expiresAt = null;
+                    if (duration_hours) {
+                        expiresAt = new Date(Date.now() + duration_hours * 60 * 60 * 1000);
+                    }
+
+                    await client.query(`
+                        INSERT INTO server_bans (server_id, user_id, banned_by, reason, expires_at)
+                        VALUES ($1, $2, $3, $4, $5)
+                        ON CONFLICT (server_id, user_id) DO UPDATE
+                        SET reason = $4, expires_at = $5, banned_by = $3
+                    `, [server_id, target_user_id, moderator_id, reason, expiresAt]);
+
+                    // Удаляем подписку
+                    await client.query(
+                        'DELETE FROM server_subscriptions WHERE user_id = $1 AND server_id = $2',
+                        [target_user_id, server_id]
+                    );
+
+                    // Удаляем из админов
+                    await client.query(
+                        'DELETE FROM server_admins WHERE user_id = $1 AND server_id = $2',
+                        [target_user_id, server_id]
+                    );
+
+                    // Обновляем счетчик участников
+                    await client.query(
+                        'UPDATE servers SET member_count = GREATEST(1, member_count - 1) WHERE id = $1',
+                        [server_id]
+                    );
+
+                    console.log(`🔨 Пользователь ${target_user_id} забанен на сервере ${server_id}`);
+                    break;
+
+                case 'make_admin':
+                    // Назначение админом
+                    await client.query(`
+                        INSERT INTO server_admins (server_id, user_id, role)
+                        VALUES ($1, $2, 'admin')
+                        ON CONFLICT (server_id, user_id) DO UPDATE
+                        SET role = 'admin'
+                    `, [server_id, target_user_id]);
+                    console.log(`👑 Пользователь ${target_user_id} назначен админом на сервере ${server_id}`);
+                    break;
+
+                case 'remove_admin':
+                    // Снятие с админа
+                    await client.query(
+                        'DELETE FROM server_admins WHERE server_id = $1 AND user_id = $2 AND role = $3',
+                        [server_id, target_user_id, 'admin']
+                    );
+                    console.log(`👤 Пользователь ${target_user_id} снят с админки на сервере ${server_id}`);
+                    break;
+
+                case 'kick':
+                    // Кик без бана
+                    await client.query(
+                        'DELETE FROM server_subscriptions WHERE user_id = $1 AND server_id = $2',
+                        [target_user_id, server_id]
+                    );
+
+                    await client.query(
+                        'DELETE FROM server_admins WHERE user_id = $1 AND server_id = $2',
+                        [target_user_id, server_id]
+                    );
+
+                    // Обновляем счетчик участников
+                    await client.query(
+                        'UPDATE servers SET member_count = GREATEST(1, member_count - 1) WHERE id = $1',
+                        [server_id]
+                    );
+
+                    console.log(`👢 Пользователь ${target_user_id} кикнут с сервера ${server_id}`);
+                    break;
+
+                default:
+                    throw new Error('Неизвестное действие');
+            }
+
+            await client.query('COMMIT');
+
+            // Отправляем уведомление через WebSocket
+            if (wss) {
+                const moderationEvent = {
+                    type: 'moderation',
+                    server_id,
+                    target_user_id,
+                    action,
+                    moderator_id,
+                    timestamp: new Date().toISOString()
+                };
+
+                wss.clients.forEach(client => {
+                    if (client.readyState === WebSocket.OPEN && 
+                        client.serverId === server_id.toString()) {
+                        client.send(JSON.stringify(moderationEvent));
+                    }
+                });
+            }
+
+            res.json({
+                success: true,
+                message: getActionMessage(action)
+            });
+
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
+
+    } catch (err) {
+        console.error('❌ Ошибка модерации:', err);
+        res.status(500).json({ error: 'Ошибка выполнения действия' });
+    }
+});
+
+// ========== Вспомогательные функции ==========
+
+// Получение роли пользователя в сервере
+async function getUserServerRole(serverId, userId) {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                CASE 
+                    WHEN s.owner_id = $2 THEN 'owner'
+                    WHEN EXISTS(
+                        SELECT 1 FROM server_admins sa 
+                        WHERE sa.server_id = $1 
+                        AND sa.user_id = $2 
+                        AND sa.role = 'global_admin'
+                    ) THEN 'global_admin'
+                    WHEN EXISTS(
+                        SELECT 1 FROM server_admins sa 
+                        WHERE sa.server_id = $1 
+                        AND sa.user_id = $2 
+                        AND sa.role = 'admin'
+                    ) THEN 'admin'
+                    ELSE 'member'
+                END as role
+            FROM servers s
+            WHERE s.id = $1
+        `, [serverId, userId]);
+
+        return result.rows[0] || { role: 'member' };
+    } catch (error) {
+        console.error('❌ Ошибка получения роли:', error);
+        return { role: 'member' };
+    }
+}
+
+// Проверка модерационных прав
+function hasModerationPermission(userRole, targetRole) {
+    const hierarchy = {
+        'owner': 4,
+        'global_admin': 3,
+        'admin': 2,
+        'member': 1
+    };
+
+    // Пользователь может модерировать тех, у кого роль ниже
+    return hierarchy[userRole] > hierarchy[targetRole];
+}
+
+// Сообщения для действий
+function getActionMessage(action) {
+    const messages = {
+        'ban': 'Пользователь забанен',
+        'make_admin': 'Пользователь назначен админом',
+        'remove_admin': 'Пользователь снят с админки',
+        'kick': 'Пользователь кикнут'
+    };
+    return messages[action] || 'Действие выполнено';
+}
+
 // Получение сервера текущего пользователя
 app.get('/api/server/my', authenticateToken, async (req, res) => {
     try {
-        const userId = req.user.userId; // ИСПРАВЛЕНО: было req.user.id
+        const userId = req.user.userId;
 
-        const server = await pool.query(
-            `SELECT us.*, u.username as owner_username 
-             FROM user_servers us 
-             JOIN users u ON us.user_id = u.id 
-             WHERE us.user_id = $1`,
-            [userId]
-        );
+        const server = await pool.query(`
+            SELECT s.*, u.username as owner_username 
+            FROM servers s 
+            JOIN users u ON s.owner_id = u.id 
+            WHERE s.owner_id = $1
+            LIMIT 1
+        `, [userId]);
 
         if (server.rows.length === 0) {
             return res.json({ hasServer: false });
@@ -2087,381 +2940,65 @@ app.get('/api/server/my', authenticateToken, async (req, res) => {
     }
 });
 
-// Получение сервера по invite_link
-app.get('/api/server/:invite_link', async (req, res) => {
-    try {
-        const { invite_link } = req.params;
+// ========== WebSocket для серверов ==========
 
-        const server = await pool.query(
-            `SELECT us.*, u.username as owner_username 
-             FROM user_servers us 
-             JOIN users u ON us.user_id = u.id 
-             WHERE us.invite_link = $1`,
-            [invite_link]
-        );
+if (wss) {
+    wss.on('connection', (ws, request) => {
+        try {
+            const url = new URL(request.url, `http://${request.headers.host}`);
+            const serverId = url.searchParams.get('serverId');
+            const userId = url.searchParams.get('userId');
 
-        if (server.rows.length === 0) {
-            return res.status(404).json({ error: 'Сервер не найден' });
+            if (serverId && userId) {
+                console.log(`🔗 WebSocket подключен: сервер ${serverId}, пользователь ${userId}`);
+
+                // Сохраняем информацию о подключении
+                ws.serverId = serverId;
+                ws.userId = userId;
+
+                ws.on('message', async (message) => {
+                    try {
+                        const data = JSON.parse(message);
+                        
+                        if (data.type === 'typing') {
+                            // Пользователь печатает
+                            const typingEvent = {
+                                type: 'user_typing',
+                                server_id: serverId,
+                                user_id: userId,
+                                username: data.username,
+                                timestamp: new Date().toISOString()
+                            };
+
+                            // Рассылаем другим участникам сервера
+                            wss.clients.forEach(client => {
+                                if (client !== ws && 
+                                    client.serverId === serverId && 
+                                    client.readyState === WebSocket.OPEN) {
+                                    client.send(JSON.stringify(typingEvent));
+                                }
+                            });
+                        }
+                    } catch (error) {
+                        console.error('WebSocket ошибка:', error);
+                    }
+                });
+
+                ws.on('close', () => {
+                    console.log(`🔗 WebSocket отключен: сервер ${serverId}, пользователь ${userId}`);
+                });
+            }
+        } catch (error) {
+            console.error('Ошибка подключения WebSocket:', error);
         }
-
-        res.json({
-            success: true,
-            server: server.rows[0]
-        });
-
-    } catch (err) {
-        console.error('❌ Ошибка получения сервера:', err);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-// Получение сообщений чата
-app.get('/api/server/:server_id/messages', authenticateToken, async (req, res) => {
-    try {
-        const { server_id } = req.params;
-        const limit = parseInt(req.query.limit) || 50;
-        const offset = parseInt(req.query.offset) || 0;
-
-        const messages = await pool.query(
-            `SELECT sc.*, u.username, u.avatar_url as avatar 
-             FROM server_chats sc 
-             JOIN users u ON sc.user_id = u.id 
-             WHERE sc.server_id = $1 
-             ORDER BY sc.created_at DESC 
-             LIMIT $2 OFFSET $3`,
-            [server_id, limit, offset]
-        );
-
-        const total = await pool.query(
-            'SELECT COUNT(*) FROM server_chats WHERE server_id = $1',
-            [server_id]
-        );
-
-        res.json({
-            messages: messages.rows.reverse(),
-            total: parseInt(total.rows[0].count)
-        });
-
-    } catch (err) {
-        console.error('❌ Ошибка получения сообщений:', err);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-// Отправка сообщения в чат
-app.post('/api/server/:server_id/messages', authenticateToken, async (req, res) => {
-    try {
-        const { server_id } = req.params;
-        const { content } = req.body;
-        const userId = req.user.userId; // ИСПРАВЛЕНО: было req.user.id
-
-        if (!content || content.trim().length === 0) {
-            return res.status(400).json({ error: 'Сообщение не может быть пустым' });
-        }
-
-        if (content.length > 2000) {
-            return res.status(400).json({ error: 'Сообщение слишком длинное' });
-        }
-
-        // Проверка существования сервера
-        const serverCheck = await pool.query(
-            'SELECT id FROM user_servers WHERE id = $1',
-            [server_id]
-        );
-
-        if (serverCheck.rows.length === 0) {
-            return res.status(404).json({ error: 'Сервер не найден' });
-        }
-
-        const newMessage = await pool.query(
-            `INSERT INTO server_chats (server_id, user_id, content) 
-             VALUES ($1, $2, $3) 
-             RETURNING id, server_id, user_id, content, created_at`,
-            [server_id, userId, content.trim()]
-        );
-
-        // Получаем полные данные сообщения
-        const messageWithUser = await pool.query(
-            `SELECT sc.*, u.username, u.avatar_url as avatar 
-             FROM server_chats sc 
-             JOIN users u ON sc.user_id = u.id 
-             WHERE sc.id = $1`,
-            [newMessage.rows[0].id]
-        );
-
-        res.json({
-            success: true,
-            message: messageWithUser.rows[0]
-        });
-
-    } catch (err) {
-        console.error('❌ Ошибка отправки сообщения:', err);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-// Эндпоинт для проверки участников
-app.get('/api/server/:server_id/members', async (req, res) => {
-    try {
-        const { server_id } = req.params;
-
-        const members = await pool.query(
-            `SELECT DISTINCT u.id, u.username, u.avatar_url as avatar 
-             FROM server_chats sc 
-             JOIN users u ON sc.user_id = u.id 
-             WHERE sc.server_id = $1 
-             ORDER BY u.username`,
-            [server_id]
-        );
-
-        res.json(members.rows);
-
-    } catch (err) {
-        console.error('❌ Ошибка получения участников:', err);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-// Добавьте этот маршрут для server-page.html
-app.get('/server-page.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'server-page.html'));
-});
-
-// ========== API для Telegram-style серверов ==========
-
-// Получение всех серверов пользователя
-app.get('/api/servers', authenticateToken, async (req, res) => {
-    try {
-        const userId = req.user.userId;
-        
-        const servers = await pool.query(`
-            SELECT us.*, u.username as owner_username,
-                   (SELECT COUNT(*) FROM server_chats sc WHERE sc.server_id = us.id) as message_count
-            FROM user_servers us
-            LEFT JOIN users u ON us.user_id = u.id
-            WHERE us.user_id = $1
-            ORDER BY us.created_at DESC
-        `, [userId]);
-
-        res.json({
-            success: true,
-            servers: servers.rows
-        });
-    } catch (err) {
-        console.error('❌ Ошибка получения серверов:', err);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-// Поиск серверов
-app.get('/api/servers/search', authenticateToken, async (req, res) => {
-    try {
-        const { query } = req.query;
-        const userId = req.user.userId;
-
-        if (!query || query.trim().length === 0) {
-            return res.json({ success: true, servers: [] });
-        }
-
-        const servers = await pool.query(`
-            SELECT us.*, u.username as owner_username
-            FROM user_servers us
-            LEFT JOIN users u ON us.user_id = u.id
-            WHERE us.name ILIKE $1 
-               OR us.description ILIKE $1 
-               OR u.username ILIKE $1
-            ORDER BY us.created_at DESC
-            LIMIT 20
-        `, [`%${query}%`]);
-
-        res.json({
-            success: true,
-            servers: servers.rows
-        });
-    } catch (err) {
-        console.error('❌ Ошибка поиска серверов:', err);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-// Получение общего чата сервера
-app.get('/api/servers/:server_id/general-chat', authenticateToken, async (req, res) => {
-    try {
-        const { server_id } = req.params;
-        const limit = parseInt(req.query.limit) || 50;
-        const offset = parseInt(req.query.offset) || 0;
-
-        // Проверяем доступ к серверу
-        const serverCheck = await pool.query(
-            'SELECT id FROM user_servers WHERE id = $1',
-            [server_id]
-        );
-
-        if (serverCheck.rows.length === 0) {
-            return res.status(404).json({ error: 'Сервер не найден' });
-        }
-
-        const messages = await pool.query(`
-            SELECT sc.*, u.username, u.avatar_url as avatar 
-            FROM server_chats sc 
-            JOIN users u ON sc.user_id = u.id 
-            WHERE sc.server_id = $1 
-            ORDER BY sc.created_at DESC 
-            LIMIT $2 OFFSET $3
-        `, [server_id, limit, offset]);
-
-        const total = await pool.query(
-            'SELECT COUNT(*) FROM server_chats WHERE server_id = $1',
-            [server_id]
-        );
-
-        res.json({
-            success: true,
-            messages: messages.rows.reverse(),
-            total: parseInt(total.rows[0].count)
-        });
-    } catch (err) {
-        console.error('❌ Ошибка получения общего чата:', err);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-// Таблица для обменов внутри сервера
-app.post('/api/servers/:server_id/exchanges', authenticateToken, async (req, res) => {
-    try {
-        const { server_id } = req.params;
-        const { title, description, price } = req.body;
-        const userId = req.user.userId;
-
-        // Проверка доступа
-        const serverCheck = await pool.query(
-            'SELECT id FROM user_servers WHERE id = $1',
-            [server_id]
-        );
-
-        if (serverCheck.rows.length === 0) {
-            return res.status(404).json({ error: 'Сервер не найден' });
-        }
-
-        const exchange = await pool.query(`
-            INSERT INTO server_exchanges (server_id, user_id, title, description, price)
-            VALUES ($1, $2, $3, $4, $5)
-            RETURNING id, title, description, price, created_at
-        `, [server_id, userId, title, description, price]);
-
-        res.json({
-            success: true,
-            exchange: exchange.rows[0]
-        });
-    } catch (err) {
-        console.error('❌ Ошибка создания обмена:', err);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-// Получение обменов сервера
-app.get('/api/servers/:server_id/exchanges', authenticateToken, async (req, res) => {
-    try {
-        const { server_id } = req.params;
-
-        const exchanges = await pool.query(`
-            SELECT se.*, u.username, u.avatar_url as avatar
-            FROM server_exchanges se
-            JOIN users u ON se.user_id = u.id
-            WHERE se.server_id = $1
-            ORDER BY se.created_at DESC
-        `, [server_id]);
-
-        res.json({
-            success: true,
-            exchanges: exchanges.rows
-        });
-    } catch (err) {
-        console.error('❌ Ошибка получения обменов:', err);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-// Чат конкретного обмена
-app.post('/api/servers/exchanges/:exchange_id/chat', authenticateToken, async (req, res) => {
-    try {
-        const { exchange_id } = req.params;
-        const { content } = req.body;
-        const userId = req.user.userId;
-
-        // Получаем информацию об обмене
-        const exchangeCheck = await pool.query(`
-            SELECT se.*, us.id as server_id
-            FROM server_exchanges se
-            JOIN user_servers us ON se.server_id = us.id
-            WHERE se.id = $1
-        `, [exchange_id]);
-
-        if (exchangeCheck.rows.length === 0) {
-            return res.status(404).json({ error: 'Обмен не найден' });
-        }
-
-        const exchange = exchangeCheck.rows[0];
-
-        // Сохраняем сообщение
-        const message = await pool.query(`
-            INSERT INTO exchange_chats (exchange_id, user_id, content)
-            VALUES ($1, $2, $3)
-            RETURNING id, exchange_id, user_id, content, created_at
-        `, [exchange_id, userId, content]);
-
-        // Получаем полные данные
-        const messageWithUser = await pool.query(`
-            SELECT ec.*, u.username, u.avatar_url as avatar
-            FROM exchange_chats ec
-            JOIN users u ON ec.user_id = u.id
-            WHERE ec.id = $1
-        `, [message.rows[0].id]);
-
-        res.json({
-            success: true,
-            message: messageWithUser.rows[0]
-        });
-    } catch (err) {
-        console.error('❌ Ошибка отправки сообщения в обмен:', err);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
-
-// Получение чата обмена
-app.get('/api/servers/exchanges/:exchange_id/chat', authenticateToken, async (req, res) => {
-    try {
-        const { exchange_id } = req.params;
-        const limit = parseInt(req.query.limit) || 50;
-        const offset = parseInt(req.query.offset) || 0;
-
-        const messages = await pool.query(`
-            SELECT ec.*, u.username, u.avatar_url as avatar
-            FROM exchange_chats ec
-            JOIN users u ON ec.user_id = u.id
-            WHERE ec.exchange_id = $1
-            ORDER BY ec.created_at DESC
-            LIMIT $2 OFFSET $3
-        `, [exchange_id, limit, offset]);
-
-        const total = await pool.query(
-            'SELECT COUNT(*) FROM exchange_chats WHERE exchange_id = $1',
-            [exchange_id]
-        );
-
-        res.json({
-            success: true,
-            messages: messages.rows.reverse(),
-            total: parseInt(total.rows[0].count)
-        });
-    } catch (err) {
-        console.error('❌ Ошибка получения чата обмена:', err);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
-});
+    });
+}
 
 
-// ================== СЕРВЕРЫ ПОЛЬЗОВАТЕЛЕЙ ==================
+// ================== СЕРВЕРЫ ==================
+
+
+
 
 
 
