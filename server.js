@@ -2227,8 +2227,243 @@ app.get('/server-page.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'server-page.html'));
 });
 
+// ========== API для Telegram-style серверов ==========
+
+// Получение всех серверов пользователя
+app.get('/api/servers', authenticateToken, async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        
+        const servers = await pool.query(`
+            SELECT us.*, u.username as owner_username,
+                   (SELECT COUNT(*) FROM server_chats sc WHERE sc.server_id = us.id) as message_count
+            FROM user_servers us
+            LEFT JOIN users u ON us.user_id = u.id
+            WHERE us.user_id = $1
+            ORDER BY us.created_at DESC
+        `, [userId]);
+
+        res.json({
+            success: true,
+            servers: servers.rows
+        });
+    } catch (err) {
+        console.error('❌ Ошибка получения серверов:', err);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// Поиск серверов
+app.get('/api/servers/search', authenticateToken, async (req, res) => {
+    try {
+        const { query } = req.query;
+        const userId = req.user.userId;
+
+        if (!query || query.trim().length === 0) {
+            return res.json({ success: true, servers: [] });
+        }
+
+        const servers = await pool.query(`
+            SELECT us.*, u.username as owner_username
+            FROM user_servers us
+            LEFT JOIN users u ON us.user_id = u.id
+            WHERE us.name ILIKE $1 
+               OR us.description ILIKE $1 
+               OR u.username ILIKE $1
+            ORDER BY us.created_at DESC
+            LIMIT 20
+        `, [`%${query}%`]);
+
+        res.json({
+            success: true,
+            servers: servers.rows
+        });
+    } catch (err) {
+        console.error('❌ Ошибка поиска серверов:', err);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// Получение общего чата сервера
+app.get('/api/servers/:server_id/general-chat', authenticateToken, async (req, res) => {
+    try {
+        const { server_id } = req.params;
+        const limit = parseInt(req.query.limit) || 50;
+        const offset = parseInt(req.query.offset) || 0;
+
+        // Проверяем доступ к серверу
+        const serverCheck = await pool.query(
+            'SELECT id FROM user_servers WHERE id = $1',
+            [server_id]
+        );
+
+        if (serverCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Сервер не найден' });
+        }
+
+        const messages = await pool.query(`
+            SELECT sc.*, u.username, u.avatar_url as avatar 
+            FROM server_chats sc 
+            JOIN users u ON sc.user_id = u.id 
+            WHERE sc.server_id = $1 
+            ORDER BY sc.created_at DESC 
+            LIMIT $2 OFFSET $3
+        `, [server_id, limit, offset]);
+
+        const total = await pool.query(
+            'SELECT COUNT(*) FROM server_chats WHERE server_id = $1',
+            [server_id]
+        );
+
+        res.json({
+            success: true,
+            messages: messages.rows.reverse(),
+            total: parseInt(total.rows[0].count)
+        });
+    } catch (err) {
+        console.error('❌ Ошибка получения общего чата:', err);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// Таблица для обменов внутри сервера
+app.post('/api/servers/:server_id/exchanges', authenticateToken, async (req, res) => {
+    try {
+        const { server_id } = req.params;
+        const { title, description, price } = req.body;
+        const userId = req.user.userId;
+
+        // Проверка доступа
+        const serverCheck = await pool.query(
+            'SELECT id FROM user_servers WHERE id = $1',
+            [server_id]
+        );
+
+        if (serverCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Сервер не найден' });
+        }
+
+        const exchange = await pool.query(`
+            INSERT INTO server_exchanges (server_id, user_id, title, description, price)
+            VALUES ($1, $2, $3, $4, $5)
+            RETURNING id, title, description, price, created_at
+        `, [server_id, userId, title, description, price]);
+
+        res.json({
+            success: true,
+            exchange: exchange.rows[0]
+        });
+    } catch (err) {
+        console.error('❌ Ошибка создания обмена:', err);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// Получение обменов сервера
+app.get('/api/servers/:server_id/exchanges', authenticateToken, async (req, res) => {
+    try {
+        const { server_id } = req.params;
+
+        const exchanges = await pool.query(`
+            SELECT se.*, u.username, u.avatar_url as avatar
+            FROM server_exchanges se
+            JOIN users u ON se.user_id = u.id
+            WHERE se.server_id = $1
+            ORDER BY se.created_at DESC
+        `, [server_id]);
+
+        res.json({
+            success: true,
+            exchanges: exchanges.rows
+        });
+    } catch (err) {
+        console.error('❌ Ошибка получения обменов:', err);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// Чат конкретного обмена
+app.post('/api/servers/exchanges/:exchange_id/chat', authenticateToken, async (req, res) => {
+    try {
+        const { exchange_id } = req.params;
+        const { content } = req.body;
+        const userId = req.user.userId;
+
+        // Получаем информацию об обмене
+        const exchangeCheck = await pool.query(`
+            SELECT se.*, us.id as server_id
+            FROM server_exchanges se
+            JOIN user_servers us ON se.server_id = us.id
+            WHERE se.id = $1
+        `, [exchange_id]);
+
+        if (exchangeCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Обмен не найден' });
+        }
+
+        const exchange = exchangeCheck.rows[0];
+
+        // Сохраняем сообщение
+        const message = await pool.query(`
+            INSERT INTO exchange_chats (exchange_id, user_id, content)
+            VALUES ($1, $2, $3)
+            RETURNING id, exchange_id, user_id, content, created_at
+        `, [exchange_id, userId, content]);
+
+        // Получаем полные данные
+        const messageWithUser = await pool.query(`
+            SELECT ec.*, u.username, u.avatar_url as avatar
+            FROM exchange_chats ec
+            JOIN users u ON ec.user_id = u.id
+            WHERE ec.id = $1
+        `, [message.rows[0].id]);
+
+        res.json({
+            success: true,
+            message: messageWithUser.rows[0]
+        });
+    } catch (err) {
+        console.error('❌ Ошибка отправки сообщения в обмен:', err);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
+// Получение чата обмена
+app.get('/api/servers/exchanges/:exchange_id/chat', authenticateToken, async (req, res) => {
+    try {
+        const { exchange_id } = req.params;
+        const limit = parseInt(req.query.limit) || 50;
+        const offset = parseInt(req.query.offset) || 0;
+
+        const messages = await pool.query(`
+            SELECT ec.*, u.username, u.avatar_url as avatar
+            FROM exchange_chats ec
+            JOIN users u ON ec.user_id = u.id
+            WHERE ec.exchange_id = $1
+            ORDER BY ec.created_at DESC
+            LIMIT $2 OFFSET $3
+        `, [exchange_id, limit, offset]);
+
+        const total = await pool.query(
+            'SELECT COUNT(*) FROM exchange_chats WHERE exchange_id = $1',
+            [exchange_id]
+        );
+
+        res.json({
+            success: true,
+            messages: messages.rows.reverse(),
+            total: parseInt(total.rows[0].count)
+        });
+    } catch (err) {
+        console.error('❌ Ошибка получения чата обмена:', err);
+        res.status(500).json({ error: 'Ошибка сервера' });
+    }
+});
+
 
 // ================== СЕРВЕРЫ ПОЛЬЗОВАТЕЛЕЙ ==================
+
+
 
 
 
