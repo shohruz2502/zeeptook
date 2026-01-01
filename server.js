@@ -1997,8 +1997,9 @@ function generateInviteLink(name) {
 // Создание сервера
 app.post('/api/server/create', authenticateToken, async (req, res) => {
     try {
+        console.log('🚀 Creating server...', req.body);
         const { name, description } = req.body;
-        const userId = req.user.id;
+        const userId = req.user.userId; // ИСПРАВЛЕНО: было req.user.id
 
         // Проверка, есть ли уже сервер у пользователя
         const existingServer = await pool.query(
@@ -2010,6 +2011,10 @@ app.post('/api/server/create', authenticateToken, async (req, res) => {
             return res.status(400).json({ 
                 error: 'У вас уже есть сервер. Можно создать только один сервер.' 
             });
+        }
+
+        if (!name || name.trim().length === 0) {
+            return res.status(400).json({ error: 'Название сервера обязательно' });
         }
 
         // Генерация уникальной ссылки
@@ -2041,13 +2046,15 @@ app.post('/api/server/create', authenticateToken, async (req, res) => {
             [userId, name, description, inviteLink]
         );
 
+        console.log('✅ Server created:', newServer.rows[0]);
+
         res.json({
             success: true,
             server: newServer.rows[0]
         });
 
     } catch (err) {
-        console.error('Ошибка создания сервера:', err);
+        console.error('❌ Ошибка создания сервера:', err);
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 });
@@ -2055,7 +2062,7 @@ app.post('/api/server/create', authenticateToken, async (req, res) => {
 // Получение сервера текущего пользователя
 app.get('/api/server/my', authenticateToken, async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user.userId; // ИСПРАВЛЕНО: было req.user.id
 
         const server = await pool.query(
             `SELECT us.*, u.username as owner_username 
@@ -2075,7 +2082,7 @@ app.get('/api/server/my', authenticateToken, async (req, res) => {
         });
 
     } catch (err) {
-        console.error('Ошибка получения сервера:', err);
+        console.error('❌ Ошибка получения сервера:', err);
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 });
@@ -2103,7 +2110,7 @@ app.get('/api/server/:invite_link', async (req, res) => {
         });
 
     } catch (err) {
-        console.error('Ошибка получения сервера:', err);
+        console.error('❌ Ошибка получения сервера:', err);
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 });
@@ -2116,7 +2123,7 @@ app.get('/api/server/:server_id/messages', authenticateToken, async (req, res) =
         const offset = parseInt(req.query.offset) || 0;
 
         const messages = await pool.query(
-            `SELECT sc.*, u.username, u.avatar 
+            `SELECT sc.*, u.username, u.avatar_url as avatar 
              FROM server_chats sc 
              JOIN users u ON sc.user_id = u.id 
              WHERE sc.server_id = $1 
@@ -2131,12 +2138,12 @@ app.get('/api/server/:server_id/messages', authenticateToken, async (req, res) =
         );
 
         res.json({
-            messages: messages.rows.reverse(), // чтобы старые были первыми
+            messages: messages.rows.reverse(),
             total: parseInt(total.rows[0].count)
         });
 
     } catch (err) {
-        console.error('Ошибка получения сообщений:', err);
+        console.error('❌ Ошибка получения сообщений:', err);
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 });
@@ -2146,7 +2153,7 @@ app.post('/api/server/:server_id/messages', authenticateToken, async (req, res) 
     try {
         const { server_id } = req.params;
         const { content } = req.body;
-        const userId = req.user.id;
+        const userId = req.user.userId; // ИСПРАВЛЕНО: было req.user.id
 
         if (!content || content.trim().length === 0) {
             return res.status(400).json({ error: 'Сообщение не может быть пустым' });
@@ -2175,17 +2182,12 @@ app.post('/api/server/:server_id/messages', authenticateToken, async (req, res) 
 
         // Получаем полные данные сообщения
         const messageWithUser = await pool.query(
-            `SELECT sc.*, u.username, u.avatar 
+            `SELECT sc.*, u.username, u.avatar_url as avatar 
              FROM server_chats sc 
              JOIN users u ON sc.user_id = u.id 
              WHERE sc.id = $1`,
             [newMessage.rows[0].id]
         );
-
-        // Отправка через WebSocket (если он настроен)
-        if (req.app.get('io')) {
-            req.app.get('io').to(`server_${server_id}`).emit('new_message', messageWithUser.rows[0]);
-        }
 
         res.json({
             success: true,
@@ -2193,18 +2195,18 @@ app.post('/api/server/:server_id/messages', authenticateToken, async (req, res) 
         });
 
     } catch (err) {
-        console.error('Ошибка отправки сообщения:', err);
+        console.error('❌ Ошибка отправки сообщения:', err);
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 });
 
-// Эндпоинт для проверки участников (опционально)
+// Эндпоинт для проверки участников
 app.get('/api/server/:server_id/members', async (req, res) => {
     try {
         const { server_id } = req.params;
 
         const members = await pool.query(
-            `SELECT DISTINCT u.id, u.username, u.avatar 
+            `SELECT DISTINCT u.id, u.username, u.avatar_url as avatar 
              FROM server_chats sc 
              JOIN users u ON sc.user_id = u.id 
              WHERE sc.server_id = $1 
@@ -2215,13 +2217,20 @@ app.get('/api/server/:server_id/members', async (req, res) => {
         res.json(members.rows);
 
     } catch (err) {
-        console.error('Ошибка получения участников:', err);
+        console.error('❌ Ошибка получения участников:', err);
         res.status(500).json({ error: 'Ошибка сервера' });
     }
 });
 
+// Добавьте этот маршрут для server-page.html
+app.get('/server-page.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'server-page.html'));
+});
+
 
 // ================== СЕРВЕРЫ ПОЛЬЗОВАТЕЛЕЙ ==================
+
+
 
 
 
