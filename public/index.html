@@ -135,14 +135,14 @@
     .messages-btn {
         display: flex;
         align-items: center;
-        gap: 6px;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
         background: var(--gradient);
         color: var(--white);
         border: none;
-        padding: 8px 12px;
-        border-radius: 18px;
-        font-size: 13px;
-        font-weight: 500;
+        border-radius: 50%;
+        font-size: 16px;
         cursor: pointer;
         transition: all 0.2s ease;
         text-decoration: none;
@@ -155,7 +155,7 @@
     }
     
     .messages-btn i {
-        font-size: 14px;
+        font-size: 18px;
     }
 
     /* Main Content Area - ФИКСИРОВАННАЯ ВЫСОТА */
@@ -169,15 +169,14 @@
         -webkit-overflow-scrolling: touch;
     }
 
-    /* Search Section - ПОД HEADER'ОМ */
-    .search-section {
-        padding: 12px 16px;
+    /* Categories - ПОД HEADER'ОМ (как на изображении) */
+    .categories-section {
         background: var(--nav-bg);
         border-bottom: 1px solid var(--gray-dark);
-        animation: slideDown 0.4s ease 0.2s both;
         position: sticky;
         top: 60px; /* Прилипает под header */
         z-index: 999;
+        animation: slideDown 0.4s ease 0.2s both;
     }
     
     @keyframes slideDown {
@@ -189,6 +188,54 @@
             opacity: 1;
             transform: translateY(0);
         }
+    }
+    
+    .categories-scroll {
+        display: flex;
+        overflow-x: auto;
+        padding: 12px 16px;
+        gap: 8px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    
+    .categories-scroll::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .category {
+        flex: 0 0 auto;
+        padding: 6px 14px;
+        background: var(--input-bg);
+        border-radius: 16px;
+        font-size: 13px;
+        font-weight: 500;
+        white-space: nowrap;
+        transition: all 0.2s ease;
+        border: 1px solid var(--gray-dark);
+        cursor: pointer;
+        color: var(--gray-light);
+    }
+    
+    .category.active {
+        background: var(--gradient);
+        color: white;
+        border-color: var(--primary);
+    }
+    
+    .category:active {
+        transform: scale(0.95);
+    }
+
+    /* Search Section - ПОД КАТЕГОРИЯМИ (как на изображении) */
+    .search-section {
+        padding: 12px 16px;
+        background: var(--nav-bg);
+        border-bottom: 1px solid var(--gray-dark);
+        animation: slideDown 0.4s ease 0.3s both;
+        position: sticky;
+        top: 108px; /* header(60) + categories(48) */
+        z-index: 998;
     }
     
     .search-container {
@@ -238,53 +285,6 @@
         transform: scale(0.95);
     }
 
-    /* Categories - ПОД ПОИСКОМ */
-    .categories-section {
-        background: var(--nav-bg);
-        border-bottom: 1px solid var(--gray-dark);
-        position: sticky;
-        top: 124px; /* header(60) + search(64) */
-        z-index: 998;
-        animation: slideDown 0.4s ease 0.3s both;
-    }
-    
-    .categories-scroll {
-        display: flex;
-        overflow-x: auto;
-        padding: 12px 16px;
-        gap: 8px;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-    
-    .categories-scroll::-webkit-scrollbar {
-        display: none;
-    }
-    
-    .category {
-        flex: 0 0 auto;
-        padding: 6px 14px;
-        background: var(--input-bg);
-        border-radius: 16px;
-        font-size: 13px;
-        font-weight: 500;
-        white-space: nowrap;
-        transition: all 0.2s ease;
-        border: 1px solid var(--gray-dark);
-        cursor: pointer;
-        color: var(--gray-light);
-    }
-    
-    .category.active {
-        background: var(--gradient);
-        color: white;
-        border-color: var(--primary);
-    }
-    
-    .category:active {
-        transform: scale(0.95);
-    }
-
     /* Main Content - ОСНОВНАЯ ОБЛАСТЬ */
     .main-content {
         flex: 1;
@@ -308,7 +308,7 @@
         background: var(--nav-bg);
         border-bottom: 1px solid var(--gray-dark);
         position: sticky;
-        top: 172px; /* header(60) + search(64) + categories(48) */
+        top: 172px; /* header(60) + categories(48) + search(64) */
         z-index: 997;
     }
     
@@ -779,20 +779,22 @@
         }
         
         .messages-btn {
-            padding: 6px 10px;
-            font-size: 12px;
+            width: 36px;
+            height: 36px;
+            font-size: 14px;
+        }
+        
+        .categories-section {
+            padding: 10px 12px;
         }
         
         .search-section {
             padding: 10px 12px;
-        }
-        
-        .categories-section {
-            top: 120px;
+            top: 106px;
         }
         
         .section-header {
-            top: 166px;
+            top: 170px;
         }
         
         .categories-scroll {
@@ -831,21 +833,23 @@
         }
         
         .messages-btn {
-            padding: 5px 8px;
-            font-size: 11px;
-            gap: 4px;
+            width: 34px;
+            height: 34px;
+            font-size: 13px;
+        }
+        
+        .categories-section {
+            padding: 8px 12px;
+            top: 60px;
         }
         
         .search-section {
             padding: 8px 12px;
-        }
-        
-        .categories-section {
-            top: 116px;
+            top: 104px;
         }
         
         .section-header {
-            top: 160px;
+            top: 168px;
         }
         
         .ad-title {
@@ -891,17 +895,24 @@
                 <span>Zeeptook</span>
             </div>
             <div class="header-actions">
-                <!-- Кнопка сообщений вместо статуса -->
+                <!-- Кнопка сообщений (только иконка) -->
                 <a href="messages.html" class="messages-btn">
                     <i class="fa fa-comment"></i>
-                    <span>Сообщения</span>
                 </a>
             </div>
         </div>
         
         <!-- ОСНОВНОЙ КОНТЕНТ -->
         <div class="content-wrapper">
-            <!-- ЗАКРЕПЛЕННЫЙ ПОИСК -->
+            <!-- ЗАКРЕПЛЕННЫЕ КАТЕГОРИИ (сначала, как на изображении) -->
+            <div class="categories-section">
+                <div class="categories-scroll" id="categories-container">
+                    <div class="category active" data-category="all">Все</div>
+                    <!-- Категории будут загружены с сервера -->
+                </div>
+            </div>
+            
+            <!-- ЗАКРЕПЛЕННЫЙ ПОИСК (после категорий, как на изображении) -->
             <div class="search-section">
                 <div class="search-container">
                     <div class="search-box">
@@ -910,14 +921,6 @@
                             <i class="fa fa-search"></i>
                         </button>
                     </div>
-                </div>
-            </div>
-            
-            <!-- ЗАКРЕПЛЕННЫЕ КАТЕГОРИИ -->
-            <div class="categories-section">
-                <div class="categories-scroll" id="categories-container">
-                    <div class="category active" data-category="all">Все</div>
-                    <!-- Категории будут загружены с сервера -->
                 </div>
             </div>
             
@@ -947,9 +950,10 @@
                 <i class="fa fa-home"></i>
                 <span>Главная</span>
             </a>
-            <a href="messages.html" class="nav-btn">
-                <i class="fa fa-comment"></i>
-                <span>Чаты</span>
+            <!-- Изменено: "Чаты" на "Избранное" -->
+            <a href="favorites.html" class="nav-btn">
+                <i class="fa fa-heart"></i>
+                <span>Избранное</span>
             </a>
             <a href="add-ad.html" class="nav-btn">
                 <i class="fa fa-plus"></i>
