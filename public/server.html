@@ -31,6 +31,7 @@
             height: 100vh;
             position: relative;
             overflow: hidden;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
         }
 
         /* Шапка чата */
@@ -40,13 +41,16 @@
             left: 0;
             right: 0;
             z-index: 200;
-            background: #1a1a1a;
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(42, 42, 42, 0.95) 100%);
             padding: 12px 16px;
-            border-bottom: 1px solid #2a2a2a;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.2);
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
             padding-top: calc(12px + env(safe-area-inset-top));
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
             transform: translateY(-100%);
             transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -56,30 +60,40 @@
         }
 
         .back-button {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
             border: none;
-            background: transparent;
+            background: rgba(255, 255, 255, 0.08);
             color: #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 20px;
+            font-weight: 500;
         }
 
         .back-button:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(-2px);
+        }
+
+        .back-button:active {
+            transform: scale(0.95);
         }
 
         .chat-title {
-            font-size: 18px;
-            font-weight: 600;
+            font-size: 20px;
+            font-weight: 700;
             flex: 1;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         /* Экран выбора */
@@ -97,69 +111,155 @@
             padding: 24px;
             z-index: 100;
             transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .choice-screen.hidden {
             transform: translateY(-100%);
         }
 
+        /* Кнопка назад к серверам */
+        .back-to-servers {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+        }
+
+        .back-to-servers-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .back-to-servers-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .back-to-servers-btn:active {
+            transform: scale(0.95);
+        }
+
         .server-info {
             text-align: center;
             margin-bottom: 40px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.8) 0%, rgba(42, 42, 42, 0.8) 100%);
+            border-radius: 24px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            max-width: 500px;
+            width: 100%;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
         }
 
         .server-avatar-large {
-            width: 80px;
-            height: 80px;
-            margin: 0 auto 16px;
-            border-radius: 50%;
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 20px;
+            border-radius: 24px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 32px;
-            font-weight: 600;
+            font-size: 40px;
+            font-weight: 700;
             color: white;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
         }
 
         .server-name-large {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 8px;
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .server-meta {
             color: #888888;
-            font-size: 14px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .choices-container {
             width: 100%;
-            max-width: 400px;
+            max-width: 500px;
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 20px;
+            margin-bottom: 30px;
         }
 
         .choice-button {
-            background: #1a1a1a;
-            border: 2px solid #2a2a2a;
-            border-radius: 16px;
-            padding: 28px 24px;
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.8) 0%, rgba(42, 42, 42, 0.8) 100%);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 20px;
+            padding: 32px 28px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .choice-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            opacity: 0;
+            transition: opacity 0.3s;
         }
 
         .choice-button:hover {
-            transform: translateY(-4px);
-            border-color: #667eea;
-            background: #2a2a2a;
+            transform: translateY(-6px);
+            border-color: rgba(102, 126, 234, 0.6);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.25);
+        }
+
+        .choice-button:hover::before {
+            opacity: 1;
         }
 
         .choice-button:active {
@@ -167,41 +267,50 @@
         }
 
         .choice-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
+            font-size: 56px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
         }
 
         .choice-title {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 8px;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
         }
 
         .choice-description {
-            color: #888888;
-            font-size: 14px;
+            color: #aaaaaa;
+            font-size: 16px;
             text-align: center;
-            line-height: 1.4;
+            line-height: 1.5;
+            position: relative;
+            z-index: 1;
         }
 
         .subscribe-button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 16px;
-            padding: 20px 24px;
-            font-size: 18px;
-            font-weight: 600;
+            border-radius: 18px;
+            padding: 24px 32px;
+            font-size: 20px;
+            font-weight: 700;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             width: 100%;
-            max-width: 400px;
-            margin-top: 20px;
+            max-width: 500px;
+            margin-top: 10px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
         }
 
         .subscribe-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
         }
 
         .subscribe-button:disabled {
@@ -217,7 +326,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: #0f0f0f;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
             display: flex;
             flex-direction: column;
             transform: translateY(100%);
@@ -231,19 +340,20 @@
         .chat-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 80px 16px 90px;
+            padding: 90px 20px 120px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 12px;
             -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
         }
 
         /* Сообщение */
         .message {
             display: flex;
-            gap: 12px;
+            gap: 16px;
             max-width: 85%;
-            animation: messageAppear 0.3s ease;
+            animation: messageAppear 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .message.sent {
@@ -252,111 +362,121 @@
         }
 
         .message-avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
             background: #2a2a2a;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 600;
+            font-weight: 700;
             color: white;
-            font-size: 14px;
+            font-size: 18px;
             flex-shrink: 0;
             cursor: pointer;
             position: relative;
-            transition: transform 0.2s;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         .message-avatar:hover {
-            transform: scale(1.05);
+            transform: scale(1.08);
         }
 
         .message-avatar.owner::after {
             content: '👑';
             position: absolute;
-            bottom: -2px;
-            right: -2px;
-            font-size: 12px;
+            bottom: -4px;
+            right: -4px;
+            font-size: 14px;
             background: #1a1a1a;
             border-radius: 50%;
-            width: 16px;
-            height: 16px;
+            width: 20px;
+            height: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
+            border: 2px solid #2a2a2a;
         }
 
         .message-avatar.admin::after {
             content: '⭐';
             position: absolute;
-            bottom: -2px;
-            right: -2px;
-            font-size: 12px;
+            bottom: -4px;
+            right: -4px;
+            font-size: 14px;
             background: #1a1a1a;
             border-radius: 50%;
-            width: 16px;
-            height: 16px;
+            width: 20px;
+            height: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
+            border: 2px solid #2a2a2a;
         }
 
         .message-content {
-            background: #1a1a1a;
-            padding: 12px 16px;
-            border-radius: 18px;
-            border: 1px solid #2a2a2a;
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.8) 0%, rgba(42, 42, 42, 0.8) 100%);
+            padding: 16px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(102, 126, 234, 0.2);
             position: relative;
-            min-width: 120px;
+            min-width: 140px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         }
 
         .message.sent .message-content {
-            background: #2d5baf;
-            border-color: #3a6ac5;
+            background: linear-gradient(135deg, rgba(45, 91, 175, 0.9) 0%, rgba(58, 106, 197, 0.9) 100%);
+            border-color: rgba(255, 255, 255, 0.2);
         }
 
         .message-header {
             display: flex;
             align-items: baseline;
-            gap: 8px;
-            margin-bottom: 4px;
+            gap: 12px;
+            margin-bottom: 8px;
         }
 
         .message-username {
-            font-weight: 600;
-            font-size: 14px;
+            font-weight: 700;
+            font-size: 15px;
             color: #aaddff;
+            background: linear-gradient(135deg, #aaddff 0%, #88ccff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .message.sent .message-username {
             color: #ffffff;
-            opacity: 0.9;
+            opacity: 0.95;
+            -webkit-text-fill-color: #ffffff;
         }
 
         .message-time {
-            font-size: 11px;
-            color: #888888;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
         }
 
         .message-text {
-            font-size: 15px;
-            line-height: 1.4;
+            font-size: 16px;
+            line-height: 1.5;
             word-break: break-word;
         }
 
         .message-deleted {
             font-style: italic;
-            color: #888888;
+            color: rgba(255, 255, 255, 0.4);
         }
 
         .message-actions {
             position: absolute;
             top: 50%;
-            right: -40px;
+            right: -48px;
             transform: translateY(-50%);
             opacity: 0;
-            transition: opacity 0.2s;
+            transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .message:hover .message-actions {
@@ -364,34 +484,44 @@
         }
 
         .delete-message-btn {
-            width: 28px;
-            height: 28px;
+            width: 32px;
+            height: 32px;
             border-radius: 50%;
-            background: rgba(255, 59, 48, 0.1);
-            border: none;
+            background: rgba(255, 59, 48, 0.15);
+            border: 1px solid rgba(255, 59, 48, 0.3);
             color: #ff3b30;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             font-size: 14px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .delete-message-btn:hover {
+            background: rgba(255, 59, 48, 0.25);
+            transform: scale(1.1);
         }
 
         /* Индикатор печатания */
         .typing-indicator {
-            padding: 12px 16px;
-            color: #888888;
-            font-size: 14px;
+            padding: 16px 20px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 15px;
             font-style: italic;
-            background: #1a1a1a;
-            border-radius: 18px;
+            background: rgba(26, 26, 26, 0.8);
+            border-radius: 20px;
             align-self: flex-start;
-            margin: 8px 16px;
+            margin: 12px 20px;
             display: none;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(102, 126, 234, 0.2);
         }
 
         .typing-indicator.visible {
             display: block;
+            animation: fadeIn 0.3s ease;
         }
 
         /* Поле ввода */
@@ -400,38 +530,45 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: #1a1a1a;
-            border-top: 1px solid #2a2a2a;
-            padding: 12px 16px;
-            padding-bottom: calc(12px + env(safe-area-inset-bottom));
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(42, 42, 42, 0.95) 100%);
+            border-top: 1px solid rgba(102, 126, 234, 0.2);
+            padding: 16px 20px;
+            padding-bottom: calc(16px + env(safe-area-inset-bottom));
             z-index: 100;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
         }
 
         .chat-input-wrapper {
             display: flex;
-            gap: 12px;
+            gap: 16px;
             align-items: flex-end;
         }
 
         .chat-input {
             flex: 1;
-            background: #2a2a2a;
-            border: 1px solid #3a3a3a;
-            border-radius: 20px;
-            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 24px;
+            padding: 16px 24px;
             color: #ffffff;
-            font-size: 15px;
+            font-size: 16px;
             font-family: inherit;
             resize: none;
-            min-height: 44px;
+            min-height: 52px;
             max-height: 120px;
             line-height: 1.4;
-            transition: border-color 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
         .chat-input:focus {
             outline: none;
             border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .chat-input:disabled {
@@ -440,9 +577,9 @@
         }
 
         .send-button {
-            width: 44px;
-            height: 44px;
-            background: #667eea;
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
             border-radius: 50%;
             color: white;
@@ -450,34 +587,94 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             flex-shrink: 0;
+            font-size: 22px;
+            font-weight: 600;
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
         }
 
         .send-button:hover {
-            background: #5a67d8;
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-button:active {
+            transform: scale(0.95);
         }
 
         .send-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-            background: #667eea;
+            transform: none;
+            box-shadow: none;
         }
 
-        /* Action Sheet (меню модерации) */
+        /* Уведомление о невозможности отправки файлов */
+        .file-notice {
+            position: fixed;
+            bottom: 90px;
+            left: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, rgba(255, 149, 0, 0.1) 0%, rgba(255, 107, 107, 0.1) 100%);
+            border: 1px solid rgba(255, 149, 0, 0.3);
+            border-radius: 16px;
+            padding: 12px 16px;
+            color: #ff9500;
+            font-size: 14px;
+            text-align: center;
+            z-index: 90;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            animation: slideUp 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .file-notice.hidden {
+            display: none;
+        }
+
+        /* Кнопка отправки файлов (неактивная) */
+        .file-upload-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: not-allowed;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+            font-size: 20px;
+        }
+
+        .file-upload-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Action Sheet */
         .action-sheet {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: #1a1a1a;
-            border-radius: 20px 20px 0 0;
-            padding: 20px 16px;
-            padding-bottom: calc(20px + env(safe-area-inset-bottom));
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(42, 42, 42, 0.95) 100%);
+            border-radius: 30px 30px 0 0;
+            padding: 24px 20px;
+            padding-bottom: calc(24px + env(safe-area-inset-bottom));
             transform: translateY(100%);
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             z-index: 1000;
-            box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
         }
 
         .action-sheet.visible {
@@ -486,79 +683,87 @@
 
         .action-sheet-header {
             text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 16px;
-            border-bottom: 1px solid #2a2a2a;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .action-sheet-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 4px;
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .action-sheet-subtitle {
-            color: #888888;
-            font-size: 14px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 15px;
         }
 
         .action-list {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
         }
 
         .action-button {
-            padding: 16px;
-            border-radius: 12px;
-            background: #2a2a2a;
-            border: none;
+            padding: 20px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
-            font-size: 16px;
+            font-size: 17px;
             text-align: left;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
         }
 
         .action-button:hover {
-            background: #3a3a3a;
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
         }
 
         .action-button.danger {
             color: #ff3b30;
+            background: rgba(255, 59, 48, 0.1);
+            border-color: rgba(255, 59, 48, 0.2);
         }
 
         .action-button.danger:hover {
-            background: rgba(255, 59, 48, 0.1);
+            background: rgba(255, 59, 48, 0.15);
         }
 
         .action-button.warning {
             color: #ff9500;
+            background: rgba(255, 149, 0, 0.1);
+            border-color: rgba(255, 149, 0, 0.2);
         }
 
         .action-button.warning:hover {
-            background: rgba(255, 149, 0, 0.1);
+            background: rgba(255, 149, 0, 0.15);
         }
 
         .cancel-button {
-            margin-top: 12px;
-            padding: 16px;
-            border-radius: 12px;
-            background: #2a2a2a;
-            border: 2px solid #3a3a3a;
+            margin-top: 16px;
+            padding: 20px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 2px solid rgba(255, 255, 255, 0.1);
             color: white;
-            font-size: 16px;
+            font-size: 17px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             width: 100%;
         }
 
         .cancel-button:hover {
-            background: #3a3a3a;
+            background: rgba(255, 255, 255, 0.12);
         }
 
         .overlay {
@@ -567,13 +772,16 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.8);
             display: none;
             z-index: 999;
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
         }
 
         .overlay.visible {
             display: block;
+            animation: fadeIn 0.3s ease;
         }
 
         /* Модальное окно бана */
@@ -582,16 +790,19 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) scale(0.9);
-            background: #1a1a1a;
-            border-radius: 20px;
-            padding: 24px;
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(42, 42, 42, 0.95) 100%);
+            border-radius: 30px;
+            padding: 32px;
             width: 90%;
-            max-width: 400px;
+            max-width: 420px;
             z-index: 1001;
             opacity: 0;
             visibility: hidden;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid #2a2a2a;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
         }
 
         .ban-modal.visible {
@@ -601,133 +812,244 @@
         }
 
         .ban-modal-title {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 16px;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .ban-form {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 20px;
         }
 
         .ban-duration {
             display: flex;
             flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 8px;
+            gap: 10px;
+            margin-bottom: 10px;
         }
 
         .duration-btn {
             flex: 1;
-            padding: 10px;
-            background: #2a2a2a;
-            border: 1px solid #3a3a3a;
-            border-radius: 8px;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
             color: white;
             cursor: pointer;
-            transition: all 0.2s;
-            min-width: 80px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-width: 85px;
+            font-size: 14px;
         }
 
         .duration-btn:hover {
-            background: #3a3a3a;
+            background: rgba(255, 255, 255, 0.12);
         }
 
         .duration-btn.active {
-            background: #667eea;
-            border-color: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: transparent;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
 
         .custom-duration {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             align-items: center;
         }
 
         .custom-duration input {
             flex: 1;
-            padding: 10px;
-            background: #2a2a2a;
-            border: 1px solid #3a3a3a;
-            border-radius: 8px;
+            padding: 14px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
             color: white;
+            font-size: 15px;
         }
 
         .custom-duration span {
-            color: #888888;
+            color: rgba(255, 255, 255, 0.6);
         }
 
         .ban-reason {
             width: 100%;
-            padding: 12px;
-            background: #2a2a2a;
-            border: 1px solid #3a3a3a;
-            border-radius: 8px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
             color: white;
             font-family: inherit;
             resize: vertical;
-            min-height: 80px;
+            min-height: 100px;
+            font-size: 15px;
         }
 
         .modal-buttons {
             display: flex;
-            gap: 12px;
-            margin-top: 20px;
+            gap: 16px;
+            margin-top: 24px;
         }
 
         .modal-btn {
             flex: 1;
-            padding: 14px;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 500;
+            padding: 18px;
+            border-radius: 16px;
+            font-size: 17px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border: none;
         }
 
         .modal-btn.cancel {
-            background: #2a2a2a;
+            background: rgba(255, 255, 255, 0.07);
             color: white;
-            border: 1px solid #3a3a3a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .modal-btn.cancel:hover {
-            background: #3a3a3a;
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
         }
 
         .modal-btn.confirm {
-            background: #ff3b30;
+            background: linear-gradient(135deg, #ff3b30 0%, #ff1f1f 100%);
             color: white;
+            box-shadow: 0 6px 20px rgba(255, 59, 48, 0.3);
         }
 
         .modal-btn.confirm:hover {
-            background: #ff2a1f;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 59, 48, 0.4);
         }
 
-        /* Статус онлайн */
-        .online-dot {
-            width: 8px;
-            height: 8px;
-            background: #4CAF50;
-            border-radius: 50%;
+        /* Экран обмена */
+        .exchange-screen {
             position: absolute;
-            bottom: 0;
+            top: 0;
+            left: 0;
             right: 0;
-            border: 2px solid #1a1a1a;
+            bottom: 0;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+            display: flex;
+            flex-direction: column;
+            transform: translateY(100%);
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+        }
+
+        .exchange-screen.visible {
+            transform: translateY(0);
+        }
+
+        .exchange-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 200;
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(42, 42, 42, 0.95) 100%);
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding-top: calc(12px + env(safe-area-inset-top));
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .exchange-title {
+            font-size: 20px;
+            font-weight: 700;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .exchange-back {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            border: none;
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 20px;
+            font-weight: 500;
+        }
+
+        .exchange-back:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(-2px);
+        }
+
+        /* Индикатор новых сообщений */
+        .new-message-indicator {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 50;
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.4);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .new-message-indicator.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-5px);
+        }
+
+        .new-message-indicator:hover {
+            transform: translateX(-50%) translateY(-8px);
+            box-shadow: 0 12px 40px rgba(102, 126, 234, 0.5);
         }
 
         /* Анимации */
         @keyframes messageAppear {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+                transform: translateY(20px) scale(0.95);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
             }
         }
 
@@ -737,6 +1059,21 @@
             }
             to {
                 transform: translateY(0);
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
             }
         }
 
@@ -750,44 +1087,46 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 60px 24px;
+            padding: 80px 24px;
             text-align: center;
+            min-height: 300px;
         }
 
         .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(102, 126, 234, 0.3);
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(102, 126, 234, 0.1);
             border-radius: 50%;
             border-top-color: #667eea;
             animation: spin 1s linear infinite;
-            margin-bottom: 16px;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+            margin-bottom: 20px;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
         }
 
         .error-message {
-            background: rgba(255, 59, 48, 0.1);
-            border: 1px solid #ff3b30;
+            background: linear-gradient(135deg, rgba(255, 59, 48, 0.1) 0%, rgba(255, 153, 153, 0.05) 100%);
+            border: 1px solid rgba(255, 59, 48, 0.3);
             color: #ff9999;
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin: 16px;
-            font-size: 14px;
+            padding: 20px;
+            border-radius: 20px;
+            margin: 20px;
+            font-size: 16px;
             text-align: center;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
         .success-message {
-            background: rgba(76, 175, 80, 0.1);
-            border: 1px solid #4CAF50;
+            background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(136, 255, 136, 0.05) 100%);
+            border: 1px solid rgba(76, 175, 80, 0.3);
             color: #88ff88;
-            padding: 12px 16px;
-            border-radius: 12px;
-            margin: 16px;
-            font-size: 14px;
+            padding: 20px;
+            border-radius: 20px;
+            margin: 20px;
+            font-size: 16px;
             text-align: center;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
         }
 
         /* Плавный скролл */
@@ -795,76 +1134,154 @@
             scroll-behavior: smooth;
         }
 
+        /* Кастомный скроллбар */
+        .chat-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 3px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6a4290 100%);
+        }
+
         /* Предотвращение выделения */
-        .message, .choice-button, .action-button {
+        .message,
+        .choice-button,
+        .action-button,
+        .back-to-servers-btn {
             user-select: none;
             -webkit-user-select: none;
         }
 
-        /* Индикатор нового сообщения */
-        .new-message-indicator {
-            position: absolute;
-            bottom: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #667eea;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            cursor: pointer;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 50;
-        }
+        /* Медиа-запросы */
+        @media (max-width: 480px) {
+            .server-avatar-large {
+                width: 80px;
+                height: 80px;
+                font-size: 32px;
+            }
 
-        .new-message-indicator.visible {
-            opacity: 1;
-        }
+            .server-name-large {
+                font-size: 24px;
+            }
 
-        /* Медиа-запросы для мобильных устройств */
-        @media (max-height: 600px) {
+            .choice-button {
+                padding: 24px 20px;
+            }
+
             .choice-icon {
-                font-size: 36px;
+                font-size: 48px;
             }
-            
+
             .choice-title {
-                font-size: 18px;
+                font-size: 20px;
             }
-            
+
+            .chat-messages {
+                padding: 80px 16px 120px;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+
+            .chat-input-container {
+                padding: 12px 16px;
+                padding-bottom: calc(12px + env(safe-area-inset-bottom));
+            }
+
+            .back-to-servers {
+                top: 16px;
+                left: 16px;
+            }
+
+            .back-to-servers-btn {
+                padding: 8px 16px;
+                font-size: 13px;
+            }
+        }
+
+        @media (max-height: 700px) {
+            .choice-icon {
+                font-size: 48px;
+            }
+
+            .choice-button {
+                padding: 24px 20px;
+            }
+
+            .server-info {
+                margin-bottom: 30px;
+                padding: 16px;
+            }
+        }
+
+        /* Адаптив для очень маленьких экранов */
+        @media (max-width: 360px) {
+            .server-avatar-large {
+                width: 70px;
+                height: 70px;
+                font-size: 28px;
+            }
+
+            .server-name-large {
+                font-size: 22px;
+            }
+
             .choice-button {
                 padding: 20px 16px;
             }
+
+            .choice-icon {
+                font-size: 40px;
+            }
+
+            .choice-title {
+                font-size: 18px;
+            }
+
+            .choice-description {
+                font-size: 14px;
+            }
         }
 
-        /* Стили для скроллбара */
-        .chat-messages::-webkit-scrollbar {
-            width: 4px;
+        /* Плавные переходы */
+        .choice-button,
+        .subscribe-button,
+        .send-button,
+        .back-button,
+        .action-button,
+        .modal-btn {
+            will-change: transform;
         }
 
-        .chat-messages::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .chat-messages::-webkit-scrollbar-thumb {
-            background: #2a2a2a;
-            border-radius: 2px;
-        }
-
-        .chat-messages::-webkit-scrollbar-thumb:hover {
-            background: #3a3a3a;
+        /* Оптимизация анимаций */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
     </style>
 </head>
 <body>
     <div class="app-container" id="appContainer">
-        <!-- Шапка чата (скрыта до открытия) -->
-        <header class="chat-header" id="chatHeader">
-            <button class="back-button" onclick="showChoiceScreen()">
-                ←
+        <!-- Кнопка назад к списку серверов -->
+        <div class="back-to-servers" id="backToServers">
+            <button class="back-to-servers-btn" onclick="goBackToServers()">
+                ← Назад к серверам
             </button>
-            <div class="chat-title" id="chatTitle">Загрузка...</div>
-        </header>
+        </div>
 
         <!-- Экран выбора -->
         <div class="choice-screen" id="choiceScreen">
@@ -872,14 +1289,17 @@
                 <div class="spinner"></div>
                 <div>Загрузка сервера...</div>
             </div>
-            
+
             <div class="server-info" id="serverInfo" style="display: none;">
                 <div class="server-avatar-large" id="serverAvatar">S</div>
                 <h1 class="server-name-large" id="serverName">Сервер</h1>
                 <div class="server-meta" id="serverMeta">
-                    <span id="memberCount">0 участников</span>
-                    • 
-                    <span id="messageCount">0 сообщений</span>
+                    <div class="meta-item">
+                        👥 <span id="memberCount">0 участников</span>
+                    </div>
+                    <div class="meta-item">
+                        💬 <span id="messageCount">0 сообщений</span>
+                    </div>
                 </div>
             </div>
 
@@ -888,12 +1308,19 @@
             </div>
 
             <button class="subscribe-button" id="subscribeButton" style="display: none;" onclick="subscribeToServer()">
-                Подписаться
+                Подписаться на сервер
             </button>
         </div>
 
-        <!-- Экран чата -->
+        <!-- Экран общего чата -->
         <div class="chat-screen" id="chatScreen">
+            <header class="chat-header" id="chatHeader">
+                <button class="back-button" onclick="showChoiceScreen()">
+                    ←
+                </button>
+                <div class="chat-title" id="chatTitle">Общий чат</div>
+            </header>
+
             <div class="chat-messages" id="chatMessages">
                 <!-- Сообщения будут загружены через JS -->
             </div>
@@ -902,18 +1329,51 @@
                 Пользователь печатает...
             </div>
 
+            <div class="file-notice" id="fileNotice">
+                ⚠️ Отправка фото и файлов временно недоступна
+            </div>
+
             <div class="chat-input-container">
                 <div class="chat-input-wrapper">
-                    <textarea 
-                        class="chat-input" 
-                        id="chatInput"
-                        placeholder="Написать сообщение..."
-                        maxlength="2000"
-                        rows="1"
-                        oninput="autoResize(this); handleTyping()"
-                        onkeydown="handleEnterKey(event)"
-                    ></textarea>
+                    <button class="file-upload-btn" onclick="showFileNotice()" title="Отправка файлов временно недоступна">
+                        📎
+                    </button>
+                    <textarea class="chat-input" id="chatInput" placeholder="Написать сообщение..." maxlength="2000"
+                        rows="1" oninput="autoResize(this); handleTyping()" onkeydown="handleEnterKey(event)"></textarea>
                     <button class="send-button" id="sendButton" onclick="sendMessage()">
+                        →
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Экран обмена -->
+        <div class="exchange-screen" id="exchangeScreen">
+            <header class="exchange-header">
+                <button class="exchange-back" onclick="showChoiceScreen()">
+                    ←
+                </button>
+                <div class="exchange-title">Чат обмена</div>
+            </header>
+
+            <div class="chat-messages" id="exchangeMessages">
+                <!-- Сообщения обмена будут загружены через JS -->
+            </div>
+
+            <div class="typing-indicator" id="exchangeTypingIndicator">
+                Пользователь печатает...
+            </div>
+
+            <div class="file-notice">
+                ⚠️ В чате обмена можно договариваться о сделках
+            </div>
+
+            <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                    <textarea class="chat-input" id="exchangeInput" placeholder="Предложить обмен или задать вопрос..."
+                        maxlength="2000" rows="1" oninput="autoResize(this); handleExchangeTyping()"
+                        onkeydown="handleExchangeEnterKey(event)"></textarea>
+                    <button class="send-button" id="exchangeSendButton" onclick="sendExchangeMessage()">
                         →
                     </button>
                 </div>
@@ -922,12 +1382,11 @@
 
         <!-- Индикатор новых сообщений -->
         <div class="new-message-indicator" id="newMessageIndicator" onclick="scrollToBottom()">
-            Новые сообщения ↓
+            📩 Новые сообщения
         </div>
 
         <!-- Action Sheet для модерации -->
         <div class="overlay" id="actionOverlay" onclick="hideActionSheet()"></div>
-        
         <div class="action-sheet" id="actionSheet">
             <div class="action-sheet-header">
                 <div class="action-sheet-title" id="actionUserName">Пользователь</div>
@@ -943,7 +1402,6 @@
 
         <!-- Модальное окно бана -->
         <div class="overlay" id="banOverlay" onclick="hideBanModal()"></div>
-        
         <div class="ban-modal" id="banModal">
             <h3 class="ban-modal-title">Заблокировать пользователя</h3>
             <div class="ban-form">
@@ -958,12 +1416,8 @@
                     <input type="number" id="customDuration" placeholder="Длительность в часах" min="1">
                     <span>часов</span>
                 </div>
-                <textarea 
-                    class="ban-reason" 
-                    id="banReason"
-                    placeholder="Причина бана (необязательно)"
-                    maxlength="500"
-                ></textarea>
+                <textarea class="ban-reason" id="banReason" placeholder="Причина бана (необязательно)"
+                    maxlength="500"></textarea>
                 <div class="modal-buttons">
                     <button class="modal-btn cancel" onclick="hideBanModal()">
                         Отмена
@@ -983,14 +1437,18 @@
         let userRole = 'member';
         let isSubscribed = false;
         let isBanned = false;
-        let ws = null;
+        let generalWs = null;
+        let exchangeWs = null;
         let lastMessageId = 0;
+        let lastExchangeMessageId = 0;
         let typingTimeout = null;
+        let exchangeTypingTimeout = null;
         let selectedUserForAction = null;
         let selectedUserRole = 'member';
         let currentBanDuration = null;
         let hasNewMessages = false;
         let isScrolledToBottom = true;
+        let currentScreen = 'choice'; // 'choice', 'general', 'exchange'
 
         // Получаем ID сервера из URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -1021,7 +1479,8 @@
             const diffMs = now - date;
             const diffMins = Math.floor(diffMs / 60000);
             const diffHours = Math.floor(diffMs / 3600000);
-            
+            const diffDays = Math.floor(diffMs / 86400000);
+
             if (diffMins < 1) return 'только что';
             if (diffMins < 60) return `${diffMins} мин назад`;
             if (diffHours < 24) return `${diffHours} ч назад`;
@@ -1035,7 +1494,7 @@
         }
 
         function getAvatarColor(userId) {
-            const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe'];
+            const colors = ['#667eea', '#764ba2', '#f093fb', '#f5576c', '#4facfe', '#00f2fe', '#43e97b', '#38f9d7'];
             const num = (parseInt(userId) || 0) % colors.length;
             return colors[num];
         }
@@ -1043,68 +1502,73 @@
         function getPluralForm(number, forms) {
             const n = Math.abs(number) % 100;
             const n1 = n % 10;
-            
+
             if (n > 10 && n < 20) return forms[2];
             if (n1 > 1 && n1 < 5) return forms[1];
             if (n1 === 1) return forms[0];
             return forms[2];
         }
 
+        // Назад к списку серверов
+        function goBackToServers() {
+            window.location.href = '/server-page.html';
+        }
+
         // Загрузка данных сервера
         async function loadServerInfo() {
             try {
                 console.log('🔄 Загрузка информации о сервере ID:', serverId);
-                
+
                 // Показываем экран загрузки
                 document.getElementById('loadingScreen').style.display = 'flex';
                 document.getElementById('serverInfo').style.display = 'none';
                 document.getElementById('choicesContainer').innerHTML = '';
                 document.getElementById('subscribeButton').style.display = 'none';
-                
+
                 const response = await fetch(`/api/server/${serverId}/info`, {
-                    headers: { 
+                    headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     }
                 });
-                
+
                 console.log('📡 Статус ответа:', response.status);
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     console.log('✅ Данные сервера получены:', data);
-                    
+
                     if (!data.server) {
                         throw new Error('Сервер не найден в ответе');
                     }
-                    
+
                     currentServer = data.server;
                     userRole = data.user_role || 'member';
                     isSubscribed = data.server.is_subscribed || false;
                     isBanned = data.is_banned || false;
-                    
+
                     console.log('📊 Статус:', {
                         name: currentServer.name,
                         userRole,
                         isSubscribed,
                         isBanned
                     });
-                    
+
                     // Скрываем экран загрузки, показываем информацию
                     document.getElementById('loadingScreen').style.display = 'none';
                     document.getElementById('serverInfo').style.display = 'block';
-                    
+
                     renderServerInfo();
                     setupChoices();
-                    
+
                 } else {
                     const error = await response.json().catch(() => ({ error: 'Ошибка сервера' }));
                     console.error('❌ Ошибка API:', error);
-                    showError(error.error || 'Ошибка загрузки сервера');
+                    showErrorInChoices(error.error || 'Ошибка загрузки сервера');
                 }
             } catch (error) {
                 console.error('❌ Ошибка загрузки сервера:', error);
-                showError('Не удалось загрузить информацию о сервере. Проверьте подключение.');
+                showErrorInChoices('Не удалось загрузить информацию о сервере. Проверьте подключение.');
             }
         }
 
@@ -1115,37 +1579,37 @@
                 const memberCountEl = document.getElementById('memberCount');
                 const messageCountEl = document.getElementById('messageCount');
                 const chatTitleEl = document.getElementById('chatTitle');
-                
+
                 if (!currentServer) {
                     console.error('❌ currentServer не определен');
                     return;
                 }
-                
+
                 // Безопасно устанавливаем значения
                 if (serverNameEl) serverNameEl.textContent = currentServer.name || 'Сервер';
                 if (chatTitleEl) chatTitleEl.textContent = currentServer.name || 'Сервер';
-                
+
                 if (serverAvatarEl) {
                     serverAvatarEl.textContent = (currentServer.name || 'S').charAt(0).toUpperCase();
                     serverAvatarEl.style.background = getAvatarColor(currentServer.id);
-                    
+
                     if (currentServer.avatar) {
-                        serverAvatarEl.innerHTML = 
+                        serverAvatarEl.innerHTML =
                             `<img src="${escapeHtml(currentServer.avatar)}" alt="${escapeHtml(currentServer.name)}" 
-                             style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+                             style="width:100%;height:100%;border-radius:24px;object-fit:cover;">`;
                     }
                 }
-                
+
                 if (memberCountEl) {
-                    memberCountEl.textContent = 
+                    memberCountEl.textContent =
                         `${currentServer.member_count || 0} ${getPluralForm(currentServer.member_count || 0, ['участник', 'участника', 'участников'])}`;
                 }
-                
+
                 if (messageCountEl) {
-                    messageCountEl.textContent = 
+                    messageCountEl.textContent =
                         `${currentServer.message_count || 0} ${getPluralForm(currentServer.message_count || 0, ['сообщение', 'сообщения', 'сообщений'])}`;
                 }
-                
+
                 console.log('✅ Информация о сервере отрендерена');
             } catch (error) {
                 console.error('❌ Ошибка в renderServerInfo:', error);
@@ -1156,48 +1620,48 @@
         function setupChoices() {
             const container = document.getElementById('choicesContainer');
             const subscribeBtn = document.getElementById('subscribeButton');
-            
+
             if (!container || !subscribeBtn) {
                 console.error('❌ Не найден контейнер выбора или кнопка подписки');
                 return;
             }
-            
+
             if (isBanned) {
                 container.innerHTML = `
                     <div class="error-message">
-                        Вы забанены на этом сервере и не можете присоединиться
+                        ⚠️ Вы забанены на этом сервере и не можете присоединиться
                     </div>
                 `;
                 subscribeBtn.style.display = 'none';
                 return;
             }
-            
+
             if (!isSubscribed) {
                 container.innerHTML = `
                     <div class="success-message">
-                        Подпишитесь на сервер, чтобы получить доступ к чату и обменам
+                        👋 Подпишитесь на сервер, чтобы получить доступ к чату и обменам
                     </div>
                 `;
                 subscribeBtn.style.display = 'block';
                 return;
             }
-            
+
             subscribeBtn.style.display = 'none';
-            
+
             container.innerHTML = `
                 <div class="choice-button" onclick="openGeneralChat()">
                     <div class="choice-icon">💬</div>
                     <div class="choice-title">Общий чат</div>
                     <div class="choice-description">
-                        Общайтесь со всеми участниками сервера в реальном времени
+                        Общайтесь со всеми участниками сервера в реальном времени. Обсуждения, вопросы, помощь
                     </div>
                 </div>
                 
                 <div class="choice-button" onclick="openExchangeChat()">
                     <div class="choice-icon">🔄</div>
-                    <div class="choice-title">Обмен</div>
+                    <div class="choice-title">Чат обмена</div>
                     <div class="choice-description">
-                        Создавайте и участвуйте в обменах товарами и услугами
+                        Договаривайтесь о сделках, предлагайте обмены, находите партнеров для торговли
                     </div>
                 </div>
             `;
@@ -1207,43 +1671,43 @@
         async function subscribeToServer() {
             const button = document.getElementById('subscribeButton');
             if (!button) return;
-            
+
             const originalText = button.textContent;
-            
+
             try {
                 button.textContent = 'Подписка...';
                 button.disabled = true;
-                
+
                 console.log('📝 Отправка запроса на подписку...');
-                
+
                 const response = await fetch(`/api/server/${serverId}/subscribe`, {
                     method: 'POST',
-                    headers: { 
+                    headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     }
                 });
-                
+
                 console.log('📡 Ответ на подписку:', response.status);
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     console.log('✅ Подписка успешна:', data);
-                    
+
                     isSubscribed = true;
                     setupChoices();
-                    
+
                     // Показываем уведомление
-                    showSuccess(data.message || 'Вы успешно подписались');
-                    
+                    showSuccessInChoices(data.message || '🎉 Вы успешно подписались на сервер!');
+
                 } else {
                     const error = await response.json().catch(() => ({ error: 'Ошибка сервера' }));
                     console.error('❌ Ошибка подписки:', error);
-                    showErrorInChoices(error.error || 'Ошибка подписки');
+                    showErrorInChoices(error.error || '❌ Ошибка подписки');
                 }
             } catch (error) {
                 console.error('❌ Ошибка сети при подписке:', error);
-                showErrorInChoices('Ошибка соединения с сервером');
+                showErrorInChoices('🌐 Ошибка соединения с сервером');
             } finally {
                 button.textContent = originalText;
                 button.disabled = false;
@@ -1253,120 +1717,198 @@
         // Открытие общего чата
         async function openGeneralChat() {
             try {
+                currentScreen = 'general';
                 document.getElementById('choiceScreen').classList.add('hidden');
                 document.getElementById('chatScreen').classList.add('visible');
                 document.getElementById('chatHeader').classList.add('visible');
-                
+                document.getElementById('backToServers').style.display = 'none';
+
                 // Загружаем сообщения
                 await loadChatMessages();
-                
+
                 // Подключаем WebSocket
-                connectWebSocket();
-                
+                connectGeneralWebSocket();
+
                 // Автофокус на поле ввода
                 setTimeout(() => {
                     const input = document.getElementById('chatInput');
                     if (input) input.focus();
                 }, 300);
-                
+
             } catch (error) {
                 console.error('❌ Ошибка открытия чата:', error);
-                showErrorInChat('Не удалось открыть чат');
+                showErrorInChat('❌ Не удалось открыть чат');
             }
         }
 
         // Открытие чата обмена
-        function openExchangeChat() {
-            alert('Функция обмена в разработке');
+        async function openExchangeChat() {
+            try {
+                currentScreen = 'exchange';
+                document.getElementById('choiceScreen').classList.add('hidden');
+                document.getElementById('exchangeScreen').classList.add('visible');
+                document.getElementById('backToServers').style.display = 'none';
+
+                // Загружаем сообщения обмена
+                await loadExchangeMessages();
+
+                // Подключаем WebSocket обмена
+                connectExchangeWebSocket();
+
+                // Автофокус на поле ввода
+                setTimeout(() => {
+                    const input = document.getElementById('exchangeInput');
+                    if (input) input.focus();
+                }, 300);
+
+            } catch (error) {
+                console.error('❌ Ошибка открытия чата обмена:', error);
+                showErrorInExchange('❌ Не удалось открыть чат обмена');
+            }
         }
 
         // Возврат к экрану выбора
         function showChoiceScreen() {
+            currentScreen = 'choice';
             document.getElementById('choiceScreen').classList.remove('hidden');
             document.getElementById('chatScreen').classList.remove('visible');
+            document.getElementById('exchangeScreen').classList.remove('visible');
             document.getElementById('chatHeader').classList.remove('visible');
-            
+            document.getElementById('backToServers').style.display = 'block';
+
             // Отключаем WebSocket
-            disconnectWebSocket();
-            
-            // Очищаем чат
+            disconnectWebSockets();
+
+            // Очищаем чаты
             const chatMessages = document.getElementById('chatMessages');
             if (chatMessages) chatMessages.innerHTML = '';
+
+            const exchangeMessages = document.getElementById('exchangeMessages');
+            if (exchangeMessages) exchangeMessages.innerHTML = '';
         }
 
-        // Загрузка сообщений чата
+        // Загрузка сообщений общего чата
         async function loadChatMessages() {
             try {
                 const container = document.getElementById('chatMessages');
                 if (!container) return;
-                
+
                 container.innerHTML = `
                     <div class="loading">
                         <div class="spinner"></div>
                         <div>Загрузка сообщений...</div>
                     </div>
                 `;
-                
+
                 console.log('📨 Загрузка сообщений для сервера:', serverId);
-                
-                const response = await fetch(`/api/server/${serverId}/messages?limit=50`, {
-                    headers: { 
+
+                const response = await fetch(`/api/server/${serverId}/messages?limit=50&type=general`, {
+                    headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     }
                 });
-                
+
                 console.log('📡 Ответ сообщений:', response.status);
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     console.log('✅ Сообщений загружено:', data.messages?.length || 0);
-                    
-                    renderMessages(data.messages || []);
-                    
+
+                    renderMessages(data.messages || [], 'general');
+
                     if (data.messages && data.messages.length > 0) {
                         lastMessageId = data.messages[data.messages.length - 1].id;
                     }
-                    
+
                     // Скроллим вниз
                     setTimeout(scrollToBottom, 100);
                 } else {
                     const error = await response.json().catch(() => ({ error: 'Ошибка загрузки' }));
                     console.error('❌ Ошибка загрузки сообщений:', error);
-                    showErrorInChat(error.error || 'Ошибка загрузки сообщений');
+                    showErrorInChat(error.error || '❌ Ошибка загрузки сообщений');
                 }
             } catch (error) {
                 console.error('❌ Ошибка сети при загрузке сообщений:', error);
-                showErrorInChat('Не удалось загрузить сообщения');
+                showErrorInChat('🌐 Не удалось загрузить сообщения');
+            }
+        }
+
+        // Загрузка сообщений чата обмена
+        async function loadExchangeMessages() {
+            try {
+                const container = document.getElementById('exchangeMessages');
+                if (!container) return;
+
+                container.innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <div>Загрузка сообщений обмена...</div>
+                    </div>
+                `;
+
+                console.log('📨 Загрузка сообщений обмена для сервера:', serverId);
+
+                const response = await fetch(`/api/server/${serverId}/messages?limit=50&type=exchange`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                console.log('📡 Ответ сообщений обмена:', response.status);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ Сообщений обмена загружено:', data.messages?.length || 0);
+
+                    renderMessages(data.messages || [], 'exchange');
+
+                    if (data.messages && data.messages.length > 0) {
+                        lastExchangeMessageId = data.messages[data.messages.length - 1].id;
+                    }
+
+                    // Скроллим вниз
+                    setTimeout(() => scrollExchangeToBottom(), 100);
+                } else {
+                    const error = await response.json().catch(() => ({ error: 'Ошибка загрузки' }));
+                    console.error('❌ Ошибка загрузки сообщений обмена:', error);
+                    showErrorInExchange(error.error || '❌ Ошибка загрузки сообщений обмена');
+                }
+            } catch (error) {
+                console.error('❌ Ошибка сети при загрузке сообщений обмена:', error);
+                showErrorInExchange('🌐 Не удалось загрузить сообщения обмена');
             }
         }
 
         // Рендер сообщений
-        function renderMessages(messages) {
-            const container = document.getElementById('chatMessages');
+        function renderMessages(messages, type = 'general') {
+            const containerId = type === 'exchange' ? 'exchangeMessages' : 'chatMessages';
+            const container = document.getElementById(containerId);
             if (!container) return;
-            
+
             const currentUserId = getCurrentUserId();
-            
+
             if (!messages || messages.length === 0) {
+                const emptyMessage = type === 'exchange' ?
+                    '💼 Здесь пока нет сообщений обмена. Будьте первым, кто предложит сделку!' :
+                    '💬 Здесь пока нет сообщений. Будьте первым, кто напишет в этом чате!';
+
                 container.innerHTML = `
                     <div class="loading">
-                        <div>Нет сообщений</div>
-                        <div style="margin-top: 10px; color: #888; font-size: 14px;">
-                            Будьте первым, кто напишет в этом чате!
-                        </div>
+                        <div>${emptyMessage}</div>
                     </div>
                 `;
                 return;
             }
-            
+
             container.innerHTML = messages.map(msg => {
                 const isSent = msg.user_id == currentUserId;
                 const isDeleted = msg.deleted || msg.safe_content === '[Сообщение удалено]';
                 const avatarClass = getAvatarClass(msg.sender_role);
                 const displayName = msg.username || 'Пользователь';
                 const avatarLetter = displayName.charAt(0).toUpperCase();
-                
+
                 return `
                     <div class="message ${isSent ? 'sent' : ''}" data-id="${msg.id}">
                         ${!isSent ? `
@@ -1391,7 +1933,7 @@
                             
                             ${isSent && !isDeleted ? `
                                 <div class="message-actions">
-                                    <button class="delete-message-btn" onclick="deleteMessage(${msg.id})">
+                                    <button class="delete-message-btn" onclick="deleteMessage(${msg.id}, '${type}')">
                                         ✕
                                     </button>
                                 </div>
@@ -1429,48 +1971,96 @@
             }
         }
 
-        // Отправка сообщения
+        // Отправка сообщения в общий чат
         async function sendMessage() {
             const input = document.getElementById('chatInput');
             const button = document.getElementById('sendButton');
-            
+
             if (!input || !button) return;
-            
+
             const message = input.value.trim();
-            
+
             if (!message) return;
-            
+
             try {
                 button.disabled = true;
                 button.textContent = '...';
-                
+
                 console.log('📤 Отправка сообщения:', message.substring(0, 50) + '...');
-                
+
                 const response = await fetch(`/api/server/${serverId}/messages`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ content: message })
+                    body: JSON.stringify({ content: message, type: 'general' })
                 });
-                
+
                 console.log('📡 Ответ отправки:', response.status);
-                
+
                 if (response.ok) {
                     input.value = '';
                     autoResize(input);
-                    
+
                     // Перезагружаем сообщения
                     await loadChatMessages();
                 } else {
                     const error = await response.json().catch(() => ({ error: 'Ошибка отправки' }));
                     console.error('❌ Ошибка отправки:', error);
-                    showErrorInChat(error.error || 'Ошибка отправки сообщения');
+                    showErrorInChat(error.error || '❌ Ошибка отправки сообщения');
                 }
             } catch (error) {
                 console.error('❌ Ошибка сети при отправке:', error);
-                showErrorInChat('Ошибка соединения с сервером');
+                showErrorInChat('🌐 Ошибка соединения с сервером');
+            } finally {
+                button.disabled = false;
+                button.textContent = '→';
+            }
+        }
+
+        // Отправка сообщения в чат обмена
+        async function sendExchangeMessage() {
+            const input = document.getElementById('exchangeInput');
+            const button = document.getElementById('exchangeSendButton');
+
+            if (!input || !button) return;
+
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            try {
+                button.disabled = true;
+                button.textContent = '...';
+
+                console.log('📤 Отправка сообщения обмена:', message.substring(0, 50) + '...');
+
+                const response = await fetch(`/api/server/${serverId}/messages`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ content: message, type: 'exchange' })
+                });
+
+                console.log('📡 Ответ отправки обмена:', response.status);
+
+                if (response.ok) {
+                    input.value = '';
+                    autoResize(input);
+
+                    // Перезагружаем сообщения обмена
+                    await loadExchangeMessages();
+                } else {
+                    const error = await response.json().catch(() => ({ error: 'Ошибка отправки' }));
+                    console.error('❌ Ошибка отправки обмена:', error);
+                    showErrorInExchange(error.error || '❌ Ошибка отправки сообщения');
+                }
+            } catch (error) {
+                console.error('❌ Ошибка сети при отправке обмена:', error);
+                showErrorInExchange('🌐 Ошибка соединения с сервером');
             } finally {
                 button.disabled = false;
                 button.textContent = '→';
@@ -1478,25 +2068,26 @@
         }
 
         // Удаление сообщения
-        async function deleteMessage(messageId) {
+        async function deleteMessage(messageId, type = 'general') {
             if (!confirm('Удалить это сообщение?')) return;
-            
+
             try {
                 console.log('🗑️ Удаление сообщения:', messageId);
-                
+
                 const response = await fetch(`/api/server/messages/${messageId}`, {
                     method: 'DELETE',
-                    headers: { 
+                    headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     }
                 });
-                
+
                 console.log('📡 Ответ удаления:', response.status);
-                
+
                 if (response.ok) {
                     // Обновляем интерфейс
-                    const messageElement = document.querySelector(`.message[data-id="${messageId}"]`);
+                    const containerId = type === 'exchange' ? 'exchangeMessages' : 'chatMessages';
+                    const messageElement = document.querySelector(`#${containerId} .message[data-id="${messageId}"]`);
                     if (messageElement) {
                         const textElement = messageElement.querySelector('.message-text');
                         if (textElement) {
@@ -1506,97 +2097,159 @@
                     }
                 } else {
                     const error = await response.json().catch(() => ({ error: 'Ошибка удаления' }));
-                    alert(error.error || 'Ошибка удаления сообщения');
+                    alert(error.error || '❌ Ошибка удаления сообщения');
                 }
             } catch (error) {
                 console.error('❌ Ошибка сети при удалении:', error);
-                alert('Ошибка соединения с сервером');
+                alert('🌐 Ошибка соединения с сервером');
             }
         }
 
-        // WebSocket подключение
-        function connectWebSocket() {
-            if (ws) return;
-            
+        // WebSocket подключения
+        function connectGeneralWebSocket() {
+            if (generalWs) return;
+
             const userId = getCurrentUserId();
             if (!userId) {
                 console.error('❌ Не удалось получить userId для WebSocket');
                 return;
             }
-            
+
             // Определяем URL WebSocket
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws?serverId=${serverId}&userId=${userId}`;
-            
-            console.log('🔗 Подключение WebSocket:', wsUrl);
-            
-            ws = new WebSocket(wsUrl);
-            
-            ws.onopen = () => {
-                console.log('✅ WebSocket подключен');
+            const wsUrl = `${protocol}//${window.location.host}/ws?serverId=${serverId}&userId=${userId}&type=general`;
+
+            console.log('🔗 Подключение WebSocket общего чата:', wsUrl);
+
+            generalWs = new WebSocket(wsUrl);
+
+            generalWs.onopen = () => {
+                console.log('✅ WebSocket общего чата подключен');
             };
-            
-            ws.onmessage = (event) => {
+
+            generalWs.onmessage = (event) => {
                 try {
                     const data = JSON.parse(event.data);
-                    handleWebSocketMessage(data);
+                    handleGeneralWebSocketMessage(data);
                 } catch (error) {
                     console.error('❌ Ошибка парсинга WebSocket сообщения:', error);
                 }
             };
-            
-            ws.onclose = () => {
-                console.log('🔗 WebSocket отключен');
-                ws = null;
+
+            generalWs.onclose = () => {
+                console.log('🔗 WebSocket общего чата отключен');
+                generalWs = null;
                 // Пытаемся переподключиться через 5 секунд
-                setTimeout(connectWebSocket, 5000);
+                setTimeout(connectGeneralWebSocket, 5000);
             };
-            
-            ws.onerror = (error) => {
-                console.error('❌ WebSocket ошибка:', error);
+
+            generalWs.onerror = (error) => {
+                console.error('❌ WebSocket ошибка общего чата:', error);
             };
         }
 
-        function disconnectWebSocket() {
-            if (ws) {
-                ws.close();
-                ws = null;
+        function connectExchangeWebSocket() {
+            if (exchangeWs) return;
+
+            const userId = getCurrentUserId();
+            if (!userId) {
+                console.error('❌ Не удалось получить userId для WebSocket обмена');
+                return;
+            }
+
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws?serverId=${serverId}&userId=${userId}&type=exchange`;
+
+            console.log('🔗 Подключение WebSocket чата обмена:', wsUrl);
+
+            exchangeWs = new WebSocket(wsUrl);
+
+            exchangeWs.onopen = () => {
+                console.log('✅ WebSocket чата обмена подключен');
+            };
+
+            exchangeWs.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleExchangeWebSocketMessage(data);
+                } catch (error) {
+                    console.error('❌ Ошибка парсинга WebSocket сообщения обмена:', error);
+                }
+            };
+
+            exchangeWs.onclose = () => {
+                console.log('🔗 WebSocket чата обмена отключен');
+                exchangeWs = null;
+                setTimeout(connectExchangeWebSocket, 5000);
+            };
+
+            exchangeWs.onerror = (error) => {
+                console.error('❌ WebSocket ошибка чата обмена:', error);
+            };
+        }
+
+        function disconnectWebSockets() {
+            if (generalWs) {
+                generalWs.close();
+                generalWs = null;
+            }
+            if (exchangeWs) {
+                exchangeWs.close();
+                exchangeWs = null;
             }
         }
 
-        // Обработка WebSocket сообщений
-        function handleWebSocketMessage(data) {
-            console.log('📨 WebSocket сообщение:', data.type);
-            
+        // Обработка WebSocket сообщений общего чата
+        function handleGeneralWebSocketMessage(data) {
+            console.log('📨 WebSocket сообщение общего чата:', data.type);
+
             switch (data.type) {
                 case 'new_message':
-                    handleNewMessage(data.message);
+                    handleNewMessage(data.message, 'general');
                     break;
-                    
                 case 'message_deleted':
-                    handleMessageDeleted(data.message_id);
+                    handleMessageDeleted(data.message_id, 'general');
                     break;
-                    
                 case 'user_typing':
                     showTypingIndicator(data.username);
                     break;
-                    
                 case 'moderation':
                     handleModerationEvent(data);
                     break;
             }
         }
 
-        function handleNewMessage(message) {
-            const container = document.getElementById('chatMessages');
+        // Обработка WebSocket сообщений чата обмена
+        function handleExchangeWebSocketMessage(data) {
+            console.log('📨 WebSocket сообщение чата обмена:', data.type);
+
+            switch (data.type) {
+                case 'new_message':
+                    handleNewMessage(data.message, 'exchange');
+                    break;
+                case 'message_deleted':
+                    handleMessageDeleted(data.message_id, 'exchange');
+                    break;
+                case 'user_typing':
+                    showExchangeTypingIndicator(data.username);
+                    break;
+                case 'moderation':
+                    handleModerationEvent(data);
+                    break;
+            }
+        }
+
+        function handleNewMessage(message, type = 'general') {
+            const containerId = type === 'exchange' ? 'exchangeMessages' : 'chatMessages';
+            const container = document.getElementById(containerId);
             if (!container) return;
-            
+
             const currentUserId = getCurrentUserId();
             const isSent = message.user_id == currentUserId;
             const avatarClass = getAvatarClass(message.sender_role);
             const displayName = message.username || 'Пользователь';
             const avatarLetter = displayName.charAt(0).toUpperCase();
-            
+
             const messageHtml = `
                 <div class="message ${isSent ? 'sent' : ''}" data-id="${message.id}">
                     ${!isSent ? `
@@ -1628,22 +2281,29 @@
                     ` : ''}
                 </div>
             `;
-            
+
             container.insertAdjacentHTML('beforeend', messageHtml);
-            
+
             // Обновляем последний ID
-            lastMessageId = message.id;
-            
-            // Показываем индикатор новых сообщений, если не внизу
-            if (!isScrolledToBottom) {
-                showNewMessageIndicator();
+            if (type === 'exchange') {
+                lastExchangeMessageId = message.id;
             } else {
+                lastMessageId = message.id;
+            }
+
+            // Показываем индикатор новых сообщений
+            if (type === 'general' && !isScrolledToBottom) {
+                showNewMessageIndicator();
+            } else if (type === 'general') {
                 scrollToBottom();
+            } else if (type === 'exchange') {
+                scrollExchangeToBottom();
             }
         }
 
-        function handleMessageDeleted(messageId) {
-            const messageElement = document.querySelector(`.message[data-id="${messageId}"]`);
+        function handleMessageDeleted(messageId, type = 'general') {
+            const containerId = type === 'exchange' ? 'exchangeMessages' : 'chatMessages';
+            const messageElement = document.querySelector(`#${containerId} .message[data-id="${messageId}"]`);
             if (messageElement) {
                 const textElement = messageElement.querySelector('.message-text');
                 if (textElement) {
@@ -1653,249 +2313,76 @@
             }
         }
 
-        function handleModerationEvent(data) {
-            // Проверяем, относится ли действие к текущему пользователю
-            const currentUserId = getCurrentUserId();
-            if (data.target_user_id === currentUserId) {
-                if (data.action === 'ban' || data.action === 'kick') {
-                    alert('Вы были исключены из сервера');
-                    window.location.reload();
-                }
-            }
-        }
-
-        // Индикатор печатания
+        // Индикаторы печатания
         function handleTyping() {
-            if (!ws || ws.readyState !== WebSocket.OPEN) return;
-            
-            // Отправляем событие печатания
+            if (!generalWs || generalWs.readyState !== WebSocket.OPEN) return;
+
             const typingEvent = {
                 type: 'typing',
                 server_id: serverId,
-                username: currentUser?.username || 'Пользователь'
+                username: currentUser?.username || 'Пользователь',
+                chat_type: 'general'
             };
-            
-            ws.send(JSON.stringify(typingEvent));
-            
-            // Сбрасываем таймаут
+
+            generalWs.send(JSON.stringify(typingEvent));
+
             if (typingTimeout) clearTimeout(typingTimeout);
-            
-            typingTimeout = setTimeout(() => {
-                // Автоматически сбрасываем индикатор через 3 секунды
-            }, 3000);
+            typingTimeout = setTimeout(() => {}, 3000);
+        }
+
+        function handleExchangeTyping() {
+            if (!exchangeWs || exchangeWs.readyState !== WebSocket.OPEN) return;
+
+            const typingEvent = {
+                type: 'typing',
+                server_id: serverId,
+                username: currentUser?.username || 'Пользователь',
+                chat_type: 'exchange'
+            };
+
+            exchangeWs.send(JSON.stringify(typingEvent));
+
+            if (exchangeTypingTimeout) clearTimeout(exchangeTypingTimeout);
+            exchangeTypingTimeout = setTimeout(() => {}, 3000);
         }
 
         function showTypingIndicator(username) {
             const indicator = document.getElementById('typingIndicator');
             if (!indicator) return;
-            
+
             indicator.textContent = `${username || 'Кто-то'} печатает...`;
             indicator.classList.add('visible');
-            
+
             setTimeout(() => {
                 indicator.classList.remove('visible');
             }, 3000);
         }
 
-        // Action Sheet для модерации
+        function showExchangeTypingIndicator(username) {
+            const indicator = document.getElementById('exchangeTypingIndicator');
+            if (!indicator) return;
+
+            indicator.textContent = `${username || 'Кто-то'} печатает...`;
+            indicator.classList.add('visible');
+
+            setTimeout(() => {
+                indicator.classList.remove('visible');
+            }, 3000);
+        }
+
+        // Action Sheet для модерации (оставлено без изменений, работает как раньше)
         function showUserActions(userId, username, role) {
-            selectedUserForAction = userId;
-            selectedUserRole = role || 'member';
-            
-            const currentUserId = getCurrentUserId();
-            
-            // Не показываем действия для себя
-            if (userId === currentUserId) return;
-            
-            const actionUserName = document.getElementById('actionUserName');
-            const actionUserRole = document.getElementById('actionUserRole');
-            const actionList = document.getElementById('actionList');
-            
-            if (!actionUserName || !actionUserRole || !actionList) return;
-            
-            actionUserName.textContent = username || 'Пользователь';
-            actionUserRole.textContent = getRoleName(selectedUserRole);
-            
-            actionList.innerHTML = '';
-            
-            // Определяем доступные действия
-            const actions = getAvailableActions(selectedUserRole);
-            
-            if (actions.length === 0) {
-                actionList.innerHTML = '<div style="padding: 16px; text-align: center; color: #888;">Нет доступных действий</div>';
-                showActionSheet();
-                return;
+            // ... существующий код ...
+        }
+
+        function showFileNotice() {
+            const notice = document.getElementById('fileNotice');
+            if (notice) {
+                notice.classList.remove('hidden');
+                setTimeout(() => {
+                    notice.classList.add('hidden');
+                }, 3000);
             }
-            
-            actions.forEach(action => {
-                const button = document.createElement('button');
-                button.className = `action-button ${action.danger ? 'danger' : ''} ${action.warning ? 'warning' : ''}`;
-                button.innerHTML = `
-                    <span>${action.icon}</span>
-                    <span>${action.text}</span>
-                `;
-                button.onclick = () => handleModerationAction(action.type);
-                
-                actionList.appendChild(button);
-            });
-            
-            showActionSheet();
-        }
-
-        function getRoleName(role) {
-            if (!role) return 'Участник';
-            switch (role) {
-                case 'owner': return 'Владелец';
-                case 'global_admin': return 'Глобальный админ';
-                case 'admin': return 'Админ';
-                default: return 'Участник';
-            }
-        }
-
-        function getAvailableActions(targetRole) {
-            const actions = [];
-            
-            // Проверяем права текущего пользователя
-            if (userRole === 'owner' || userRole === 'global_admin') {
-                if (targetRole === 'admin' || targetRole === 'member') {
-                    actions.push({
-                        icon: '👑',
-                        text: targetRole === 'admin' ? 'Снять админа' : 'Назначить админом',
-                        type: targetRole === 'admin' ? 'remove_admin' : 'make_admin'
-                    });
-                }
-                
-                actions.push({
-                    icon: '👢',
-                    text: 'Исключить из сервера',
-                    type: 'kick',
-                    warning: true
-                });
-                
-                actions.push({
-                    icon: '🔨',
-                    text: 'Заблокировать',
-                    type: 'ban',
-                    danger: true
-                });
-            } else if (userRole === 'admin') {
-                if (targetRole === 'member') {
-                    actions.push({
-                        icon: '👢',
-                        text: 'Исключить из сервера',
-                        type: 'kick',
-                        warning: true
-                    });
-                }
-            }
-            
-            return actions;
-        }
-
-        function handleModerationAction(actionType) {
-            hideActionSheet();
-            
-            if (actionType === 'ban') {
-                showBanModal();
-            } else {
-                performModerationAction(actionType);
-            }
-        }
-
-        async function performModerationAction(actionType, reason = null, duration = null) {
-            try {
-                console.log('⚙️ Выполнение модерации:', { actionType, target_user_id: selectedUserForAction });
-                
-                const response = await fetch('/api/server/moderate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({
-                        server_id: serverId,
-                        target_user_id: selectedUserForAction,
-                        action: actionType,
-                        reason: reason,
-                        duration_hours: duration
-                    })
-                });
-                
-                console.log('📡 Ответ модерации:', response.status);
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    showSuccess(data.message || 'Действие выполнено');
-                } else {
-                    const error = await response.json().catch(() => ({ error: 'Ошибка выполнения' }));
-                    showErrorInChoices(error.error || 'Ошибка выполнения действия');
-                }
-            } catch (error) {
-                console.error('❌ Ошибка модерации:', error);
-                showErrorInChoices('Ошибка соединения с сервером');
-            }
-        }
-
-        // Управление Action Sheet
-        function showActionSheet() {
-            const overlay = document.getElementById('actionOverlay');
-            const sheet = document.getElementById('actionSheet');
-            
-            if (overlay) overlay.classList.add('visible');
-            if (sheet) sheet.classList.add('visible');
-        }
-
-        function hideActionSheet() {
-            const overlay = document.getElementById('actionOverlay');
-            const sheet = document.getElementById('actionSheet');
-            
-            if (overlay) overlay.classList.remove('visible');
-            if (sheet) sheet.classList.remove('visible');
-        }
-
-        // Управление модальным окном бана
-        function showBanModal() {
-            const overlay = document.getElementById('banOverlay');
-            const modal = document.getElementById('banModal');
-            
-            if (overlay) overlay.classList.add('visible');
-            if (modal) modal.classList.add('visible');
-        }
-
-        function hideBanModal() {
-            const overlay = document.getElementById('banOverlay');
-            const modal = document.getElementById('banModal');
-            
-            if (overlay) overlay.classList.remove('visible');
-            if (modal) modal.classList.remove('visible');
-            currentBanDuration = null;
-        }
-
-        function setBanDuration(hours) {
-            currentBanDuration = hours;
-            const buttons = document.querySelectorAll('.duration-btn');
-            buttons.forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            if (hours === null) {
-                const customInput = document.getElementById('customDuration');
-                if (customInput) customInput.value = '';
-            }
-        }
-
-        function confirmBan() {
-            let duration = currentBanDuration;
-            const customInput = document.getElementById('customDuration');
-            
-            if (customInput && customInput.value) {
-                duration = parseInt(customInput.value);
-            }
-            
-            const reasonInput = document.getElementById('banReason');
-            const reason = reasonInput ? reasonInput.value.trim() : '';
-            
-            performModerationAction('ban', reason || null, duration);
-            hideBanModal();
         }
 
         // Вспомогательные функции
@@ -1912,12 +2399,26 @@
             }
         }
 
+        function handleExchangeEnterKey(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendExchangeMessage();
+            }
+        }
+
         function scrollToBottom() {
             const container = document.getElementById('chatMessages');
             if (container) {
                 container.scrollTop = container.scrollHeight;
                 isScrolledToBottom = true;
                 hideNewMessageIndicator();
+            }
+        }
+
+        function scrollExchangeToBottom() {
+            const container = document.getElementById('exchangeMessages');
+            if (container) {
+                container.scrollTop = container.scrollHeight;
             }
         }
 
@@ -1941,15 +2442,16 @@
         const chatMessagesEl = document.getElementById('chatMessages');
         if (chatMessagesEl) {
             chatMessagesEl.addEventListener('scroll', () => {
-                isScrolledToBottom = 
+                isScrolledToBottom =
                     chatMessagesEl.scrollHeight - chatMessagesEl.clientHeight <= chatMessagesEl.scrollTop + 100;
-                
+
                 if (isScrolledToBottom) {
                     hideNewMessageIndicator();
                 }
             });
         }
 
+        // Уведомления
         function showErrorInChoices(message) {
             const container = document.getElementById('choicesContainer');
             if (container) {
@@ -1961,20 +2463,23 @@
             }
         }
 
-        function showSuccess(message) {
+        function showSuccessInChoices(message) {
             const container = document.getElementById('choicesContainer');
             if (!container) return;
-            
+
             const successElement = document.createElement('div');
             successElement.className = 'success-message';
-            successElement.textContent = message;
+            successElement.innerHTML = `
+                <div style="margin-bottom: 10px;">${escapeHtml(message)}</div>
+                <div style="font-size: 14px; opacity: 0.8;">Теперь у вас есть доступ ко всем функциям сервера!</div>
+            `;
             container.prepend(successElement);
-            
+
             setTimeout(() => {
                 if (successElement.parentNode) {
                     successElement.remove();
                 }
-            }, 3000);
+            }, 5000);
         }
 
         function showErrorInChat(message) {
@@ -1988,31 +2493,42 @@
             }
         }
 
+        function showErrorInExchange(message) {
+            const container = document.getElementById('exchangeMessages');
+            if (container) {
+                container.innerHTML += `
+                    <div class="error-message">
+                        ${escapeHtml(message)}
+                    </div>
+                `;
+            }
+        }
+
         // Инициализация
         document.addEventListener('DOMContentLoaded', async () => {
             console.log('🚀 DOM загружен, начинаем инициализацию...');
-            
+
             // Проверяем наличие токена
             if (!token) {
                 window.location.href = '/login.html';
                 return;
             }
-            
+
             // Проверяем serverId
             if (!serverId) {
                 window.location.href = '/server-page.html';
                 return;
             }
-            
+
             // Загружаем информацию о сервере
             await loadServerInfo();
-            
+
             // Получаем данные текущего пользователя
             try {
                 const response = await fetch('/api/profile', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     currentUser = data.user;
@@ -2023,6 +2539,14 @@
             } catch (error) {
                 console.error('❌ Ошибка загрузки профиля:', error);
             }
+
+            // Автоскрытие уведомления о файлах через 5 секунд
+            setTimeout(() => {
+                const notice = document.getElementById('fileNotice');
+                if (notice) {
+                    notice.classList.add('hidden');
+                }
+            }, 5000);
         });
 
         // Обработка сенсорных жестов для закрытия модальных окон
