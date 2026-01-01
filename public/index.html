@@ -2,11 +2,11 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Zeeptook - Игровой маркетплейс</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
-        /* Telegram-подобные стили */
+        /* Telegram-подобные стили - ТОЛЬКО ДЛЯ МОБИЛЬНЫХ */
         * {
             margin: 0;
             padding: 0;
@@ -44,6 +44,28 @@
             font-size: 15px;
             opacity: 0;
             animation: pageFadeIn 0.6s ease forwards;
+            padding-bottom: 70px; /* Для нижнего меню */
+        }
+
+        /* Запрет десктопного просмотра */
+        @media (min-width: 768px) {
+            body::before {
+                content: "Это приложение доступно только на мобильных устройствах";
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: var(--chat-bg);
+                color: var(--white);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                text-align: center;
+                font-size: 18px;
+                z-index: 9999;
+            }
         }
 
         @keyframes pageFadeIn {
@@ -60,11 +82,10 @@
         .app-container {
             background: var(--chat-bg);
             min-height: 100vh;
-            padding-bottom: 70px;
             max-width: 100%;
         }
 
-        /* Header - Telegram стиль с Instagram-like индикатором */
+        /* Header - ЗАКРЕПЛЕННЫЙ */
         .header {
             background: var(--nav-bg);
             color: var(--white);
@@ -72,8 +93,10 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            position: sticky;
+            position: fixed;
             top: 0;
+            left: 0;
+            right: 0;
             z-index: 1000;
             height: 60px;
             border-bottom: 1px solid var(--gray-dark);
@@ -94,59 +117,53 @@
             font-size: 20px;
         }
         
-        /* Instagram-like статус загрузки вместо онлайн статуса */
+        /* Кнопка сообщений вместо статуса */
         .header-actions {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
         }
         
-        .loading-indicator {
+        .messages-btn {
             display: flex;
             align-items: center;
-            font-size: 11px;
-            background: rgba(0, 136, 204, 0.1);
-            padding: 4px 10px;
-            border-radius: 12px;
+            gap: 6px;
+            background: var(--gradient);
+            color: var(--white);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 18px;
+            font-size: 13px;
             font-weight: 500;
-            border: 1px solid rgba(0, 136, 204, 0.2);
-            color: var(--primary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            box-shadow: 0 2px 8px rgba(0, 136, 204, 0.3);
         }
         
-        .loading-dots {
-            display: inline-flex;
-            margin-left: 4px;
+        .messages-btn:active {
+            transform: scale(0.95);
+            background: linear-gradient(135deg, var(--primary-dark) 0%, #006699 100%);
         }
         
-        .loading-dots span {
-            width: 4px;
-            height: 4px;
-            background-color: var(--primary);
-            border-radius: 50%;
-            margin: 0 1px;
-            animation: loadingDots 1.5s infinite ease-in-out;
-        }
-        
-        .loading-dots span:nth-child(1) { animation-delay: 0s; }
-        .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
-        .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
-        
-        @keyframes loadingDots {
-            0%, 100% { opacity: 0.3; }
-            50% { opacity: 1; }
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+        .messages-btn i {
+            font-size: 14px;
         }
 
-        /* Search Section - Telegram стиль */
+        /* Контент с отступами для закрепленных элементов */
+        .content-wrapper {
+            margin-top: 60px; /* Для header */
+            margin-bottom: 60px; /* Для bottom-nav */
+        }
+
+        /* Search Section - ЗАКРЕПЛЕННЫЙ */
         .search-section {
             padding: 12px 16px;
             background: var(--nav-bg);
             border-bottom: 1px solid var(--gray-dark);
+            position: sticky;
+            top: 60px;
+            z-index: 999;
             animation: slideDown 0.4s ease 0.2s both;
         }
         
@@ -208,17 +225,23 @@
             transform: scale(0.95);
         }
 
-        /* Categories - Telegram стиль */
+        /* Categories - ЗАКРЕПЛЕННЫЙ */
+        .categories-section {
+            background: var(--nav-bg);
+            border-bottom: 1px solid var(--gray-dark);
+            position: sticky;
+            top: 124px; /* header(60) + search(64) */
+            z-index: 998;
+            animation: slideDown 0.4s ease 0.3s both;
+        }
+        
         .categories-scroll {
             display: flex;
             overflow-x: auto;
             padding: 12px 16px;
             gap: 8px;
-            background: var(--nav-bg);
-            border-bottom: 1px solid var(--gray-dark);
             scrollbar-width: none;
             -ms-overflow-style: none;
-            animation: slideDown 0.4s ease 0.3s both;
         }
         
         .categories-scroll::-webkit-scrollbar {
@@ -253,6 +276,7 @@
         .main-content {
             padding: 0;
             animation: fadeIn 0.4s ease 0.4s both;
+            min-height: calc(100vh - 244px); /* Высота всех закрепленных элементов */
         }
 
         @keyframes fadeIn {
@@ -287,7 +311,7 @@
             opacity: 0.7;
         }
 
-        /* Ads Grid - ДВА РЯДА с закруглениями */
+        /* Ads Grid - ДВА РЯДА */
         .ads-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -302,7 +326,7 @@
             opacity: 0.5;
         }
 
-        /* Ad Card - Закругленный стиль */
+        /* Ad Card */
         .ad-card {
             background: var(--nav-bg);
             border-radius: var(--radius);
@@ -332,7 +356,7 @@
             transition: transform 0.1s ease;
         }
         
-        /* Ad Image - раздельная загрузка */
+        /* Ad Image */
         .ad-image {
             position: relative;
             width: 100%;
@@ -653,7 +677,7 @@
             background: rgba(0, 136, 204, 0.1);
         }
 
-        /* Bottom Navigation - Telegram стиль, 5 кнопок как в server-page */
+        /* Bottom Navigation - ЗАКРЕПЛЕННЫЙ ВНИЗУ */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -666,6 +690,7 @@
             border-top: 1px solid var(--gray-dark);
             z-index: 1000;
             height: 60px;
+            box-shadow: 0 -1px 3px rgba(0,0,0,0.2);
         }
         
         .nav-btn {
@@ -679,6 +704,9 @@
             transition: all 0.2s ease;
             flex: 1;
             position: relative;
+            border: none;
+            background: none;
+            cursor: pointer;
         }
         
         .nav-btn i {
@@ -726,14 +754,23 @@
             100% { transform: rotate(360deg); }
         }
 
-        /* Responsive */
+        /* Адаптация для маленьких экранов */
         @media (max-width: 360px) {
             .header {
                 padding: 10px 12px;
             }
             
+            .messages-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+            
             .search-section {
                 padding: 10px 12px;
+            }
+            
+            .categories-section {
+                top: 120px;
             }
             
             .categories-scroll {
@@ -760,103 +797,129 @@
             .ad-description {
                 font-size: 11px;
             }
+            
+            .section-header {
+                padding: 12px;
+            }
         }
         
-        @media (min-width: 768px) {
-            .ads-grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 15px;
-                padding: 16px;
+        @media (max-width: 320px) {
+            .logo span {
+                font-size: 15px;
             }
             
-            .ad-image {
-                height: 180px;
+            .messages-btn {
+                padding: 5px 8px;
+                font-size: 11px;
+                gap: 4px;
+            }
+            
+            .ad-title {
+                font-size: 12px;
+            }
+            
+            .ad-price {
+                font-size: 14px;
             }
         }
-        
-        @media (min-width: 1024px) {
-            .ads-grid {
-                grid-template-columns: repeat(4, 1fr);
-                max-width: 1200px;
-                margin: 0 auto;
-            }
+
+        /* Плавный скролл */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Запрет выделения текста для лучшего UX на мобильных */
+        .category,
+        .nav-btn,
+        .ad-card,
+        .messages-btn {
+            user-select: none;
+            -webkit-user-select: none;
         }
     </style>
 </head>
 <body>
     <div class="app-container">
+        <!-- ЗАКРЕПЛЕННЫЙ ХЕДЕР -->
         <div class="header">
             <div class="logo">
                 <i class="fa fa-diamond"></i>
                 <span>Zeeptook</span>
             </div>
             <div class="header-actions">
-                <div class="loading-indicator" id="loading-status">
-                    Загрузка
-                    <span class="loading-dots">
-                        <span></span><span></span><span></span>
-                    </span>
-                </div>
+                <!-- Кнопка сообщений вместо статуса -->
+                <a href="messages.html" class="messages-btn">
+                    <i class="fa fa-comment"></i>
+                    <span>Сообщения</span>
+                </a>
             </div>
         </div>
         
-        <div class="search-section">
-            <div class="search-container">
-                <div class="search-box">
-                    <input type="text" id="search-input" placeholder="Поиск игровых аккаунтов...">
-                    <button id="search-btn">
-                        <i class="fa fa-search"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-        
-        <div class="categories-scroll" id="categories-container">
-            <div class="category active" data-category="all">Все</div>
-            <!-- Категории будут загружены с сервера -->
-        </div>
-        
-        <div class="main-content">
-            <div class="section-header">
-                <div class="section-title">Игровые аккаунты</div>
-                <a href="#" class="view-all">Все</a>
-            </div>
-            
-            <div class="ads-grid" id="ads-container">
-                <div class="initial-loading">
-                    <div class="loading-spinner"></div>
-                    <div>Загрузка объявлений...</div>
+        <!-- ОСНОВНОЙ КОНТЕНТ -->
+        <div class="content-wrapper">
+            <!-- ЗАКРЕПЛЕННЫЙ ПОИСК -->
+            <div class="search-section">
+                <div class="search-container">
+                    <div class="search-box">
+                        <input type="text" id="search-input" placeholder="Поиск игровых аккаунтов...">
+                        <button id="search-btn">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
             
-            <div class="load-more">
-                <button class="load-more-btn" id="load-more-btn" style="display: none;">Показать ещё</button>
+            <!-- ЗАКРЕПЛЕННЫЕ КАТЕГОРИИ -->
+            <div class="categories-section">
+                <div class="categories-scroll" id="categories-container">
+                    <div class="category active" data-category="all">Все</div>
+                    <!-- Категории будут загружены с сервера -->
+                </div>
+            </div>
+            
+            <!-- ОСНОВНОЙ КОНТЕНТ -->
+            <div class="main-content">
+                <div class="section-header">
+                    <div class="section-title">Игровые аккаунты</div>
+                    <a href="#" class="view-all">Все</a>
+                </div>
+                
+                <div class="ads-grid" id="ads-container">
+                    <div class="initial-loading">
+                        <div class="loading-spinner"></div>
+                        <div>Загрузка объявлений...</div>
+                    </div>
+                </div>
+                
+                <div class="load-more">
+                    <button class="load-more-btn" id="load-more-btn" style="display: none;">Показать ещё</button>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Нижняя навигация с 5 кнопками как в server-page.html -->
-    <div class="bottom-nav">
-        <a href="index.html" class="nav-btn active">
-            <i class="fa fa-home"></i>
-            <span>Главная</span>
-        </a>
-        <a href="messages.html" class="nav-btn">
-            <i class="fa fa-comment"></i>
-            <span>Чаты</span>
-        </a>
-        <a href="add-ad.html" class="nav-btn">
-            <i class="fa fa-plus"></i>
-            <span>Добавить</span>
-        </a>
-        <a href="server-page.html" class="nav-btn">
-            <i class="fa fa-gamepad"></i>
-            <span>Серверы</span>
-        </a>
-        <a href="profile.html" class="nav-btn">
-            <i class="fa fa-user"></i>
-            <span>Профиль</span>
-        </a>
+        
+        <!-- ЗАКРЕПЛЕННОЕ НИЖНЕЕ МЕНЮ -->
+        <div class="bottom-nav">
+            <a href="index.html" class="nav-btn active">
+                <i class="fa fa-home"></i>
+                <span>Главная</span>
+            </a>
+            <a href="messages.html" class="nav-btn">
+                <i class="fa fa-comment"></i>
+                <span>Чаты</span>
+            </a>
+            <a href="add-ad.html" class="nav-btn">
+                <i class="fa fa-plus"></i>
+                <span>Добавить</span>
+            </a>
+            <a href="server-page.html" class="nav-btn">
+                <i class="fa fa-gamepad"></i>
+                <span>Серверы</span>
+            </a>
+            <a href="profile.html" class="nav-btn">
+                <i class="fa fa-user"></i>
+                <span>Профиль</span>
+            </a>
+        </div>
     </div>
 
     <script>
@@ -873,29 +936,8 @@
         // API базовый URL
         const API_BASE = '/api';
 
-        // Функция для обновления статуса загрузки (Instagram-like)
-        function updateLoadingStatus(text = 'Загрузка') {
-            const loadingStatus = document.getElementById('loading-status');
-            if (loadingStatus) {
-                const textElement = loadingStatus.childNodes[0];
-                textElement.nodeValue = text + ' ';
-            }
-        }
-
-        // Функция для завершения загрузки
-        function completeLoading() {
-            const loadingStatus = document.getElementById('loading-status');
-            if (loadingStatus) {
-                loadingStatus.innerHTML = 'Готово';
-                setTimeout(() => {
-                    loadingStatus.style.opacity = '0.7';
-                }, 1000);
-            }
-        }
-
         // Функция для загрузки категорий
         async function loadCategories() {
-            updateLoadingStatus('Загрузка категорий');
             try {
                 const response = await fetch(`${API_BASE}/categories`);
                 if (!response.ok) throw new Error('Failed to load categories');
@@ -969,7 +1011,6 @@
             try {
                 // Показываем индикатор загрузки только при первой загрузке
                 if (page === 1) {
-                    updateLoadingStatus('Загрузка объявлений');
                     adsContainer.innerHTML = `
                         <div class="initial-loading">
                             <div class="loading-spinner"></div>
@@ -1037,16 +1078,9 @@
                     loadMoreBtn.style.display = 'none';
                 }
                 
-                // Обновляем статус загрузки
-                if (page === 1) {
-                    updateLoadingStatus('Готово');
-                    setTimeout(completeLoading, 500);
-                }
-                
             } catch (error) {
                 console.error('Ошибка при загрузке объявлений:', error);
                 showError('Не удалось загрузить объявления. Проверьте подключение к интернету.');
-                updateLoadingStatus('Ошибка загрузки');
             } finally {
                 isLoading = false;
                 adsContainer.classList.remove('loading');
@@ -1425,7 +1459,7 @@
             const notification = document.createElement('div');
             notification.style.cssText = `
                 position: fixed;
-                top: 20px;
+                top: 80px;
                 left: 50%;
                 transform: translateX(-50%);
                 background: #0088cc;
@@ -1438,6 +1472,7 @@
                 animation: slideDown 0.3s ease-out;
                 max-width: 90%;
                 text-align: center;
+                font-size: 14px;
             `;
             notification.textContent = message;
             
@@ -1458,9 +1493,6 @@
                 console.error('❌ ads-container not found!');
                 return;
             }
-            
-            // Обновляем статус загрузки
-            updateLoadingStatus('Инициализация');
             
             // Загружаем данные
             loadCategories();
