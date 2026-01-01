@@ -4,21 +4,106 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Мой сервер - Zeeptook</title>
-    <link rel="stylesheet" href="/css/style.css">
     <style>
-        .server-container {
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Header стили из profile.html */
+        header {
+            background: #1a1a1a;
+            border-bottom: 1px solid #333;
+            padding: 0 20px;
+        }
+
+        .navbar {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 60px;
+        }
+
+        .nav-brand a {
+            font-size: 24px;
+            font-weight: bold;
+            color: #fff;
+            text-decoration: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+        }
+
+        .nav-menu a {
+            color: #b0b0b0;
+            text-decoration: none;
+            font-size: 16px;
+            transition: color 0.3s;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+
+        .nav-menu a:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-menu a.active {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        #logoutBtn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        #logoutBtn:hover {
+            background: #c82333;
+        }
+
+        /* Main контент */
+        main {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .server-container {
             display: grid;
             grid-template-columns: 300px 1fr;
             gap: 20px;
+            min-height: calc(100vh - 100px);
         }
 
+        /* Панель информации о сервере */
         .server-info {
-            background: #1e1e1e;
-            border-radius: 10px;
+            background: #1a1a1a;
+            border-radius: 12px;
             padding: 20px;
+            border: 1px solid #333;
             height: fit-content;
         }
 
@@ -27,6 +112,8 @@
             align-items: center;
             gap: 15px;
             margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #333;
         }
 
         .server-avatar {
@@ -40,33 +127,48 @@
             font-size: 32px;
             color: white;
             font-weight: bold;
+            flex-shrink: 0;
         }
 
         .server-title {
             font-size: 24px;
-            font-weight: bold;
+            font-weight: 600;
             color: white;
+            margin-bottom: 5px;
+        }
+
+        .server-owner {
+            color: #808080;
+            font-size: 14px;
         }
 
         .server-description {
             color: #b0b0b0;
             margin: 15px 0;
             line-height: 1.5;
+            font-size: 15px;
         }
 
         .server-meta {
             color: #808080;
             font-size: 14px;
             margin-top: 20px;
-            border-top: 1px solid #333;
             padding-top: 15px;
+            border-top: 1px solid #333;
         }
 
         .invite-link-container {
-            background: #2a2a2a;
+            background: #222;
             border-radius: 8px;
             padding: 15px;
             margin-top: 20px;
+            border: 1px solid #444;
+        }
+
+        .invite-link-container p {
+            color: white;
+            margin-bottom: 10px;
+            font-weight: 500;
         }
 
         .invite-link {
@@ -80,18 +182,22 @@
             background: #1a1a1a;
             border: 1px solid #444;
             color: white;
-            padding: 8px 12px;
-            border-radius: 5px;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 14px;
         }
 
         .btn-copy {
             background: #4CAF50;
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 5px;
+            padding: 10px 16px;
+            border-radius: 6px;
             cursor: pointer;
             transition: background 0.3s;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
         }
 
         .btn-copy:hover {
@@ -102,12 +208,14 @@
             background: #2196F3;
         }
 
+        /* Чат контейнер */
         .chat-container {
-            background: #1e1e1e;
-            border-radius: 10px;
+            background: #1a1a1a;
+            border-radius: 12px;
             display: flex;
             flex-direction: column;
-            height: calc(100vh - 160px);
+            border: 1px solid #333;
+            height: calc(100vh - 140px);
         }
 
         .chat-messages {
@@ -131,13 +239,19 @@
             background: #333;
             border-radius: 50%;
             flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
         }
 
         .message-content {
-            background: #2a2a2a;
+            background: #222;
             padding: 12px 15px;
             border-radius: 15px;
             max-width: 70%;
+            border: 1px solid #444;
         }
 
         .message-header {
@@ -148,8 +262,9 @@
         }
 
         .message-username {
-            font-weight: bold;
+            font-weight: 600;
             color: white;
+            font-size: 14px;
         }
 
         .message-time {
@@ -160,6 +275,7 @@
         .message-text {
             color: #e0e0e0;
             line-height: 1.4;
+            font-size: 14px;
         }
 
         .chat-input-container {
@@ -174,7 +290,7 @@
 
         .chat-input textarea {
             flex: 1;
-            background: #2a2a2a;
+            background: #222;
             border: 1px solid #444;
             color: white;
             padding: 12px;
@@ -182,6 +298,12 @@
             resize: none;
             height: 60px;
             font-family: inherit;
+            font-size: 14px;
+        }
+
+        .chat-input textarea:focus {
+            outline: none;
+            border-color: #667eea;
         }
 
         .btn-send {
@@ -192,18 +314,28 @@
             border-radius: 8px;
             cursor: pointer;
             transition: background 0.3s;
+            font-weight: 500;
         }
 
         .btn-send:hover {
             background: #5a67d8;
         }
 
+        /* Форма создания сервера */
         .create-server-form {
             max-width: 500px;
             margin: 50px auto;
-            background: #1e1e1e;
+            background: #1a1a1a;
             padding: 30px;
-            border-radius: 10px;
+            border-radius: 12px;
+            border: 1px solid #333;
+        }
+
+        .create-server-form h2 {
+            color: white;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 28px;
         }
 
         .form-group {
@@ -215,17 +347,25 @@
             margin-bottom: 8px;
             color: white;
             font-weight: 500;
+            font-size: 14px;
         }
 
         .form-group input,
         .form-group textarea {
             width: 100%;
             padding: 12px;
-            background: #2a2a2a;
+            background: #222;
             border: 1px solid #444;
-            border-radius: 5px;
+            border-radius: 6px;
             color: white;
-            font-size: 16px;
+            font-size: 15px;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
         }
 
         .form-group textarea {
@@ -237,11 +377,11 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 12px 30px;
-            border-radius: 5px;
+            padding: 14px 30px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 16px;
-            font-weight: 500;
+            font-weight: 600;
             width: 100%;
             transition: transform 0.3s;
         }
@@ -250,6 +390,7 @@
             transform: translateY(-2px);
         }
 
+        /* Состояния */
         .empty-state {
             text-align: center;
             padding: 50px 20px;
@@ -259,8 +400,25 @@
         .empty-state h2 {
             color: white;
             margin-bottom: 10px;
+            font-size: 24px;
         }
 
+        .empty-state p {
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+
+        .empty-state a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .empty-state a:hover {
+            text-decoration: underline;
+        }
+
+        /* Индикатор печати */
         .typing-indicator {
             padding: 10px 20px;
             color: #808080;
@@ -269,11 +427,31 @@
             display: none;
         }
 
+        /* Анимации */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* Скроллбар */
+        .chat-messages::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-messages::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Адаптивность */
         @media (max-width: 768px) {
             .server-container {
                 grid-template-columns: 1fr;
@@ -286,6 +464,54 @@
             .message-content {
                 max-width: 85%;
             }
+            
+            .navbar {
+                flex-direction: column;
+                height: auto;
+                padding: 15px 0;
+            }
+            
+            .nav-menu {
+                margin-top: 15px;
+                gap: 15px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .create-server-form {
+                margin: 20px auto;
+                padding: 20px;
+            }
+        }
+
+        /* Утилиты */
+        .hidden {
+            display: none !important;
+        }
+
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .error-message {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid #dc3545;
+            color: #ff6b6b;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .success-message {
+            background: rgba(40, 167, 69, 0.1);
+            border: 1px solid #28a745;
+            color: #6bff8d;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 14px;
         }
     </style>
 </head>
@@ -325,252 +551,16 @@
         const urlParams = new URLSearchParams(window.location.search);
         const inviteLink = urlParams.get('invite');
 
-        // Загрузка данных сервера
-        async function loadServerData() {
-            try {
-                const container = document.getElementById('serverContainer');
-                
-                if (inviteLink) {
-                    // Загрузка чужого сервера по invite_link
-                    const response = await fetch(`/api/server/${inviteLink}`, {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        currentServer = data.server;
-                        renderServerPage();
-                        loadChatMessages();
-                    } else {
-                        container.innerHTML = `
-                            <div class="empty-state">
-                                <h2>Сервер не найден</h2>
-                                <p>Ссылка может быть устаревшей или сервер был удален.</p>
-                                <a href="/server-page.html" style="color: #667eea;">Вернуться к своему серверу</a>
-                            </div>
-                        `;
-                    }
-                } else {
-                    // Загрузка своего сервера
-                    const response = await fetch('/api/server/my', {
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.hasServer) {
-                        currentServer = data.server;
-                        renderServerPage();
-                        loadChatMessages();
-                    } else {
-                        renderCreateServerForm();
-                    }
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки сервера:', error);
-            }
-        }
-
-        // Рендер формы создания сервера
-        function renderCreateServerForm() {
-            const container = document.getElementById('serverContainer');
-            container.innerHTML = `
-                <div class="create-server-form">
-                    <h2 style="color: white; margin-bottom: 30px; text-align: center;">Создать сервер</h2>
-                    <form id="createServerForm">
-                        <div class="form-group">
-                            <label for="serverName">Название сервера</label>
-                            <input type="text" id="serverName" required maxlength="100" placeholder="Введите название">
-                        </div>
-                        <div class="form-group">
-                            <label for="serverDescription">Описание</label>
-                            <textarea id="serverDescription" maxlength="500" placeholder="Опишите ваш сервер (необязательно)"></textarea>
-                        </div>
-                        <button type="submit" class="btn-create">Создать сервер</button>
-                    </form>
-                    <p style="color: #808080; margin-top: 20px; text-align: center;">
-                        Вы можете создать только один сервер. Выбирайте название с умом!
-                    </p>
-                </div>
-            `;
-
-            document.getElementById('createServerForm').addEventListener('submit', createServer);
-        }
-
-        // Рендер страницы сервера
-        function renderServerPage() {
-            const container = document.getElementById('serverContainer');
-            const isOwner = !inviteLink; // Если нет invite параметра, значит это свой сервер
-            
-            container.innerHTML = `
-                <div class="server-info">
-                    <div class="server-header">
-                        <div class="server-avatar">${currentServer.name.charAt(0).toUpperCase()}</div>
-                        <div>
-                            <h1 class="server-title">${escapeHtml(currentServer.name)}</h1>
-                            <p style="color: #808080;">Создал: ${escapeHtml(currentServer.owner_username)}</p>
-                        </div>
-                    </div>
-                    
-                    ${currentServer.description ? `
-                        <div class="server-description">
-                            ${escapeHtml(currentServer.description)}
-                        </div>
-                    ` : ''}
-                    
-                    <div class="server-meta">
-                        <p>Создан: ${new Date(currentServer.created_at).toLocaleDateString('ru-RU')}</p>
-                    </div>
-                    
-                    ${isOwner ? `
-                        <div class="invite-link-container">
-                            <p style="color: white; margin-bottom: 10px;">Пригласительная ссылка:</p>
-                            <div class="invite-link">
-                                <input type="text" id="inviteLinkInput" value="${window.location.origin}/server-page.html?invite=${currentServer.invite_link}" readonly>
-                                <button class="btn-copy" onclick="copyInviteLink()">Копировать</button>
-                            </div>
-                            <p style="color: #808080; font-size: 12px; margin-top: 10px;">
-                                Поделитесь этой ссылкой с друзьями
-                            </p>
-                        </div>
-                    ` : ''}
-                </div>
-                
-                <div class="chat-container">
-                    <div class="chat-messages" id="chatMessages">
-                        <!-- Сообщения будут загружаться здесь -->
-                    </div>
-                    <div class="typing-indicator" id="typingIndicator"></div>
-                    <div class="chat-input-container">
-                        <div class="chat-input">
-                            <textarea 
-                                id="messageInput" 
-                                placeholder="Написать сообщение..." 
-                                maxlength="2000"
-                                oninput="autoResize(this)"
-                            ></textarea>
-                            <button class="btn-send" onclick="sendMessage()">Отправить</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            // Добавляем обработчик Enter для отправки сообщения
-            document.getElementById('messageInput').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    sendMessage();
-                }
-            });
-        }
-
-        // Загрузка сообщений чата
-        async function loadChatMessages() {
-            if (!currentServer) return;
-
-            try {
-                const response = await fetch(`/api/server/${currentServer.id}/messages`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    const messagesContainer = document.getElementById('chatMessages');
-                    
-                    if (data.messages.length > 0) {
-                        lastMessageId = data.messages[data.messages.length - 1].id;
-                        
-                        messagesContainer.innerHTML = data.messages.map(msg => `
-                            <div class="message" data-id="${msg.id}">
-                                <div class="message-avatar" style="background: ${getAvatarColor(msg.user_id)}">
-                                    ${msg.username.charAt(0).toUpperCase()}
-                                </div>
-                                <div class="message-content">
-                                    <div class="message-header">
-                                        <span class="message-username">${escapeHtml(msg.username)}</span>
-                                        <span class="message-time">${formatTime(msg.created_at)}</span>
-                                    </div>
-                                    <div class="message-text">${escapeHtml(msg.content)}</div>
-                                </div>
-                            </div>
-                        `).join('');
-                        
-                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-                    } else {
-                        messagesContainer.innerHTML = `
-                            <div class="empty-state">
-                                <p>Пока нет сообщений. Будьте первым!</p>
-                            </div>
-                        `;
-                    }
-                }
-            } catch (error) {
-                console.error('Ошибка загрузки сообщений:', error);
-            }
-        }
-
-        // Отправка сообщения
-        async function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const message = input.value.trim();
-            
-            if (!message || !currentServer) return;
-            
-            try {
-                const response = await fetch(`/api/server/${currentServer.id}/messages`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ content: message })
-                });
-                
-                if (response.ok) {
-                    input.value = '';
-                    autoResize(input);
-                    loadChatMessages(); // Перезагружаем сообщения
-                }
-            } catch (error) {
-                console.error('Ошибка отправки сообщения:', error);
-                alert('Ошибка отправки сообщения');
-            }
-        }
-
         // Функции утилиты
-        function copyInviteLink() {
-            const input = document.getElementById('inviteLinkInput');
-            input.select();
-            document.execCommand('copy');
-            
-            const btn = document.querySelector('.btn-copy');
-            btn.textContent = 'Скопировано!';
-            btn.classList.add('copied');
-            
-            setTimeout(() => {
-                btn.textContent = 'Копировать';
-                btn.classList.remove('copied');
-            }, 2000);
-        }
-
-        function autoResize(textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
-        }
-
         function escapeHtml(text) {
+            if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
         function formatTime(dateString) {
+            if (!dateString) return '';
             const date = new Date(dateString);
             const now = new Date();
             const diffMs = now - date;
@@ -590,7 +580,379 @@
                 '#4facfe', '#00f2fe', '#43e97b', '#38f9d7',
                 '#fa709a', '#fee140', '#a8edea', '#fed6e3'
             ];
-            return colors[userId % colors.length];
+            return colors[(userId || 0) % colors.length];
+        }
+
+        function showError(message) {
+            const container = document.getElementById('serverContainer');
+            container.innerHTML = `
+                <div class="error-message" style="grid-column: 1 / -1; margin: 20px;">
+                    <strong>Ошибка:</strong> ${escapeHtml(message)}
+                </div>
+            `;
+        }
+
+        // Загрузка данных сервера
+        async function loadServerData() {
+            try {
+                console.log('🔍 Загрузка данных сервера...');
+                const container = document.getElementById('serverContainer');
+                
+                if (inviteLink) {
+                    // Загрузка чужого сервера по invite_link
+                    console.log(`🔗 Загрузка сервера по ссылке: ${inviteLink}`);
+                    const response = await fetch(`/api/server/${inviteLink}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        currentServer = data.server;
+                        console.log('✅ Сервер загружен:', currentServer);
+                        renderServerPage();
+                        loadChatMessages();
+                        startPolling();
+                    } else {
+                        const error = await response.json();
+                        container.innerHTML = `
+                            <div class="empty-state" style="grid-column: 1 / -1;">
+                                <h2>Сервер не найден</h2>
+                                <p>${escapeHtml(error.error || 'Ссылка может быть устаревшей или сервер был удален.')}</p>
+                                <a href="/server-page.html">Вернуться к своему серверу</a>
+                            </div>
+                        `;
+                    }
+                } else {
+                    // Загрузка своего сервера
+                    console.log('👤 Загрузка своего сервера...');
+                    const response = await fetch('/api/server/my', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Ошибка загрузки сервера');
+                    }
+                    
+                    const data = await response.json();
+                    console.log('📊 Ответ сервера:', data);
+                    
+                    if (data.hasServer) {
+                        currentServer = data.server;
+                        console.log('✅ У пользователя есть сервер:', currentServer);
+                        renderServerPage();
+                        loadChatMessages();
+                        startPolling();
+                    } else {
+                        console.log('🆕 У пользователя нет сервера, показываем форму создания');
+                        renderCreateServerForm();
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Ошибка загрузки сервера:', error);
+                showError('Не удалось загрузить данные сервера');
+            }
+        }
+
+        // Рендер формы создания сервера
+        function renderCreateServerForm() {
+            const container = document.getElementById('serverContainer');
+            container.innerHTML = `
+                <div class="create-server-form">
+                    <h2>Создать сервер</h2>
+                    <form id="createServerForm">
+                        <div class="form-group">
+                            <label for="serverName">Название сервера *</label>
+                            <input type="text" id="serverName" required maxlength="100" 
+                                   placeholder="Введите название сервера">
+                        </div>
+                        <div class="form-group">
+                            <label for="serverDescription">Описание</label>
+                            <textarea id="serverDescription" maxlength="500" 
+                                      placeholder="Опишите ваш сервер (необязательно)"></textarea>
+                        </div>
+                        <div id="formError" class="error-message hidden"></div>
+                        <button type="submit" class="btn-create">
+                            Создать сервер
+                        </button>
+                    </form>
+                    <p style="color: #808080; margin-top: 20px; text-align: center; font-size: 14px;">
+                        Вы можете создать только один сервер. Выбирайте название с умом!
+                    </p>
+                </div>
+            `;
+
+            document.getElementById('createServerForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await createServer(e);
+            });
+        }
+
+        // Рендер страницы сервера
+        function renderServerPage() {
+            const container = document.getElementById('serverContainer');
+            const isOwner = !inviteLink;
+            
+            container.innerHTML = `
+                <div class="server-info">
+                    <div class="server-header">
+                        <div class="server-avatar">${currentServer.name.charAt(0).toUpperCase()}</div>
+                        <div>
+                            <h1 class="server-title">${escapeHtml(currentServer.name)}</h1>
+                            <p class="server-owner">Создал: ${escapeHtml(currentServer.owner_username)}</p>
+                        </div>
+                    </div>
+                    
+                    ${currentServer.description ? `
+                        <div class="server-description">
+                            ${escapeHtml(currentServer.description)}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="server-meta">
+                        <p>Создан: ${new Date(currentServer.created_at).toLocaleDateString('ru-RU')}</p>
+                    </div>
+                    
+                    ${isOwner ? `
+                        <div class="invite-link-container">
+                            <p>Пригласительная ссылка:</p>
+                            <div class="invite-link">
+                                <input type="text" id="inviteLinkInput" 
+                                       value="${window.location.origin}/server-page.html?invite=${currentServer.invite_link}" 
+                                       readonly>
+                                <button class="btn-copy" onclick="copyInviteLink()">Копировать</button>
+                            </div>
+                            <p style="color: #808080; font-size: 12px; margin-top: 10px;">
+                                Поделитесь этой ссылкой с друзьями
+                            </p>
+                        </div>
+                    ` : ''}
+                </div>
+                
+                <div class="chat-container">
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="empty-state">
+                            <p>Загрузка сообщений...</p>
+                        </div>
+                    </div>
+                    <div class="chat-input-container">
+                        <div class="chat-input">
+                            <textarea 
+                                id="messageInput" 
+                                placeholder="Написать сообщение..." 
+                                maxlength="2000"
+                                oninput="autoResize(this)"
+                            ></textarea>
+                            <button class="btn-send" onclick="sendMessage()">Отправить</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Добавляем обработчик Enter для отправки сообщения
+            const messageInput = document.getElementById('messageInput');
+            if (messageInput) {
+                messageInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                    }
+                });
+            }
+        }
+
+        // Загрузка сообщений чата
+        async function loadChatMessages() {
+            if (!currentServer) return;
+
+            try {
+                const response = await fetch(`/api/server/${currentServer.id}/messages`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const messagesContainer = document.getElementById('chatMessages');
+                    
+                    if (data.messages && data.messages.length > 0) {
+                        lastMessageId = data.messages[data.messages.length - 1].id;
+                        
+                        messagesContainer.innerHTML = data.messages.map(msg => `
+                            <div class="message" data-id="${msg.id}">
+                                <div class="message-avatar" style="background: ${getAvatarColor(msg.user_id)}">
+                                    ${msg.username ? msg.username.charAt(0).toUpperCase() : '?'}
+                                </div>
+                                <div class="message-content">
+                                    <div class="message-header">
+                                        <span class="message-username">${escapeHtml(msg.username || 'Пользователь')}</span>
+                                        <span class="message-time">${formatTime(msg.created_at)}</span>
+                                    </div>
+                                    <div class="message-text">${escapeHtml(msg.content)}</div>
+                                </div>
+                            </div>
+                        `).join('');
+                        
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    } else {
+                        messagesContainer.innerHTML = `
+                            <div class="empty-state">
+                                <p>Пока нет сообщений. Будьте первым!</p>
+                            </div>
+                        `;
+                    }
+                } else {
+                    const error = await response.json();
+                    console.error('Ошибка загрузки сообщений:', error);
+                }
+            } catch (error) {
+                console.error('Ошибка загрузки сообщений:', error);
+            }
+        }
+
+        // Отправка сообщения
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            if (!input) return;
+            
+            const message = input.value.trim();
+            
+            if (!message || !currentServer) return;
+            
+            try {
+                const response = await fetch(`/api/server/${currentServer.id}/messages`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ content: message })
+                });
+                
+                if (response.ok) {
+                    input.value = '';
+                    autoResize(input);
+                    loadChatMessages(); // Перезагружаем сообщения
+                } else {
+                    const error = await response.json();
+                    alert(error.error || 'Ошибка отправки сообщения');
+                }
+            } catch (error) {
+                console.error('Ошибка отправки сообщения:', error);
+                alert('Ошибка отправки сообщения');
+            }
+        }
+
+        // Копирование ссылки
+        function copyInviteLink() {
+            const input = document.getElementById('inviteLinkInput');
+            if (!input) return;
+            
+            input.select();
+            input.setSelectionRange(0, 99999); // Для мобильных устройств
+            
+            try {
+                document.execCommand('copy');
+                
+                const btn = document.querySelector('.btn-copy');
+                if (btn) {
+                    const originalText = btn.textContent;
+                    btn.textContent = 'Скопировано!';
+                    btn.classList.add('copied');
+                    
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                        btn.classList.remove('copied');
+                    }, 2000);
+                }
+            } catch (err) {
+                console.error('Ошибка копирования:', err);
+            }
+        }
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
+        }
+
+        // Создание сервера
+        async function createServer(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('serverName').value.trim();
+            const description = document.getElementById('serverDescription').value.trim();
+            const errorElement = document.getElementById('formError');
+            
+            if (errorElement) {
+                errorElement.className = 'error-message hidden';
+            }
+            
+            if (!name) {
+                showFormError('Введите название сервера');
+                return;
+            }
+            
+            const form = document.getElementById('createServerForm');
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            
+            try {
+                submitBtn.textContent = 'Создание...';
+                submitBtn.disabled = true;
+                
+                console.log('📤 Отправка запроса на создание сервера:', { name, description });
+                
+                const response = await fetch('/api/server/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ name, description })
+                });
+                
+                const data = await response.json();
+                console.log('📥 Ответ сервера:', data);
+                
+                if (response.ok) {
+                    currentServer = data.server;
+                    console.log('✅ Сервер создан:', currentServer);
+                    
+                    // Показываем сообщение об успехе
+                    if (errorElement) {
+                        errorElement.textContent = 'Сервер успешно создан!';
+                        errorElement.className = 'success-message';
+                        setTimeout(() => {
+                            errorElement.className = 'error-message hidden';
+                            loadServerData();
+                        }, 1500);
+                    } else {
+                        loadServerData();
+                    }
+                } else {
+                    showFormError(data.error || 'Ошибка создания сервера');
+                }
+            } catch (error) {
+                console.error('❌ Ошибка создания сервера:', error);
+                showFormError('Ошибка соединения с сервером');
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        function showFormError(message) {
+            const errorElement = document.getElementById('formError');
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.className = 'error-message';
+            } else {
+                alert(message);
+            }
         }
 
         // Polling для новых сообщений
@@ -609,7 +971,7 @@
                     
                     if (response.ok) {
                         const data = await response.json();
-                        if (data.messages.length > 0) {
+                        if (data.messages && data.messages.length > 0) {
                             lastMessageId = data.messages[data.messages.length - 1].id;
                             renderNewMessages(data.messages);
                         }
@@ -617,11 +979,12 @@
                 } catch (error) {
                     console.error('Ошибка polling:', error);
                 }
-            }, 3000); // Каждые 3 секунды
+            }, 3000);
         }
 
         function renderNewMessages(messages) {
             const container = document.getElementById('chatMessages');
+            if (!container) return;
             
             messages.forEach(msg => {
                 if (document.querySelector(`[data-id="${msg.id}"]`)) return;
@@ -631,11 +994,11 @@
                 messageElement.dataset.id = msg.id;
                 messageElement.innerHTML = `
                     <div class="message-avatar" style="background: ${getAvatarColor(msg.user_id)}">
-                        ${msg.username.charAt(0).toUpperCase()}
+                        ${msg.username ? msg.username.charAt(0).toUpperCase() : '?'}
                     </div>
                     <div class="message-content">
                         <div class="message-header">
-                            <span class="message-username">${escapeHtml(msg.username)}</span>
+                            <span class="message-username">${escapeHtml(msg.username || 'Пользователь')}</span>
                             <span class="message-time">${formatTime(msg.created_at)}</span>
                         </div>
                         <div class="message-text">${escapeHtml(msg.content)}</div>
@@ -652,42 +1015,6 @@
             });
         }
 
-        // Создание сервера
-        async function createServer(e) {
-            e.preventDefault();
-            
-            const name = document.getElementById('serverName').value.trim();
-            const description = document.getElementById('serverDescription').value.trim();
-            
-            if (!name) {
-                alert('Введите название сервера');
-                return;
-            }
-            
-            try {
-                const response = await fetch('/api/server/create', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ name, description })
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    currentServer = data.server;
-                    loadServerData();
-                } else {
-                    alert(data.error || 'Ошибка создания сервера');
-                }
-            } catch (error) {
-                console.error('Ошибка создания сервера:', error);
-                alert('Ошибка создания сервера');
-            }
-        }
-
         // Выход из системы
         document.addEventListener('DOMContentLoaded', function() {
             const logoutBtn = document.getElementById('logoutBtn');
@@ -701,7 +1028,6 @@
             
             // Загружаем данные сервера
             loadServerData();
-            startPolling();
         });
 
         // Очистка интервала при закрытии страницы
