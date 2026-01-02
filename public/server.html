@@ -34,10 +34,56 @@
             background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
         }
 
+        /* Кнопка назад к серверам - теперь вверху */
+        .back-to-servers {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 300;
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(42, 42, 42, 0.95) 100%);
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: calc(12px + env(safe-area-inset-top));
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .back-to-servers-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 10px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .back-to-servers-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .back-to-servers-btn:active {
+            transform: scale(0.95);
+        }
+
         /* Шапка чата */
         .chat-header {
             position: fixed;
-            top: 0;
+            top: 60px;
             left: 0;
             right: 0;
             z-index: 200;
@@ -47,7 +93,6 @@
             display: flex;
             align-items: center;
             gap: 16px;
-            padding-top: calc(12px + env(safe-area-inset-top));
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
@@ -99,7 +144,7 @@
         /* Экран выбора */
         .choice-screen {
             position: absolute;
-            top: 0;
+            top: 60px;
             left: 0;
             right: 0;
             bottom: 0;
@@ -117,41 +162,6 @@
 
         .choice-screen.hidden {
             transform: translateY(-100%);
-        }
-
-        /* Кнопка назад к серверам */
-        .back-to-servers {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 10;
-        }
-
-        .back-to-servers-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            color: #ffffff;
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
-
-        .back-to-servers-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateX(-2px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-        }
-
-        .back-to-servers-btn:active {
-            transform: scale(0.95);
         }
 
         .server-info {
@@ -322,7 +332,7 @@
         /* Экран чата */
         .chat-screen {
             position: absolute;
-            top: 0;
+            top: 60px;
             left: 0;
             right: 0;
             bottom: 0;
@@ -340,7 +350,7 @@
         .chat-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 90px 20px 120px;
+            padding: 20px 16px 120px;
             display: flex;
             flex-direction: column;
             gap: 12px;
@@ -348,10 +358,10 @@
             scroll-behavior: smooth;
         }
 
-        /* Сообщение */
+        /* Улучшенный стиль сообщений */
         .message {
             display: flex;
-            gap: 16px;
+            gap: 12px;
             max-width: 85%;
             animation: messageAppear 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
@@ -415,27 +425,33 @@
             border: 2px solid #2a2a2a;
         }
 
+        /* Улучшенные облачка сообщений */
         .message-content {
-            background: linear-gradient(135deg, rgba(26, 26, 26, 0.8) 0%, rgba(42, 42, 42, 0.8) 100%);
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.9) 0%, rgba(42, 42, 42, 0.9) 100%);
             padding: 16px 20px;
-            border-radius: 20px;
-            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 22px;
+            border: 1px solid rgba(102, 126, 234, 0.15);
             position: relative;
             min-width: 140px;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 
+                0 4px 20px rgba(0, 0, 0, 0.2),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset;
         }
 
         .message.sent .message-content {
-            background: linear-gradient(135deg, rgba(45, 91, 175, 0.9) 0%, rgba(58, 106, 197, 0.9) 100%);
-            border-color: rgba(255, 255, 255, 0.2);
+            background: linear-gradient(135deg, rgba(45, 91, 175, 0.95) 0%, rgba(58, 106, 197, 0.95) 100%);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 
+                0 4px 25px rgba(45, 91, 175, 0.3),
+                0 0 0 1px rgba(255, 255, 255, 0.05) inset;
         }
 
         .message-header {
             display: flex;
-            align-items: baseline;
-            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
             margin-bottom: 8px;
         }
 
@@ -454,9 +470,23 @@
             -webkit-text-fill-color: #ffffff;
         }
 
+        .message-time-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+        }
+
         .message-time {
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .message-status {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 10px;
+            display: flex;
+            align-items: center;
         }
 
         .message-text {
@@ -659,279 +689,10 @@
             color: rgba(255, 255, 255, 0.8);
         }
 
-        /* Action Sheet */
-        .action-sheet {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(42, 42, 42, 0.95) 100%);
-            border-radius: 30px 30px 0 0;
-            padding: 24px 20px;
-            padding-bottom: calc(24px + env(safe-area-inset-bottom));
-            transform: translateY(100%);
-            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 1000;
-            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-        }
-
-        .action-sheet.visible {
-            transform: translateY(0);
-        }
-
-        .action-sheet-header {
-            text-align: center;
-            margin-bottom: 24px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .action-sheet-title {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 6px;
-            background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .action-sheet-subtitle {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 15px;
-        }
-
-        .action-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .action-button {
-            padding: 20px;
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 17px;
-            text-align: left;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .action-button:hover {
-            background: rgba(255, 255, 255, 0.12);
-            transform: translateY(-2px);
-        }
-
-        .action-button.danger {
-            color: #ff3b30;
-            background: rgba(255, 59, 48, 0.1);
-            border-color: rgba(255, 59, 48, 0.2);
-        }
-
-        .action-button.danger:hover {
-            background: rgba(255, 59, 48, 0.15);
-        }
-
-        .action-button.warning {
-            color: #ff9500;
-            background: rgba(255, 149, 0, 0.1);
-            border-color: rgba(255, 149, 0, 0.2);
-        }
-
-        .action-button.warning:hover {
-            background: rgba(255, 149, 0, 0.15);
-        }
-
-        .cancel-button {
-            margin-top: 16px;
-            padding: 20px;
-            border-radius: 16px;
-            background: rgba(255, 255, 255, 0.07);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 17px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            width: 100%;
-        }
-
-        .cancel-button:hover {
-            background: rgba(255, 255, 255, 0.12);
-        }
-
-        .overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            display: none;
-            z-index: 999;
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
-        }
-
-        .overlay.visible {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        /* Модальное окно бана */
-        .ban-modal {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.9);
-            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(42, 42, 42, 0.95) 100%);
-            border-radius: 30px;
-            padding: 32px;
-            width: 90%;
-            max-width: 420px;
-            z-index: 1001;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid rgba(102, 126, 234, 0.3);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(30px);
-            -webkit-backdrop-filter: blur(30px);
-        }
-
-        .ban-modal.visible {
-            opacity: 1;
-            visibility: visible;
-            transform: translate(-50%, -50%) scale(1);
-        }
-
-        .ban-modal-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 24px;
-            background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .ban-form {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .ban-duration {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .duration-btn {
-            flex: 1;
-            padding: 14px;
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            color: white;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            min-width: 85px;
-            font-size: 14px;
-        }
-
-        .duration-btn:hover {
-            background: rgba(255, 255, 255, 0.12);
-        }
-
-        .duration-btn.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-color: transparent;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-
-        .custom-duration {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .custom-duration input {
-            flex: 1;
-            padding: 14px;
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            color: white;
-            font-size: 15px;
-        }
-
-        .custom-duration span {
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        .ban-reason {
-            width: 100%;
-            padding: 16px;
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            color: white;
-            font-family: inherit;
-            resize: vertical;
-            min-height: 100px;
-            font-size: 15px;
-        }
-
-        .modal-buttons {
-            display: flex;
-            gap: 16px;
-            margin-top: 24px;
-        }
-
-        .modal-btn {
-            flex: 1;
-            padding: 18px;
-            border-radius: 16px;
-            font-size: 17px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border: none;
-        }
-
-        .modal-btn.cancel {
-            background: rgba(255, 255, 255, 0.07);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .modal-btn.cancel:hover {
-            background: rgba(255, 255, 255, 0.12);
-            transform: translateY(-2px);
-        }
-
-        .modal-btn.confirm {
-            background: linear-gradient(135deg, #ff3b30 0%, #ff1f1f 100%);
-            color: white;
-            box-shadow: 0 6px 20px rgba(255, 59, 48, 0.3);
-        }
-
-        .modal-btn.confirm:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(255, 59, 48, 0.4);
-        }
-
         /* Экран обмена */
         .exchange-screen {
             position: absolute;
-            top: 0;
+            top: 60px;
             left: 0;
             right: 0;
             bottom: 0;
@@ -949,7 +710,7 @@
 
         .exchange-header {
             position: fixed;
-            top: 0;
+            top: 60px;
             left: 0;
             right: 0;
             z-index: 200;
@@ -959,7 +720,6 @@
             display: flex;
             align-items: center;
             gap: 16px;
-            padding-top: calc(12px + env(safe-area-inset-top));
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
@@ -1056,15 +816,6 @@
         @keyframes slideUp {
             from {
                 transform: translateY(100%);
-            }
-            to {
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes slideDown {
-            from {
-                transform: translateY(-100%);
             }
             to {
                 transform: translateY(0);
@@ -1187,11 +938,23 @@
             }
 
             .chat-messages {
-                padding: 80px 16px 120px;
+                padding: 16px 12px 120px;
             }
 
             .message {
                 max-width: 90%;
+                gap: 10px;
+            }
+
+            .message-avatar {
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+
+            .message-content {
+                padding: 14px 16px;
+                border-radius: 20px;
             }
 
             .chat-input-container {
@@ -1200,8 +963,7 @@
             }
 
             .back-to-servers {
-                top: 16px;
-                left: 16px;
+                padding: 8px 12px;
             }
 
             .back-to-servers-btn {
@@ -1225,7 +987,6 @@
             }
         }
 
-        /* Адаптив для очень маленьких экранов */
         @media (max-width: 360px) {
             .server-avatar-large {
                 width: 70px;
@@ -1253,30 +1014,11 @@
                 font-size: 14px;
             }
         }
-
-        /* Плавные переходы */
-        .choice-button,
-        .subscribe-button,
-        .send-button,
-        .back-button,
-        .action-button,
-        .modal-btn {
-            will-change: transform;
-        }
-
-        /* Оптимизация анимаций */
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
-        }
     </style>
 </head>
 <body>
     <div class="app-container" id="appContainer">
-        <!-- Кнопка назад к списку серверов -->
+        <!-- Кнопка назад к списку серверов - теперь вверху -->
         <div class="back-to-servers" id="backToServers">
             <button class="back-to-servers-btn" onclick="goBackToServers()">
                 ← Назад к серверам
@@ -1384,50 +1126,6 @@
         <div class="new-message-indicator" id="newMessageIndicator" onclick="scrollToBottom()">
             📩 Новые сообщения
         </div>
-
-        <!-- Action Sheet для модерации -->
-        <div class="overlay" id="actionOverlay" onclick="hideActionSheet()"></div>
-        <div class="action-sheet" id="actionSheet">
-            <div class="action-sheet-header">
-                <div class="action-sheet-title" id="actionUserName">Пользователь</div>
-                <div class="action-sheet-subtitle" id="actionUserRole">Участник</div>
-            </div>
-            <div class="action-list" id="actionList">
-                <!-- Будет заполнено через JS -->
-            </div>
-            <button class="cancel-button" onclick="hideActionSheet()">
-                Отмена
-            </button>
-        </div>
-
-        <!-- Модальное окно бана -->
-        <div class="overlay" id="banOverlay" onclick="hideBanModal()"></div>
-        <div class="ban-modal" id="banModal">
-            <h3 class="ban-modal-title">Заблокировать пользователя</h3>
-            <div class="ban-form">
-                <div class="ban-duration">
-                    <button class="duration-btn" onclick="setBanDuration(1)">1 час</button>
-                    <button class="duration-btn" onclick="setBanDuration(24)">1 день</button>
-                    <button class="duration-btn" onclick="setBanDuration(168)">1 неделя</button>
-                    <button class="duration-btn" onclick="setBanDuration(720)">1 месяц</button>
-                    <button class="duration-btn" onclick="setBanDuration(null)">Навсегда</button>
-                </div>
-                <div class="custom-duration">
-                    <input type="number" id="customDuration" placeholder="Длительность в часах" min="1">
-                    <span>часов</span>
-                </div>
-                <textarea class="ban-reason" id="banReason" placeholder="Причина бана (необязательно)"
-                    maxlength="500"></textarea>
-                <div class="modal-buttons">
-                    <button class="modal-btn cancel" onclick="hideBanModal()">
-                        Отмена
-                    </button>
-                    <button class="modal-btn confirm" onclick="confirmBan()">
-                        Заблокировать
-                    </button>
-                </div>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -1437,17 +1135,6 @@
         let userRole = 'member';
         let isSubscribed = false;
         let isBanned = false;
-        let generalWs = null;
-        let exchangeWs = null;
-        let lastMessageId = 0;
-        let lastExchangeMessageId = 0;
-        let typingTimeout = null;
-        let exchangeTypingTimeout = null;
-        let selectedUserForAction = null;
-        let selectedUserRole = 'member';
-        let currentBanDuration = null;
-        let hasNewMessages = false;
-        let isScrolledToBottom = true;
         let currentScreen = 'choice'; // 'choice', 'general', 'exchange'
 
         // Получаем ID сервера из URL
@@ -1721,13 +1408,9 @@
                 document.getElementById('choiceScreen').classList.add('hidden');
                 document.getElementById('chatScreen').classList.add('visible');
                 document.getElementById('chatHeader').classList.add('visible');
-                document.getElementById('backToServers').style.display = 'none';
 
                 // Загружаем сообщения
                 await loadChatMessages();
-
-                // Подключаем WebSocket
-                connectGeneralWebSocket();
 
                 // Автофокус на поле ввода
                 setTimeout(() => {
@@ -1747,13 +1430,9 @@
                 currentScreen = 'exchange';
                 document.getElementById('choiceScreen').classList.add('hidden');
                 document.getElementById('exchangeScreen').classList.add('visible');
-                document.getElementById('backToServers').style.display = 'none';
 
                 // Загружаем сообщения обмена
                 await loadExchangeMessages();
-
-                // Подключаем WebSocket обмена
-                connectExchangeWebSocket();
 
                 // Автофокус на поле ввода
                 setTimeout(() => {
@@ -1774,10 +1453,6 @@
             document.getElementById('chatScreen').classList.remove('visible');
             document.getElementById('exchangeScreen').classList.remove('visible');
             document.getElementById('chatHeader').classList.remove('visible');
-            document.getElementById('backToServers').style.display = 'block';
-
-            // Отключаем WebSocket
-            disconnectWebSockets();
 
             // Очищаем чаты
             const chatMessages = document.getElementById('chatMessages');
@@ -1816,10 +1491,6 @@
                     console.log('✅ Сообщений загружено:', data.messages?.length || 0);
 
                     renderMessages(data.messages || [], 'general');
-
-                    if (data.messages && data.messages.length > 0) {
-                        lastMessageId = data.messages[data.messages.length - 1].id;
-                    }
 
                     // Скроллим вниз
                     setTimeout(scrollToBottom, 100);
@@ -1864,10 +1535,6 @@
 
                     renderMessages(data.messages || [], 'exchange');
 
-                    if (data.messages && data.messages.length > 0) {
-                        lastExchangeMessageId = data.messages[data.messages.length - 1].id;
-                    }
-
                     // Скроллим вниз
                     setTimeout(() => scrollExchangeToBottom(), 100);
                 } else {
@@ -1881,7 +1548,7 @@
             }
         }
 
-        // Рендер сообщений
+        // Рендер сообщений с улучшенным дизайном
         function renderMessages(messages, type = 'general') {
             const containerId = type === 'exchange' ? 'exchangeMessages' : 'chatMessages';
             const container = document.getElementById(containerId);
@@ -1908,36 +1575,32 @@
                 const avatarClass = getAvatarClass(msg.sender_role);
                 const displayName = msg.username || 'Пользователь';
                 const avatarLetter = displayName.charAt(0).toUpperCase();
+                const messageTime = formatShortTime(msg.created_at);
 
                 return `
                     <div class="message ${isSent ? 'sent' : ''}" data-id="${msg.id}">
                         ${!isSent ? `
                             <div class="message-avatar ${avatarClass}" 
-                                 style="background: ${getAvatarColor(msg.user_id)}"
-                                 onclick="showUserActions(${msg.user_id}, '${escapeHtml(displayName)}', '${msg.sender_role}')">
+                                 style="background: ${getAvatarColor(msg.user_id)}">
                                 ${avatarLetter}
                             </div>
                         ` : ''}
                         
                         <div class="message-content">
-                            ${!isSent ? `
-                                <div class="message-header">
+                            <div class="message-header">
+                                ${!isSent ? `
                                     <span class="message-username">${escapeHtml(displayName)}</span>
-                                    <span class="message-time">${formatShortTime(msg.created_at)}</span>
+                                ` : ''}
+                                
+                                <div class="message-time-wrapper">
+                                    <span class="message-time">${messageTime}</span>
+                                    <span class="message-status">✓</span>
                                 </div>
-                            ` : ''}
+                            </div>
                             
                             <div class="message-text ${isDeleted ? 'message-deleted' : ''}">
                                 ${escapeHtml(isDeleted ? '[Сообщение удалено]' : (msg.content || msg.safe_content || ''))}
                             </div>
-                            
-                            ${isSent && !isDeleted ? `
-                                <div class="message-actions">
-                                    <button class="delete-message-btn" onclick="deleteMessage(${msg.id}, '${type}')">
-                                        ✕
-                                    </button>
-                                </div>
-                            ` : ''}
                         </div>
                         
                         ${isSent ? `
@@ -1971,7 +1634,7 @@
             }
         }
 
-        // Отправка сообщения в общий чат
+        // Отправка сообщения в общий чат с редиректом
         async function sendMessage() {
             const input = document.getElementById('chatInput');
             const button = document.getElementById('sendButton');
@@ -2002,9 +1665,11 @@
                 if (response.ok) {
                     input.value = '';
                     autoResize(input);
-
-                    // Перезагружаем сообщения
-                    await loadChatMessages();
+                    
+                    // РЕДИРЕКТ НА СТРАНИЦУ СЕРВЕРОВ ПОСЛЕ ОТПРАВКИ
+                    setTimeout(() => {
+                        window.location.href = '/server-page.html';
+                    }, 300);
                 } else {
                     const error = await response.json().catch(() => ({ error: 'Ошибка отправки' }));
                     console.error('❌ Ошибка отправки:', error);
@@ -2019,7 +1684,7 @@
             }
         }
 
-        // Отправка сообщения в чат обмена
+        // Отправка сообщения в чат обмена с редиректом
         async function sendExchangeMessage() {
             const input = document.getElementById('exchangeInput');
             const button = document.getElementById('exchangeSendButton');
@@ -2050,9 +1715,11 @@
                 if (response.ok) {
                     input.value = '';
                     autoResize(input);
-
-                    // Перезагружаем сообщения обмена
-                    await loadExchangeMessages();
+                    
+                    // РЕДИРЕКТ НА СТРАНИЦУ СЕРВЕРОВ ПОСЛЕ ОТПРАВКИ
+                    setTimeout(() => {
+                        window.location.href = '/server-page.html';
+                    }, 300);
                 } else {
                     const error = await response.json().catch(() => ({ error: 'Ошибка отправки' }));
                     console.error('❌ Ошибка отправки обмена:', error);
@@ -2105,276 +1772,6 @@
             }
         }
 
-        // WebSocket подключения
-        function connectGeneralWebSocket() {
-            if (generalWs) return;
-
-            const userId = getCurrentUserId();
-            if (!userId) {
-                console.error('❌ Не удалось получить userId для WebSocket');
-                return;
-            }
-
-            // Определяем URL WebSocket
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws?serverId=${serverId}&userId=${userId}&type=general`;
-
-            console.log('🔗 Подключение WebSocket общего чата:', wsUrl);
-
-            generalWs = new WebSocket(wsUrl);
-
-            generalWs.onopen = () => {
-                console.log('✅ WebSocket общего чата подключен');
-            };
-
-            generalWs.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    handleGeneralWebSocketMessage(data);
-                } catch (error) {
-                    console.error('❌ Ошибка парсинга WebSocket сообщения:', error);
-                }
-            };
-
-            generalWs.onclose = () => {
-                console.log('🔗 WebSocket общего чата отключен');
-                generalWs = null;
-                // Пытаемся переподключиться через 5 секунд
-                setTimeout(connectGeneralWebSocket, 5000);
-            };
-
-            generalWs.onerror = (error) => {
-                console.error('❌ WebSocket ошибка общего чата:', error);
-            };
-        }
-
-        function connectExchangeWebSocket() {
-            if (exchangeWs) return;
-
-            const userId = getCurrentUserId();
-            if (!userId) {
-                console.error('❌ Не удалось получить userId для WebSocket обмена');
-                return;
-            }
-
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}/ws?serverId=${serverId}&userId=${userId}&type=exchange`;
-
-            console.log('🔗 Подключение WebSocket чата обмена:', wsUrl);
-
-            exchangeWs = new WebSocket(wsUrl);
-
-            exchangeWs.onopen = () => {
-                console.log('✅ WebSocket чата обмена подключен');
-            };
-
-            exchangeWs.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    handleExchangeWebSocketMessage(data);
-                } catch (error) {
-                    console.error('❌ Ошибка парсинга WebSocket сообщения обмена:', error);
-                }
-            };
-
-            exchangeWs.onclose = () => {
-                console.log('🔗 WebSocket чата обмена отключен');
-                exchangeWs = null;
-                setTimeout(connectExchangeWebSocket, 5000);
-            };
-
-            exchangeWs.onerror = (error) => {
-                console.error('❌ WebSocket ошибка чата обмена:', error);
-            };
-        }
-
-        function disconnectWebSockets() {
-            if (generalWs) {
-                generalWs.close();
-                generalWs = null;
-            }
-            if (exchangeWs) {
-                exchangeWs.close();
-                exchangeWs = null;
-            }
-        }
-
-        // Обработка WebSocket сообщений общего чата
-        function handleGeneralWebSocketMessage(data) {
-            console.log('📨 WebSocket сообщение общего чата:', data.type);
-
-            switch (data.type) {
-                case 'new_message':
-                    handleNewMessage(data.message, 'general');
-                    break;
-                case 'message_deleted':
-                    handleMessageDeleted(data.message_id, 'general');
-                    break;
-                case 'user_typing':
-                    showTypingIndicator(data.username);
-                    break;
-                case 'moderation':
-                    handleModerationEvent(data);
-                    break;
-            }
-        }
-
-        // Обработка WebSocket сообщений чата обмена
-        function handleExchangeWebSocketMessage(data) {
-            console.log('📨 WebSocket сообщение чата обмена:', data.type);
-
-            switch (data.type) {
-                case 'new_message':
-                    handleNewMessage(data.message, 'exchange');
-                    break;
-                case 'message_deleted':
-                    handleMessageDeleted(data.message_id, 'exchange');
-                    break;
-                case 'user_typing':
-                    showExchangeTypingIndicator(data.username);
-                    break;
-                case 'moderation':
-                    handleModerationEvent(data);
-                    break;
-            }
-        }
-
-        function handleNewMessage(message, type = 'general') {
-            const containerId = type === 'exchange' ? 'exchangeMessages' : 'chatMessages';
-            const container = document.getElementById(containerId);
-            if (!container) return;
-
-            const currentUserId = getCurrentUserId();
-            const isSent = message.user_id == currentUserId;
-            const avatarClass = getAvatarClass(message.sender_role);
-            const displayName = message.username || 'Пользователь';
-            const avatarLetter = displayName.charAt(0).toUpperCase();
-
-            const messageHtml = `
-                <div class="message ${isSent ? 'sent' : ''}" data-id="${message.id}">
-                    ${!isSent ? `
-                        <div class="message-avatar ${avatarClass}" 
-                             style="background: ${getAvatarColor(message.user_id)}"
-                             onclick="showUserActions(${message.user_id}, '${escapeHtml(displayName)}', '${message.sender_role}')">
-                            ${avatarLetter}
-                        </div>
-                    ` : ''}
-                    
-                    <div class="message-content">
-                        ${!isSent ? `
-                            <div class="message-header">
-                                <span class="message-username">${escapeHtml(displayName)}</span>
-                                <span class="message-time">${formatShortTime(message.created_at)}</span>
-                            </div>
-                        ` : ''}
-                        
-                        <div class="message-text">
-                            ${escapeHtml(message.content || '')}
-                        </div>
-                    </div>
-                    
-                    ${isSent ? `
-                        <div class="message-avatar" 
-                             style="background: ${getAvatarColor(message.user_id)}">
-                            ${avatarLetter}
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-
-            container.insertAdjacentHTML('beforeend', messageHtml);
-
-            // Обновляем последний ID
-            if (type === 'exchange') {
-                lastExchangeMessageId = message.id;
-            } else {
-                lastMessageId = message.id;
-            }
-
-            // Показываем индикатор новых сообщений
-            if (type === 'general' && !isScrolledToBottom) {
-                showNewMessageIndicator();
-            } else if (type === 'general') {
-                scrollToBottom();
-            } else if (type === 'exchange') {
-                scrollExchangeToBottom();
-            }
-        }
-
-        function handleMessageDeleted(messageId, type = 'general') {
-            const containerId = type === 'exchange' ? 'exchangeMessages' : 'chatMessages';
-            const messageElement = document.querySelector(`#${containerId} .message[data-id="${messageId}"]`);
-            if (messageElement) {
-                const textElement = messageElement.querySelector('.message-text');
-                if (textElement) {
-                    textElement.textContent = '[Сообщение удалено]';
-                    textElement.className = 'message-text message-deleted';
-                }
-            }
-        }
-
-        // Индикаторы печатания
-        function handleTyping() {
-            if (!generalWs || generalWs.readyState !== WebSocket.OPEN) return;
-
-            const typingEvent = {
-                type: 'typing',
-                server_id: serverId,
-                username: currentUser?.username || 'Пользователь',
-                chat_type: 'general'
-            };
-
-            generalWs.send(JSON.stringify(typingEvent));
-
-            if (typingTimeout) clearTimeout(typingTimeout);
-            typingTimeout = setTimeout(() => {}, 3000);
-        }
-
-        function handleExchangeTyping() {
-            if (!exchangeWs || exchangeWs.readyState !== WebSocket.OPEN) return;
-
-            const typingEvent = {
-                type: 'typing',
-                server_id: serverId,
-                username: currentUser?.username || 'Пользователь',
-                chat_type: 'exchange'
-            };
-
-            exchangeWs.send(JSON.stringify(typingEvent));
-
-            if (exchangeTypingTimeout) clearTimeout(exchangeTypingTimeout);
-            exchangeTypingTimeout = setTimeout(() => {}, 3000);
-        }
-
-        function showTypingIndicator(username) {
-            const indicator = document.getElementById('typingIndicator');
-            if (!indicator) return;
-
-            indicator.textContent = `${username || 'Кто-то'} печатает...`;
-            indicator.classList.add('visible');
-
-            setTimeout(() => {
-                indicator.classList.remove('visible');
-            }, 3000);
-        }
-
-        function showExchangeTypingIndicator(username) {
-            const indicator = document.getElementById('exchangeTypingIndicator');
-            if (!indicator) return;
-
-            indicator.textContent = `${username || 'Кто-то'} печатает...`;
-            indicator.classList.add('visible');
-
-            setTimeout(() => {
-                indicator.classList.remove('visible');
-            }, 3000);
-        }
-
-        // Action Sheet для модерации (оставлено без изменений, работает как раньше)
-        function showUserActions(userId, username, role) {
-            // ... существующий код ...
-        }
-
         function showFileNotice() {
             const notice = document.getElementById('fileNotice');
             if (notice) {
@@ -2410,8 +1807,6 @@
             const container = document.getElementById('chatMessages');
             if (container) {
                 container.scrollTop = container.scrollHeight;
-                isScrolledToBottom = true;
-                hideNewMessageIndicator();
             }
         }
 
@@ -2420,35 +1815,6 @@
             if (container) {
                 container.scrollTop = container.scrollHeight;
             }
-        }
-
-        function showNewMessageIndicator() {
-            if (!hasNewMessages) {
-                hasNewMessages = true;
-                const indicator = document.getElementById('newMessageIndicator');
-                if (indicator) indicator.classList.add('visible');
-            }
-        }
-
-        function hideNewMessageIndicator() {
-            if (hasNewMessages) {
-                hasNewMessages = false;
-                const indicator = document.getElementById('newMessageIndicator');
-                if (indicator) indicator.classList.remove('visible');
-            }
-        }
-
-        // Отслеживание скролла
-        const chatMessagesEl = document.getElementById('chatMessages');
-        if (chatMessagesEl) {
-            chatMessagesEl.addEventListener('scroll', () => {
-                isScrolledToBottom =
-                    chatMessagesEl.scrollHeight - chatMessagesEl.clientHeight <= chatMessagesEl.scrollTop + 100;
-
-                if (isScrolledToBottom) {
-                    hideNewMessageIndicator();
-                }
-            });
         }
 
         // Уведомления
@@ -2547,13 +1913,6 @@
                     notice.classList.add('hidden');
                 }
             }, 5000);
-        });
-
-        // Обработка сенсорных жестов для закрытия модальных окон
-        document.addEventListener('touchstart', (e) => {
-            if (e.target.classList.contains('overlay')) {
-                e.target.click();
-            }
         });
     </script>
 </body>
