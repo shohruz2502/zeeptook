@@ -190,17 +190,27 @@
     }
     
     .categories-scroll {
-        display: flex;
-        overflow-x: auto;
-        padding: 12px 16px;
-        gap: 8px;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
+    display: flex;
+    overflow-x: auto;
+    padding: 12px 16px;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
+    
+    margin-left: 0;
+    transform: none !important;
+    
+    justify-content: flex-start; 
+    
+
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+@media (max-width: 400px) {
+    .categories-scroll {
+        justify-content: center; 
     }
-    ы
-    .categories-scroll::-webkit-scrollbar {
-        display: none;
-    }
+}
     
     .category {
         flex: 0 0 auto;
@@ -228,12 +238,14 @@
 
     /* Search Section - ПОД КАТЕГОРИЯМИ (как на изображении) */
     .search-section {
-        padding: 12px 16px;
-        background: var(--nav-bg);
-        border-bottom: 1px solid var(--gray-dark);
-        animation: slideDown 0.4s ease 0.3s both;
-        position: sticky;
-        z-index: 998;
+    padding: 12px 16px;
+    background: var(--nav-bg);
+    border-bottom: 1px solid var(--gray-dark);
+    position: sticky;
+    top: 60px; /* Прилипает под header */
+    z-index: 999;
+    transform: translateX(0%);
+    animation: slideInFromRight 0.4s ease 0.2s both;
     }
     
     .search-container {
