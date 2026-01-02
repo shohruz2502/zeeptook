@@ -487,63 +487,67 @@
             background: rgba(0, 136, 204, 0.1);
         }
 
-        /* Bottom Navigation */
+
         .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--nav-bg);
-            display: flex;
-            justify-content: space-around;
-            padding: 8px 0 10px;
-            border-top: 1px solid var(--gray-dark);
-            z-index: 1000;
-            height: 60px;
-        }
-        
-        .nav-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-decoration: none;
-            color: var(--gray-light);
-            font-size: 10px;
-            padding: 6px 4px;
-            transition: all 0.2s ease;
-            flex: 1;
-            position: relative;
-        }
-        
-        .nav-btn i {
-            font-size: 20px;
-            margin-bottom: 2px;
-            transition: all 0.2s ease;
-        }
-        
-        .nav-btn.active {
-            color: var(--primary);
-        }
-        
-        .nav-btn.active i {
-            transform: translateY(-1px);
-        }
-        
-        .nav-btn.active::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 30px;
-            height: 3px;
-            background: var(--primary);
-            border-radius: 2px;
-        }
-        
-        .nav-btn:active {
-            transform: scale(0.95);
-        }
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: var(--nav-bg);
+        display: flex;
+        justify-content: space-around;
+        padding: 8px 0 10px;
+        border-top: 1px solid var(--gray-dark);
+        z-index: 1000;
+        height: 60px;
+        box-shadow: 0 -1px 3px rgba(0,0,0,0.2);
+    }
+    
+    .nav-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-decoration: none;
+        color: var(--gray-light);
+        font-size: 10px;
+        padding: 6px 4px;
+        transition: all 0.2s ease;
+        flex: 1;
+        position: relative;
+        border: none;
+        background: none;
+        cursor: pointer;
+    }
+    
+    .nav-btn i {
+        font-size: 20px;
+        margin-bottom: 2px;
+        transition: all 0.2s ease;
+    }
+    
+    .nav-btn.active {
+        color: var(--primary);
+    }
+    
+    .nav-btn.active i {
+        transform: translateY(-1px);
+    }
+    
+    .nav-btn.active::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 30px;
+        height: 3px;
+        background: var(--primary);
+        border-radius: 2px;
+    }
+    
+    .nav-btn:active {
+        transform: scale(0.95);
+    }
 
         /* Animations */
         @keyframes fadeIn {
@@ -648,10 +652,10 @@
             <i class="fa fa-plus"></i>
             <span>Добавить</span>
         </a>
-        <a href="messages.html" class="nav-btn">
-            <i class="fa fa-comment"></i>
-            <span>Чаты</span>
-        </a>
+        <a href="server-page.html" class="nav-btn">
+                <i class="fa fa-gamepad"></i>
+                <span>Серверы</span>
+            </a>
         <a href="profile.html" class="nav-btn">
             <i class="fa fa-user"></i>
             <span>Профиль</span>
