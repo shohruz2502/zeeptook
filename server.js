@@ -2655,19 +2655,6 @@ const isSubscribed = await pool.query(`
     }
 });
 
-// Логирование проверки подписки (для отладки)
-
-console.log(`🔍 Проверка подписки: userId=${userId}, serverId=${server_id}`);
-console.log(`🔍 Результат подписки:`, isSubscribed.rows);
-
-// Также добавьте логирование запроса
-console.log(`🔍 SQL запрос:`, `
-    SELECT 1 FROM server_subscriptions WHERE user_id = ${userId} AND server_id = ${server_id}
-    UNION ALL
-    SELECT 1 FROM servers WHERE id = ${server_id} AND owner_id = ${userId}
-`);
-
-
 // Удаление сообщения
 app.delete('/api/server/messages/:message_id', authenticateToken, async (req, res) => {
     try {
@@ -3054,7 +3041,6 @@ if (wss) {
                 // Сохраняем информацию о подключении
                 ws.serverId = serverId;
                 ws.userId = userId;
-                ws.chatType = chatType; // Добавляем тип чата
 
                 ws.on('message', async (message) => {
                     try {
