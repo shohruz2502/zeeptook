@@ -3032,15 +3032,13 @@ if (wss) {
             const url = new URL(request.url, `http://${request.headers.host}`);
             const serverId = url.searchParams.get('serverId');
             const userId = url.searchParams.get('userId');
-            const chatType = url.searchParams.get('chatType') || 'general'; // Добавляем chatType
 
             if (serverId && userId) {
-                console.log(`🔗 WebSocket подключен: сервер ${serverId}, пользователь ${userId}, тип чата: ${chatType}`);
+                console.log(`🔗 WebSocket подключен: сервер ${serverId}, пользователь ${userId}`);
 
                 // Сохраняем информацию о подключении
                 ws.serverId = serverId;
                 ws.userId = userId;
-                ws.chatType = chatType; // Добавляем chatType
 
                 ws.on('message', async (message) => {
                     try {
@@ -3053,15 +3051,13 @@ if (wss) {
                                 server_id: serverId,
                                 user_id: userId,
                                 username: data.username,
-                                chat_type: chatType, // Добавляем chatType
                                 timestamp: new Date().toISOString()
                             };
 
-                            // Рассылаем другим участникам сервера с тем же типом чата
+                            // Рассылаем другим участникам сервера
                             wss.clients.forEach(client => {
                                 if (client !== ws && 
                                     client.serverId === serverId && 
-                                    client.chatType === chatType && // Фильтруем по типу чата
                                     client.readyState === WebSocket.OPEN) {
                                     client.send(JSON.stringify(typingEvent));
                                 }
@@ -3073,7 +3069,7 @@ if (wss) {
                 });
 
                 ws.on('close', () => {
-                    console.log(`🔗 WebSocket отключен: сервер ${serverId}, пользователь ${userId}, тип чата: ${chatType}`);
+                    console.log(`🔗 WebSocket отключен: сервер ${serverId}, пользователь ${userId}`);
                 });
             }
         } catch (error) {
