@@ -2888,6 +2888,69 @@ async function getUserServerRole(serverId, userId) {
     }
 }
 
+// GET /api/server/{id}/general-messages
+app.get('/api/server/:id/general-messages', async (req, res) => {
+  const { id } = req.params;
+  const messages = await db.query(
+    `SELECT m.*, u.username, u.avatar 
+     FROM server_messages m
+     JOIN users u ON m.user_id = u.id
+     WHERE m.server_id = $1 AND m.chat_type = 'general' AND m.deleted = false
+     ORDER BY m.created_at DESC
+     LIMIT 50`,
+    [id]
+  );
+  res.json({ messages: messages.rows.reverse() });
+});
+
+// POST /api/server/{id}/general-messages
+app.post('/api/server/:id/general-messages', async (req, res) => {
+  const { id } = req.params;
+  const { content } = req.body;
+  const userId = req.user.id;
+  
+  const message = await db.query(
+    `INSERT INTO server_messages (server_id, user_id, content, chat_type)
+     VALUES ($1, $2, $3, 'general')
+     RETURNING *`,
+    [id, userId, content]
+  );
+  
+  res.json({ message: message.rows[0] });
+});
+
+// GET /api/server/{id}/exchange-messages
+app.get('/api/server/:id/exchange-messages', async (req, res) => {
+  const { id } = req.params;
+  const messages = await db.query(
+    `SELECT m.*, u.username, u.avatar 
+     FROM server_messages m
+     JOIN users u ON m.user_id = u.id
+     WHERE m.server_id = $1 AND m.chat_type = 'exchange' AND m.deleted = false
+     ORDER BY m.created_at DESC
+     LIMIT 50`,
+    [id]
+  );
+  res.json({ messages: messages.rows.reverse() });
+});
+
+// POST /api/server/{id}/exchange-messages
+app.post('/api/server/:id/exchange-messages', async (req, res) => {
+  const { id } = req.params;
+  const { content } = req.body;
+  const userId = req.user.id;
+  
+  const message = await db.query(
+    `INSERT INTO server_messages (server_id, user_id, content, chat_type)
+     VALUES ($1, $2, $3, 'exchange')
+     RETURNING *`,
+    [id, userId, content]
+  );
+  
+  res.json({ message: message.rows[0] });
+});
+
+
 // Проверка модерационных прав
 function hasModerationPermission(userRole, targetRole) {
     const hierarchy = {
