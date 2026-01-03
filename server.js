@@ -2430,16 +2430,18 @@ app.get('/api/server/:server_id/messages', authenticateToken, async (req, res) =
 
         console.log(`💬 Получение сообщений для сервера ${server_id}, тип: ${chat_type}`);
 
-        // Проверяем подписку
-        const isSubscribed = await pool.query(`
-            SELECT 1 FROM server_subscriptions WHERE user_id = $1 AND server_id = $2
-            UNION
-            SELECT 1 FROM servers WHERE id = $2 AND owner_id = $1
-        `, [userId, server_id]);
+       // Проверяем подписку (включая владельца сервера)
+const isSubscribed = await pool.query(`
+    SELECT 1 FROM server_subscriptions ss 
+    WHERE ss.user_id = $1 AND ss.server_id = $2
+    UNION ALL
+    SELECT 1 FROM servers s 
+    WHERE s.id = $2 AND s.owner_id = $1
+`, [userId, server_id]);
 
-        if (isSubscribed.rows.length === 0) {
-            return res.status(403).json({ error: 'Вы не подписаны на этот сервер' });
-        }
+if (isSubscribed.rows.length === 0) {
+    return res.status(403).json({ error: 'Вы не подписаны на этот сервер' });
+}
 
         // Проверяем бан
         const isBanned = await pool.query(`
@@ -2534,11 +2536,11 @@ app.post('/api/server/:server_id/messages', authenticateToken, async (req, res) 
         console.log(`📤 Отправка сообщения в сервер ${server_id} от пользователя ${userId}, тип: ${type}`);
 
         // Проверяем подписку
-        const isSubscribed = await pool.query(`
-            SELECT 1 FROM server_subscriptions WHERE user_id = $1 AND server_id = $2
-            UNION
-            SELECT 1 FROM servers WHERE id = $2 AND owner_id = $1
-        `, [userId, server_id]);
+const isSubscribed = await pool.query(`
+    SELECT 1 FROM server_subscriptions WHERE user_id = $1 AND server_id = $2
+    UNION
+    SELECT 1 FROM servers WHERE id = $2 AND owner_id = $1
+`, [userId, server_id]);
 
         if (isSubscribed.rows.length === 0) {
             return res.status(403).json({ error: 'Вы не подписаны на этот сервер' });
@@ -2652,6 +2654,19 @@ app.post('/api/server/:server_id/messages', authenticateToken, async (req, res) 
         res.status(500).json({ error: 'Ошибка отправки сообщения' });
     }
 });
+
+// Логирование проверки подписки (для отладки)
+
+console.log(`🔍 Проверка подписки: userId=${userId}, serverId=${server_id}`);
+console.log(`🔍 Результат подписки:`, isSubscribed.rows);
+
+// Также добавьте логирование запроса
+console.log(`🔍 SQL запрос:`, `
+    SELECT 1 FROM server_subscriptions WHERE user_id = ${userId} AND server_id = ${server_id}
+    UNION ALL
+    SELECT 1 FROM servers WHERE id = ${server_id} AND owner_id = ${userId}
+`);
+
 
 // Удаление сообщения
 app.delete('/api/server/messages/:message_id', authenticateToken, async (req, res) => {
@@ -3039,6 +3054,7 @@ if (wss) {
                 // Сохраняем информацию о подключении
                 ws.serverId = serverId;
                 ws.userId = userId;
+                ws.chatType = chatType; // Добавляем тип чата
 
                 ws.on('message', async (message) => {
                     try {
