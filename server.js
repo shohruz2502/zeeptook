@@ -2419,15 +2419,16 @@ app.post('/api/server/:server_id/subscribe', authenticateToken, async (req, res)
     }
 });
 
-// Получение сообщений чата сервера
+// Получение сообщений чата сервера с учетом типа чата
 app.get('/api/server/:server_id/messages', authenticateToken, async (req, res) => {
     try {
         const { server_id } = req.params;
         const limit = parseInt(req.query.limit) || 50;
-        const before = req.query.before; // ID сообщения, после которого загружать
+        const before = req.query.before;
+        const chat_type = req.query.type || 'general'; // Добавляем тип чата
         const userId = req.user.userId;
 
-        console.log(`💬 Получение сообщений для сервера ${server_id}`);
+        console.log(`💬 Получение сообщений для сервера ${server_id}, тип: ${chat_type}`);
 
         // Проверяем подписку
         const isSubscribed = await pool.query(`
@@ -2461,6 +2462,7 @@ app.get('/api/server/:server_id/messages', authenticateToken, async (req, res) =
                 sm.created_at,
                 u.username,
                 u.avatar_url,
+                sm.chat_type,  // Добавляем chat_type
                 CASE 
                     WHEN sm.deleted = TRUE THEN '[Сообщение удалено]'
                     ELSE sm.content
@@ -2490,6 +2492,10 @@ app.get('/api/server/:server_id/messages', authenticateToken, async (req, res) =
         let params = [server_id];
         let paramCount = 1;
 
+        // Фильтруем по типу чата
+        query += ` AND sm.chat_type = $${++paramCount}`;
+        params.push(chat_type);
+
         if (before) {
             query += ` AND sm.id < $${++paramCount}`;
             params.push(parseInt(before));
@@ -2500,10 +2506,10 @@ app.get('/api/server/:server_id/messages', authenticateToken, async (req, res) =
 
         const messages = await pool.query(query, params);
 
-        // Общее количество сообщений
+        // Общее количество сообщений этого типа
         const totalResult = await pool.query(
-            'SELECT COUNT(*) FROM server_messages WHERE server_id = $1',
-            [server_id]
+            'SELECT COUNT(*) FROM server_messages WHERE server_id = $1 AND chat_type = $2',
+            [server_id, chat_type]
         );
 
         res.json({
@@ -2522,10 +2528,10 @@ app.get('/api/server/:server_id/messages', authenticateToken, async (req, res) =
 app.post('/api/server/:server_id/messages', authenticateToken, async (req, res) => {
     try {
         const { server_id } = req.params;
-        const { content } = req.body;
+        const { content, type = 'general' } = req.body; // Добавляем тип чата
         const userId = req.user.userId;
 
-        console.log(`📤 Отправка сообщения в сервер ${server_id} от пользователя ${userId}`);
+        console.log(`📤 Отправка сообщения в сервер ${server_id} от пользователя ${userId}, тип: ${type}`);
 
         // Проверяем подписку
         const isSubscribed = await pool.query(`
@@ -2557,12 +2563,17 @@ app.post('/api/server/:server_id/messages', authenticateToken, async (req, res) 
             return res.status(400).json({ error: 'Сообщение слишком длинное' });
         }
 
-        // Добавляем сообщение
+        // Валидация типа чата
+        if (!['general', 'exchange'].includes(type)) {
+            return res.status(400).json({ error: 'Неверный тип чата' });
+        }
+
+        // Добавляем сообщение с указанием типа чата
         const result = await pool.query(`
-            INSERT INTO server_messages (server_id, user_id, content)
-            VALUES ($1, $2, $3)
-            RETURNING id, server_id, user_id, content, created_at
-        `, [server_id, userId, content.trim()]);
+            INSERT INTO server_messages (server_id, user_id, content, chat_type)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id, server_id, user_id, content, created_at, chat_type
+        `, [server_id, userId, content.trim(), type]);
 
         // Обновляем счетчик сообщений
         await pool.query(
@@ -2578,6 +2589,7 @@ app.post('/api/server/:server_id/messages', authenticateToken, async (req, res) 
                 sm.user_id,
                 sm.content,
                 sm.created_at,
+                sm.chat_type,
                 u.username,
                 u.avatar_url,
                 CASE 
@@ -2610,12 +2622,15 @@ app.post('/api/server/:server_id/messages', authenticateToken, async (req, res) 
                 type: 'new_message',
                 server_id,
                 message: message,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                chat_type: type // Добавляем тип чата в вебсокет сообщение
             };
 
+            // Отправляем только тем клиентам, которые подписаны на этот тип чата
             wss.clients.forEach(client => {
                 if (client.readyState === WebSocket.OPEN && 
-                    client.serverId === server_id.toString()) {
+                    client.serverId === server_id.toString() &&
+                    client.chatType === type) { // Проверяем тип чата
                     client.send(JSON.stringify(wsMessage));
                 }
             });
@@ -2628,6 +2643,12 @@ app.post('/api/server/:server_id/messages', authenticateToken, async (req, res) 
 
     } catch (err) {
         console.error('❌ Ошибка отправки сообщения:', err);
+        
+        // Проверка на дублирование или ограничения БД
+        if (err.code === '23505') { // unique_violation
+            return res.status(400).json({ error: 'Сообщение с таким ID уже существует' });
+        }
+        
         res.status(500).json({ error: 'Ошибка отправки сообщения' });
     }
 });
