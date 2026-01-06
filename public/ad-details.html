@@ -2,188 +2,269 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Детали объявления - Zeeptook</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
+        /* Telegram-подобные стили как в index.html */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
         }
         
         :root {
-            --primary: #00f2fe;
-            --primary-dark: #4facfe;
-            --secondary: #0f172a;
+            --primary: #0088cc;
+            --primary-dark: #0077b3;
+            --secondary: #18222d;
             --accent: #ff6b6b;
-            --google: #4285f4;
-            --dark: #1e293b;
-            --darker: #0f172a;
-            --light: #f8fafc;
-            --gray: #64748b;
-            --gray-light: #cbd5e1;
+            --gray-dark: #2a2f36;
+            --gray-medium: #3c4350;
+            --gray-light: #8e98a3;
             --white: #ffffff;
+            --message-out: #2b5278;
+            --message-in: #182533;
+            --chat-bg: #0e1621;
+            --input-bg: #242f3d;
+            --nav-bg: #17212b;
+            --exchange-bg: #1a2c38;
+            --exchange-out: #1e3a4a;
             --gradient: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            --gradient-dark: linear-gradient(135deg, var(--secondary) 0%, #1e3a8a 100%);
-            --shadow: 0 8px 32px rgba(0, 242, 254, 0.15);
-            --radius: 16px;
-            --radius-sm: 12px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --radius-xs: 6px;
         }
         
         body {
-            background: var(--gradient-dark);
+            background: var(--chat-bg);
             color: var(--white);
             min-height: 100vh;
-            padding-bottom: 80px;
+            font-size: 15px;
+            max-width: 768px;
+            margin: 0 auto;
+            width: 100%;
         }
 
         .app-container {
             width: 100%;
-            max-width: 100%;
-            margin: 0 auto;
+            position: relative;
         }
-        
+
+        /* Header как в index.html */
         .header {
-            background: rgba(30, 41, 59, 0.9);
-            backdrop-filter: blur(20px);
+            background: var(--nav-bg);
             color: var(--white);
-            padding: 15px 20px;
+            padding: 8px 16px;
             display: flex;
             align-items: center;
-            gap: 15px;
-            box-shadow: var(--shadow);
-            position: sticky;
+            gap: 12px;
+            position: fixed;
             top: 0;
+            left: 0;
+            right: 0;
             z-index: 1000;
-            border-bottom: 1px solid rgba(0, 242, 254, 0.1);
+            height: 56px;
+            border-bottom: 1px solid var(--gray-dark);
+            max-width: 768px;
+            margin: 0 auto;
         }
         
         .back-btn {
             color: var(--primary);
             text-decoration: none;
             font-size: 18px;
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
             border-radius: 50%;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            background: none;
+            border: none;
+            cursor: pointer;
         }
         
         .back-btn:active {
-            background: rgba(0, 242, 254, 0.1);
+            background: rgba(0, 136, 204, 0.1);
         }
         
         .page-title {
-            font-size: 18px;
+            font-size: 17px;
             font-weight: 600;
             color: var(--white);
+            flex: 1;
         }
-        
-        .ad-details {
-            padding: 20px;
+
+        /* Контент */
+        .content-wrapper {
+            margin-top: 56px;
+            margin-bottom: 60px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding: 0;
         }
-        
+
+        /* Главное изображение */
         .ad-image-container {
             position: relative;
-            height: 250px;
-            border-radius: var(--radius);
+            width: 100%;
+            height: 300px;
+            background: var(--gray-dark);
             overflow: hidden;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow);
+            border-radius: 0;
         }
         
         .ad-image {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            background: var(--gradient);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
         }
         
         .ad-badge {
             position: absolute;
-            top: 15px;
-            left: 15px;
+            top: 16px;
+            left: 16px;
             background: var(--accent);
             color: white;
             padding: 6px 12px;
             border-radius: 12px;
             font-size: 12px;
             font-weight: 600;
+            z-index: 2;
         }
         
+        /* Миниатюры изображений */
+        .image-gallery {
+            display: flex;
+            gap: 8px;
+            padding: 12px 16px;
+            overflow-x: auto;
+            background: var(--nav-bg);
+            border-bottom: 1px solid var(--gray-dark);
+        }
+        
+        .image-gallery::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .gallery-thumb {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 2px solid transparent;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+        }
+        
+        .gallery-thumb.active {
+            border-color: var(--primary);
+        }
+        
+        /* Детали объявления */
         .ad-content {
-            background: rgba(30, 41, 59, 0.9);
-            backdrop-filter: blur(20px);
-            border-radius: var(--radius);
-            padding: 20px;
-            box-shadow: var(--shadow);
-            border: 1px solid rgba(0, 242, 254, 0.1);
-            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--chat-bg);
         }
         
         .ad-price {
             font-size: 28px;
             font-weight: 700;
             color: var(--primary);
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
         
         .ad-title {
-            font-size: 22px;
+            font-size: 20px;
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 16px;
             line-height: 1.3;
             color: var(--white);
         }
         
         .ad-meta {
             display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
             flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--gray-dark);
         }
         
         .meta-item {
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
             font-size: 14px;
-            color: var(--gray);
+            color: var(--gray-light);
+            background: var(--input-bg);
+            padding: 6px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--gray-dark);
         }
         
         .ad-description {
-            line-height: 1.6;
-            margin-bottom: 25px;
+            line-height: 1.5;
+            margin-bottom: 24px;
             font-size: 15px;
+            color: var(--white);
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--gray-dark);
+        }
+        
+        /* Статистика */
+        .ad-stats {
+            display: flex;
+            justify-content: space-between;
+            background: var(--nav-bg);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            margin-bottom: 20px;
+            border: 1px solid var(--gray-dark);
+        }
+        
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .stat-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
             color: var(--gray-light);
         }
         
+        /* Информация о продавце */
         .seller-info {
-            background: rgba(15, 23, 42, 0.6);
+            background: var(--nav-bg);
             border-radius: var(--radius-sm);
-            padding: 15px;
+            padding: 16px;
             margin-bottom: 20px;
+            border: 1px solid var(--gray-dark);
         }
         
         .seller-header {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
             color: var(--white);
         }
         
         .seller-details {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
         
         .seller-avatar {
@@ -196,6 +277,7 @@
             justify-content: center;
             color: white;
             font-size: 20px;
+            flex-shrink: 0;
         }
         
         .seller-avatar img {
@@ -208,29 +290,38 @@
         .seller-name {
             font-weight: 600;
             color: var(--white);
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
         
         .seller-rating {
             font-size: 14px;
-            color: var(--gray);
+            color: var(--gray-light);
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
         
+        /* Кнопки действий */
         .action-buttons {
             display: flex;
-            gap: 10px;
-            margin-top: 25px;
+            gap: 12px;
+            margin-top: 8px;
+            position: fixed;
+            bottom: 60px;
+            left: 16px;
+            right: 16px;
+            z-index: 900;
         }
         
         .btn {
             flex: 1;
-            padding: 15px;
+            padding: 14px;
             border: none;
             border-radius: var(--radius-sm);
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -244,12 +335,12 @@
         .btn-primary {
             background: var(--gradient);
             color: white;
-            box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
+            box-shadow: 0 4px 15px rgba(0, 136, 204, 0.3);
         }
         
         .btn-outline {
-            background: transparent;
-            border: 2px solid var(--primary);
+            background: var(--input-bg);
+            border: 1px solid var(--primary);
             color: var(--primary);
         }
         
@@ -259,16 +350,17 @@
             color: white;
         }
         
+        /* Loading */
         .loading {
             text-align: center;
-            padding: 50px 20px;
-            color: var(--gray);
+            padding: 80px 20px;
+            color: var(--gray-light);
         }
         
         .loading-spinner {
             width: 40px;
             height: 40px;
-            border: 3px solid rgba(0, 242, 254, 0.2);
+            border: 3px solid rgba(0, 136, 204, 0.2);
             border-top: 3px solid var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
@@ -280,73 +372,21 @@
             100% { transform: rotate(360deg); }
         }
         
-        .image-gallery {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-        }
-        
-        .image-gallery::-webkit-scrollbar {
-            display: none;
-        }
-        
-        .gallery-thumb {
-            width: 80px;
-            height: 80px;
-            border-radius: var(--radius-sm);
-            object-fit: cover;
-            cursor: pointer;
-            border: 2px solid transparent;
-            transition: all 0.3s ease;
-        }
-        
-        .gallery-thumb.active {
-            border-color: var(--primary);
-        }
-        
-        .ad-stats {
-            display: flex;
-            justify-content: space-between;
-            background: rgba(15, 23, 42, 0.6);
-            border-radius: var(--radius-sm);
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .stat-item {
-            text-align: center;
-            flex: 1;
-        }
-        
-        .stat-value {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 5px;
-        }
-        
-        .stat-label {
-            font-size: 12px;
-            color: var(--gray);
-        }
-        
+        /* Bottom Navigation - точно как в index.html */
         .bottom-nav {
             position: fixed;
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(30, 41, 59, 0.98);
-            backdrop-filter: blur(20px);
+            background: var(--nav-bg);
             display: flex;
             justify-content: space-around;
-            padding: 12px 0;
-            box-shadow: 0 -2px 20px rgba(0, 242, 254, 0.1);
+            padding: 8px 0 10px;
+            border-top: 1px solid var(--gray-dark);
             z-index: 1000;
-            border-top: 1px solid rgba(0, 242, 254, 0.1);
+            height: 60px;
+            max-width: 768px;
+            margin: 0 auto;
         }
         
         .nav-btn {
@@ -354,17 +394,21 @@
             flex-direction: column;
             align-items: center;
             text-decoration: none;
-            color: var(--gray);
-            font-size: 11px;
-            padding: 5px;
-            transition: all 0.3s ease;
+            color: var(--gray-light);
+            font-size: 10px;
+            padding: 6px 4px;
+            transition: all 0.2s ease;
             flex: 1;
+            position: relative;
+            border: none;
+            background: none;
+            cursor: pointer;
         }
         
         .nav-btn i {
             font-size: 20px;
-            margin-bottom: 3px;
-            transition: all 0.3s ease;
+            margin-bottom: 2px;
+            transition: all 0.2s ease;
         }
         
         .nav-btn.active {
@@ -372,109 +416,170 @@
         }
         
         .nav-btn.active i {
-            transform: translateY(-2px);
+            transform: translateY(-1px);
+        }
+        
+        .nav-btn.active::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 2px;
         }
         
         .nav-btn:active {
             transform: scale(0.95);
         }
-        
+
+        /* Quick Notification */
+        .quick-notification {
+            position: fixed;
+            top: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            font-weight: 500;
+            z-index: 10000;
+            animation: slideDown 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
         /* Анимации */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        @keyframes slideDown {
+            from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
         }
-        
-        .ad-content {
-            animation: fadeInUp 0.5s ease-out;
+
+        @keyframes slideUp {
+            from { transform: translateX(-50%) translateY(0); opacity: 1; }
+            to { transform: translateX(-50%) translateY(-20px); opacity: 0; }
         }
-        
-        /* Улучшения для iOS */
-        @supports (-webkit-touch-callout: none) {
-            body {
-                background-attachment: fixed;
-            }
-        }
-        
-        /* Адаптивность для очень маленьких экранов */
-        @media (max-width: 360px) {
-            .header {
-                padding: 12px 15px;
+
+        /* Адаптивность */
+        @media (max-width: 480px) {
+            .ad-image-container {
+                height: 250px;
             }
             
-            .ad-details {
-                padding: 15px;
+            .ad-price {
+                font-size: 24px;
+            }
+            
+            .ad-title {
+                font-size: 18px;
             }
             
             .action-buttons {
-                flex-direction: column;
+                left: 12px;
+                right: 12px;
+                bottom: 60px;
+            }
+            
+            .btn {
+                padding: 12px;
+                font-size: 14px;
             }
         }
         
-        /* Адаптивность для планшетов */
         @media (min-width: 768px) {
-            .app-container {
-                max-width: 750px;
-                margin: 0 auto;
+            .ad-image-container {
+                border-radius: var(--radius);
+                margin: 16px 16px 0;
+                width: calc(100% - 32px);
+                height: 350px;
+            }
+            
+            .image-gallery {
+                padding: 12px 16px 0;
+                background: transparent;
+                border: none;
+            }
+            
+            .ad-content {
+                padding: 16px 16px 80px;
             }
         }
         
-        /* Адаптивность для десктопов */
-        @media (min-width: 1024px) {
-            .app-container {
-                max-width: 900px;
-            }
+        /* Улучшение скролла */
+        .content-wrapper {
+            scroll-behavior: smooth;
+        }
+        
+        .content-wrapper::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .content-wrapper::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .content-wrapper::-webkit-scrollbar-thumb {
+            background: var(--gray-medium);
+            border-radius: 3px;
         }
     </style>
 </head>
 <body>
     <div class="app-container">
+        <!-- Хедер -->
         <div class="header">
-            <a href="#" class="back-btn" onclick="goBack()">
+            <button class="back-btn" onclick="goBack()">
                 <i class="fa fa-arrow-left"></i>
-            </a>
-            <div class="page-title">Детали объявления</div>
+            </button>
+            <div class="page-title">Детали</div>
         </div>
         
-        <div class="ad-details" id="ad-details">
-            <div class="loading">
-                <div class="loading-spinner"></div>
-                <div>Загрузка деталей объявления...</div>
+        <!-- Контент -->
+        <div class="content-wrapper" id="content-wrapper">
+            <div class="ad-details" id="ad-details">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>Загрузка деталей объявления...</div>
+                </div>
             </div>
         </div>
-    </div>
-    
-    <div class="bottom-nav">
-        <a href="index.html" class="nav-btn">
-            <i class="fa fa-home"></i>
-            <span>Главная</span>
-        </a>
-        <a href="favorites.html" class="nav-btn">
-            <i class="fa fa-heart"></i>
-            <span>Избранное</span>
-        </a>
-        <a href="add-ad.html" class="nav-btn">
-            <i class="fa fa-plus"></i>
-            <span>Добавить</span>
-        </a>
-        <a href="messages.html" class="nav-btn">
-            <i class="fa fa-comment"></i>
-            <span>Чаты</span>
-        </a>
-        <a href="profile.html" class="nav-btn">
-            <i class="fa fa-user"></i>
-            <span>Профиль</span>
-        </a>
+        
+        <!-- Кнопки действий (фиксированные внизу) -->
+        <div class="action-buttons" id="action-buttons" style="display: none;">
+            <!-- Кнопки будут добавлены через JS -->
+        </div>
+        
+        <!-- Нижнее меню (точно как в index.html) -->
+        <div class="bottom-nav">
+            <a href="index.html" class="nav-btn">
+                <i class="fa fa-home"></i>
+                <span>Главная</span>
+            </a>
+            <a href="favorites.html" class="nav-btn">
+                <i class="fa fa-heart"></i>
+                <span>Избранное</span>
+            </a>
+            <a href="add-ad.html" class="nav-btn">
+                <i class="fa fa-plus"></i>
+                <span>Добавить</span>
+            </a>
+            <a href="messages.html" class="nav-btn">
+                <i class="fa fa-comment"></i>
+                <span>Чаты</span>
+            </a>
+            <a href="profile.html" class="nav-btn">
+                <i class="fa fa-user"></i>
+                <span>Профиль</span>
+            </a>
+        </div>
     </div>
 
     <script>
-        // Функция для безопасного вывода текста
+        // Оригинальные функции из вашего кода, только обновлены для нового стиля
+        
         function escapeHtml(text) {
             if (!text) return '';
             const div = document.createElement('div');
@@ -482,15 +587,12 @@
             return div.innerHTML;
         }
 
-        // Получаем ID объявления из URL параметров
         const urlParams = new URLSearchParams(window.location.search);
         const adId = urlParams.get('id');
         const source = urlParams.get('source');
         
-        // API базовый URL
         const API_BASE = '/api';
         
-        // Безопасное получение токена
         let token = null;
         try {
             token = localStorage.getItem('token');
@@ -498,7 +600,6 @@
             console.error('Error reading token:', error);
         }
         
-        // Функция для загрузки деталей объявления
         async function loadAdDetails() {
             const detailsContainer = document.getElementById('ad-details');
             
@@ -518,7 +619,6 @@
                     headers: {}
                 };
 
-                // Добавляем токен авторизации, если есть
                 if (token) {
                     options.headers['Authorization'] = `Bearer ${token}`;
                 }
@@ -530,8 +630,6 @@
                 }
                 
                 const ad = await response.json();
-                
-                // Отображаем детали объявления
                 displayAdDetails(ad);
                 
             } catch (error) {
@@ -548,9 +646,9 @@
             }
         }
         
-        // Функция для отображения деталей объявления
         function displayAdDetails(ad) {
             const detailsContainer = document.getElementById('ad-details');
+            const actionButtons = document.getElementById('action-buttons');
             
             // Форматируем цену
             const priceFormatted = ad.price ? 
@@ -574,7 +672,9 @@
             const mainImageUrl = ad.imageUrls && ad.imageUrls.length > 0 ? ad.imageUrls[0] : '';
             const mainImageHtml = mainImageUrl ? 
                 `<img src="${escapeHtml(mainImageUrl)}" alt="${escapeHtml(ad.title)}" class="ad-image">` :
-                `<div class="ad-image"><i class="fa fa-gamepad" style="font-size: 48px; opacity: 0.8;"></i></div>`;
+                `<div class="ad-image" style="display: flex; align-items: center; justify-content: center; color: var(--gray-light);">
+                    <i class="fa fa-gamepad" style="font-size: 48px;"></i>
+                </div>`;
             
             // Отображаем детали объявления
             detailsContainer.innerHTML = `
@@ -605,7 +705,7 @@
                     </div>
                     
                     <div class="ad-description">
-                        ${escapeHtml(ad.description || 'Описание отсутствует')}
+                        ${escapeHtml(ad.description || 'Описание отсутствует').replace(/\n/g, '<br>')}
                     </div>
                     
                     <div class="ad-stats">
@@ -635,49 +735,53 @@
                             <div>
                                 <div class="seller-name">${escapeHtml(ad.seller ? ad.seller.name : 'Неизвестно')}</div>
                                 <div class="seller-rating">
-                                    ⭐ ${escapeHtml(ad.seller ? ad.seller.rating || '5.0' : '5.0')} 
+                                    <i class="fa fa-star" style="color: #ffd700;"></i>
+                                    ${escapeHtml(ad.seller ? ad.seller.rating || '5.0' : '5.0')} 
                                     ${ad.seller && ad.seller.since ? `• на сайте ${escapeHtml(ad.seller.since)}` : ''}
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="action-buttons">
-                        <button class="btn btn-outline ${ad.isFavorite ? 'active' : ''}" id="favorite-btn" onclick="toggleFavorite(${ad.id})">
-                            <i class="fa ${ad.isFavorite ? 'fa-heart' : 'fa-heart-o'}"></i>
-                            ${ad.isFavorite ? 'В избранном' : 'В избранное'}
-                        </button>
-                        <button class="btn btn-primary" onclick="startChat(${ad.id}, ${ad.seller ? ad.seller.id : 'null'})">
-                            <i class="fa fa-comment"></i>
-                            Написать
-                        </button>
-                    </div>
                 </div>
             `;
+            
+            // Добавляем кнопки действий
+            actionButtons.innerHTML = `
+                <button class="btn btn-outline ${ad.isFavorite ? 'active' : ''}" id="favorite-btn" onclick="toggleFavorite(${ad.id})">
+                    <i class="fa ${ad.isFavorite ? 'fa-heart' : 'fa-heart-o'}"></i>
+                    ${ad.isFavorite ? 'В избранном' : 'В избранное'}
+                </button>
+                <button class="btn btn-primary" onclick="startChat(${ad.id}, ${ad.seller ? ad.seller.id : 'null'})">
+                    <i class="fa fa-comment"></i>
+                    Написать
+                </button>
+            `;
+            actionButtons.style.display = 'flex';
+            
+            // Скроллим вверх
+            document.querySelector('.content-wrapper').scrollTop = 0;
         }
         
-        // Функция для смены основного изображения
         function changeMainImage(imageUrl, thumbElement) {
-            // Обновляем основное изображение
             const mainImageContainer = document.querySelector('.ad-image-container');
+            const badge = mainImageContainer.querySelector('.ad-badge');
+            const badgeHtml = badge ? badge.outerHTML : '';
+            
             mainImageContainer.innerHTML = `
-                ${document.querySelector('.ad-badge') ? '<div class="ad-badge">СРОЧНО</div>' : ''}
+                ${badgeHtml}
                 <img src="${imageUrl}" alt="Основное изображение" class="ad-image">
             `;
             
-            // Обновляем активный миниатюры
             document.querySelectorAll('.gallery-thumb').forEach(thumb => {
                 thumb.classList.remove('active');
             });
             thumbElement.classList.add('active');
         }
         
-        // Функция для добавления/удаления из избранного
         async function toggleFavorite(adId) {
             const favoriteBtn = document.getElementById('favorite-btn');
             const isCurrentlyFavorite = favoriteBtn.classList.contains('active');
             
-            // Обновляем UI сразу для лучшего UX
             if (isCurrentlyFavorite) {
                 favoriteBtn.classList.remove('active');
                 favoriteBtn.innerHTML = '<i class="fa fa-heart-o"></i> В избранное';
@@ -688,15 +792,11 @@
                 showNotification('Добавлено в избранное');
             }
             
-            // Сохраняем в localStorage независимо от авторизации
             let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
             
             if (isCurrentlyFavorite) {
-                // Удаляем из избранного
                 favorites = favorites.filter(fav => fav.id !== adId);
             } else {
-                // Добавляем в избранное
-                // Получаем данные объявления для сохранения
                 const adData = {
                     id: adId,
                     title: document.querySelector('.ad-title').textContent,
@@ -709,10 +809,8 @@
                 favorites.push(adData);
             }
             
-            // Сохраняем обновленный список в localStorage
             localStorage.setItem('favorites', JSON.stringify(favorites));
             
-            // Если пользователь авторизован, синхронизируем с сервером
             if (token) {
                 try {
                     const url = `${API_BASE}/favorites/${adId}`;
@@ -727,7 +825,6 @@
                     await fetch(url, options);
                 } catch (error) {
                     console.error('Error syncing favorites with server:', error);
-                    // Откатываем UI изменения в случае ошибки
                     if (isCurrentlyFavorite) {
                         favoriteBtn.classList.add('active');
                         favoriteBtn.innerHTML = '<i class="fa fa-heart"></i> В избранном';
@@ -740,66 +837,60 @@
             }
         }
         
-        // Функция для начала чата с продавцом
-async function startChat(adId, sellerId) {
-    console.log('💬 Starting chat:', { adId, sellerId });
-    
-    // Получаем токен
-    const token = localStorage.getItem('token');
-    if (!token) {
-        showNotification('Для отправки сообщений необходимо войти в систему', 'error');
-        setTimeout(() => {
-            window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
-        }, 2000);
-        return;
-    }
-    
-    if (!sellerId || sellerId === 'null') {
-        showNotification('Не удалось определить продавца', 'error');
-        return;
-    }
-    
-    try {
-        // Создаем или получаем чат
-        const response = await fetch(`${API_BASE}/chats/create`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                other_user_id: sellerId,
-                ad_id: adId
-            })
-        });
-        
-        if (!response.ok) {
-            throw new Error('Failed to create chat');
+        async function startChat(adId, sellerId) {
+            console.log('💬 Starting chat:', { adId, sellerId });
+            
+            const token = localStorage.getItem('token');
+            if (!token) {
+                showNotification('Для отправки сообщений необходимо войти в систему', 'error');
+                setTimeout(() => {
+                    window.location.href = 'login.html?redirect=' + encodeURIComponent(window.location.href);
+                }, 2000);
+                return;
+            }
+            
+            if (!sellerId || sellerId === 'null') {
+                showNotification('Не удалось определить продавца', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/chats/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        other_user_id: sellerId,
+                        ad_id: adId
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to create chat');
+                }
+                
+                const result = await response.json();
+                console.log('💬 Chat created/loaded:', result);
+                
+                if (result.chatId) {
+                    showNotification('Чат открыт', 'success');
+                    window.location.href = `messages.html?chat=${result.chatId}&seller=${sellerId}&ad=${adId}`;
+                } else {
+                    throw new Error('Chat ID not received');
+                }
+                
+            } catch (error) {
+                console.error('❌ Start chat error:', error);
+                showNotification('Ошибка создания чата: ' + error.message, 'error');
+                
+                setTimeout(() => {
+                    window.location.href = 'messages.html';
+                }, 3000);
+            }
         }
         
-        const result = await response.json();
-        console.log('💬 Chat created/loaded:', result);
-        
-        // Переходим на страницу чатов с параметрами
-        if (result.chatId) {
-            showNotification('Чат открыт', 'success');
-            window.location.href = `messages.html?chat=${result.chatId}&seller=${sellerId}&ad=${adId}`;
-        } else {
-            throw new Error('Chat ID not received');
-        }
-        
-    } catch (error) {
-        console.error('❌ Start chat error:', error);
-        showNotification('Ошибка создания чата: ' + error.message, 'error');
-        
-        // Альтернативный вариант: открыть общие чаты
-        setTimeout(() => {
-            window.location.href = 'messages.html';
-        }, 3000);
-    }
-}
-        
-        // Функция для возврата назад
         function goBack() {
             if (source === 'favorites') {
                 window.location.href = 'favorites.html';
@@ -808,20 +899,18 @@ async function startChat(adId, sellerId) {
             }
         }
         
-        // Функция для показа уведомлений
         function showNotification(message, type = 'success') {
-            // Создаем элемент уведомления
             const notification = document.createElement('div');
             notification.style.cssText = `
                 position: fixed;
-                top: 20px;
+                top: 70px;
                 left: 50%;
                 transform: translateX(-50%);
                 background: ${type === 'error' ? 'var(--accent)' : 'var(--primary)'};
                 color: white;
-                padding: 12px 20px;
+                padding: 10px 20px;
                 border-radius: 25px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
                 z-index: 10000;
                 font-weight: 500;
                 animation: slideDown 0.3s ease-out;
@@ -830,7 +919,6 @@ async function startChat(adId, sellerId) {
             
             document.body.appendChild(notification);
             
-            // Удаляем уведомление через 3 секунды
             setTimeout(() => {
                 notification.style.animation = 'slideUp 0.3s ease-in';
                 setTimeout(() => {
@@ -841,7 +929,6 @@ async function startChat(adId, sellerId) {
             }, 3000);
         }
         
-        // Добавляем стили для анимации уведомлений
         const style = document.createElement('style');
         style.textContent = `
             @keyframes slideDown {
@@ -855,7 +942,6 @@ async function startChat(adId, sellerId) {
         `;
         document.head.appendChild(style);
         
-        // Инициализация при загрузке страницы
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Initializing ad details page...');
             console.log('📄 Ad ID:', adId);
