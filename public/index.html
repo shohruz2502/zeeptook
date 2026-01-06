@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Zeeptook - Игровой маркетплейс</title>
+    <title>Zeeptook - Маркетплейс</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
-    /* Telegram-подобные стили - ТОЛЬКО ДЛЯ МОБИЛЬНЫХ */
+    /* Оптимизированные стили для всех устройств */
     * {
         margin: 0;
         padding: 0;
@@ -39,50 +39,31 @@
     html, body {
         height: 100%;
         overflow-x: hidden;
+        background: var(--chat-bg);
+        color: var(--white);
     }
     
     body {
-        background: var(--chat-bg);
-        color: var(--white);
         font-size: 15px;
         opacity: 0;
-        animation: pageFadeIn 0.6s ease forwards;
+        animation: pageFadeIn 0.4s ease forwards;
         display: flex;
         flex-direction: column;
         min-height: 100vh;
         padding: 0;
         margin: 0;
-    }
-
-    /* Запрет десктопного просмотра */
-    @media (min-width: 768px) {
-        body::before {
-            content: "Это приложение доступно только на мобильных устройствах";
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: var(--chat-bg);
-            color: var(--white);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            text-align: center;
-            font-size: 18px;
-            z-index: 9999;
-        }
+        max-width: 768px; /* Ограничение ширины для планшетов */
+        margin: 0 auto; /* Центрирование на больших экранах */
+        width: 100%;
+        box-shadow: 0 0 20px rgba(0,0,0,0.3); /* Визуальное разделение на ПК */
     }
 
     @keyframes pageFadeIn {
         from {
             opacity: 0;
-            transform: translateY(10px);
         }
         to {
             opacity: 1;
-            transform: translateY(0);
         }
     }
 
@@ -94,7 +75,7 @@
         position: relative;
     }
 
-    /* Header - ЗАКРЕПЛЕННЫЙ СВЕРХУ */
+    /* Header */
     .header {
         background: var(--nav-bg);
         color: var(--white);
@@ -158,7 +139,7 @@
         font-size: 18px;
     }
 
-    /* Main Content Area - ФИКСИРОВАННАЯ ВЫСОТА */
+    /* Main Content Area */
     .content-wrapper {
         flex: 1;
         display: flex;
@@ -169,83 +150,14 @@
         -webkit-overflow-scrolling: touch;
     }
 
-    /* Categories - ПОД HEADER'ОМ (как на изображении) */
-    .categories-section {
+    /* Search Section - НА ВЕРХУ */
+    .search-section {
+        padding: 12px 16px;
         background: var(--nav-bg);
         border-bottom: 1px solid var(--gray-dark);
         position: sticky;
+        top: 60px; /* Под header */
         z-index: 999;
-        animation: slideDown 0.4s ease 0.2s both;
-    }
-    
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-    
-    .categories-scroll {
-    display: flex;
-    overflow-x: auto;
-    padding: 12px 16px;
-    gap: 8px;
-    -webkit-overflow-scrolling: touch;
-    
-    margin-left: 0;
-    transform: none !important;
-    
-    justify-content: flex-start; 
-    
-
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-}
-
-@media (max-width: 400px) {
-    .categories-scroll {
-        justify-content: center; 
-    }
-}
-    
-    .category {
-        flex: 0 0 auto;
-        padding: 6px 14px;
-        background: var(--input-bg);
-        border-radius: 16px;
-        font-size: 13px;
-        font-weight: 500;
-        white-space: nowrap;
-        transition: all 0.2s ease;
-        border: 1px solid var(--gray-dark);
-        cursor: pointer;
-        color: var(--gray-light);
-    }
-    
-    .category.active {
-        background: var(--gradient);
-        color: white;
-        border-color: var(--primary);
-    }
-    
-    .category:active {
-        transform: scale(0.95);
-    }
-
-    /* Search Section - ПОД КАТЕГОРИЯМИ (как на изображении) */
-    .search-section {
-    padding: 12px 16px;
-    background: var(--nav-bg);
-    border-bottom: 1px solid var(--gray-dark);
-    position: sticky;
-    top: 60px; /* Прилипает под header */
-    z-index: 999;
-    transform: translateX(0%);
-    animation: slideInFromRight 0.4s ease 0.2s both;
     }
     
     .search-container {
@@ -295,30 +207,72 @@
         transform: scale(0.95);
     }
 
-    /* Main Content - ОСНОВНАЯ ОБЛАСТЬ */
+    /* Categories - ПОД ПОИСКОМ */
+    .categories-section {
+        background: var(--nav-bg);
+        border-bottom: 1px solid var(--gray-dark);
+        position: sticky;
+        z-index: 998;
+        top: 124px; /* Под header + search */
+    }
+    
+    .categories-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        padding: 12px 16px;
+    }
+    
+    .category {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px 5px;
+        background: var(--input-bg);
+        border-radius: var(--radius-sm);
+        font-size: 12px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        border: 1px solid var(--gray-dark);
+        cursor: pointer;
+        color: var(--gray-light);
+        text-align: center;
+        min-height: 70px;
+    }
+    
+    .category i {
+        font-size: 20px;
+        margin-bottom: 6px;
+        color: var(--primary);
+    }
+    
+    .category.active {
+        background: var(--gradient);
+        color: white;
+        border-color: var(--primary);
+    }
+    
+    .category.active i {
+        color: white;
+    }
+    
+    .category:active {
+        transform: scale(0.95);
+    }
+
+    /* Main Content */
     .main-content {
         flex: 1;
         padding: 0;
-        animation: fadeIn 0.4s ease 0.4s both;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
     }
 
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-
-    /* Section Header */
+    /* Section Header - УПРОЩЕННЫЙ */
     .section-header {
-        padding: 16px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        padding: 12px 16px;
         background: var(--nav-bg);
         border-bottom: 1px solid var(--gray-dark);
-        position: sticky;
-        z-index: 997;
     }
     
     .section-title {
@@ -326,34 +280,18 @@
         font-weight: 600;
         color: var(--white);
     }
-    
-    .view-all {
-        font-size: 13px;
-        color: var(--primary);
-        font-weight: 500;
-        text-decoration: none;
-    }
-    
-    .view-all:active {
-        opacity: 0.7;
-    }
 
-    /* Ads Grid - ДВА РЯДА */
+    /* Ads Grid */
     .ads-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         gap: 10px;
         padding: 12px;
         background: var(--chat-bg);
-        opacity: 1;
-        transition: opacity 0.3s ease;
+        min-height: 200px;
     }
 
-    .ads-grid.loading {
-        opacity: 0.5;
-    }
-
-    /* Ad Card */
+    /* Ad Card - ОПТИМИЗИРОВАННЫЙ */
     .ad-card {
         background: var(--nav-bg);
         border-radius: var(--radius);
@@ -362,16 +300,12 @@
         border: 1px solid var(--gray-dark);
         display: flex;
         flex-direction: column;
-        transform: translateY(0);
         opacity: 0;
+        transform: translateY(10px);
         animation: cardAppear 0.3s ease-out forwards;
     }
     
     @keyframes cardAppear {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
         to {
             opacity: 1;
             transform: translateY(0);
@@ -383,7 +317,7 @@
         transition: transform 0.1s ease;
     }
     
-    /* Ad Image */
+    /* Ad Image - ЛЕНИВАЯ ЗАГРУЗКА */
     .ad-image {
         position: relative;
         width: 100%;
@@ -404,12 +338,6 @@
     
     .ad-image-img.loaded {
         opacity: 1;
-        animation: imageFadeIn 0.3s ease;
-    }
-    
-    @keyframes imageFadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
     }
     
     .ad-image-placeholder {
@@ -426,12 +354,6 @@
         gap: 8px;
         background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
         border-radius: var(--radius) var(--radius) 0 0;
-        transition: opacity 0.3s ease;
-    }
-    
-    .ad-image-placeholder.hidden {
-        opacity: 0;
-        pointer-events: none;
     }
     
     .ad-image-placeholder i {
@@ -442,25 +364,6 @@
     .ad-image-placeholder span {
         font-size: 12px;
         opacity: 0.7;
-    }
-    
-    .image-loader {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 30px;
-        height: 30px;
-        border: 2px solid rgba(255, 255, 255, 0.1);
-        border-top: 2px solid var(--primary);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-    
-    .image-loader.active {
-        opacity: 1;
     }
     
     .ad-content {
@@ -573,7 +476,6 @@
         margin: 12px;
         border-radius: var(--radius);
         border: 1px solid var(--gray-dark);
-        animation: fadeIn 0.6s ease-out;
         grid-column: 1 / -1;
     }
     
@@ -601,18 +503,17 @@
         color: var(--gray-light);
     }
 
-    /* Loading - только для первоначальной загрузки */
+    /* Loading */
     .initial-loading {
         text-align: center;
         padding: 40px 20px;
         color: var(--gray-light);
         grid-column: 1 / -1;
-        animation: fadeIn 0.3s ease;
     }
     
     .loading-spinner {
-        width: 40px;
-        height: 40px;
+        width: 30px;
+        height: 30px;
         border: 2px solid rgba(0, 136, 204, 0.2);
         border-top: 2px solid var(--primary);
         border-radius: 50%;
@@ -704,7 +605,7 @@
         background: rgba(0, 136, 204, 0.1);
     }
 
-    /* Bottom Navigation - ЗАКРЕПЛЕННЫЙ ВНИЗУ */
+    /* Bottom Navigation */
     .bottom-nav {
         position: fixed;
         bottom: 0;
@@ -767,111 +668,55 @@
     }
 
     /* Animations */
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-        }
-        to {
-            opacity: 1;
-        }
-    }
-    
     @keyframes spin {
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
 
-    /* Адаптация для маленьких экранов */
-    @media (max-width: 360px) {
-        .header {
+    /* Адаптация */
+    @media (max-width: 480px) {
+        .categories-grid {
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
             padding: 10px 12px;
         }
         
-        .messages-btn {
-            width: 36px;
-            height: 36px;
-            font-size: 14px;
+        .category {
+            padding: 8px 4px;
+            font-size: 11px;
+            min-height: 65px;
         }
         
-        .categories-section {
-            padding: 10px 12px;
-        }
-        
-        .search-section {
-            padding: 10px 12px;
-            top: 106px;
-        }
-        
-        .section-header {
-            top: 170px;
-        }
-        
-        .categories-scroll {
-            padding: 10px 12px;
-        }
-        
-        .ads-grid {
-            gap: 8px;
-            padding: 10px;
+        .category i {
+            font-size: 18px;
         }
         
         .ad-image {
             height: 130px;
         }
-        
-        .ad-content {
-            padding: 10px;
+    }
+    
+    @media (min-width: 481px) and (max-width: 768px) {
+        .categories-grid {
+            grid-template-columns: repeat(5, 1fr);
         }
         
-        .ad-title {
-            font-size: 13px;
-        }
-        
-        .ad-description {
-            font-size: 11px;
-        }
-        
-        .section-header {
-            padding: 12px;
+        .ads-grid {
+            grid-template-columns: repeat(3, 1fr);
         }
     }
     
-    @media (max-width: 320px) {
-        .logo span {
-            font-size: 16px;
+    @media (min-width: 769px) {
+        body {
+            border-left: 1px solid var(--gray-dark);
+            border-right: 1px solid var(--gray-dark);
         }
-        
-        .messages-btn {
-            width: 34px;
-            height: 34px;
-            font-size: 13px;
-        }
-        
-        .categories-section {
-            padding: 8px 12px;
-            top: 60px;
-        }
-        
-        .search-section {
-            padding: 8px 12px;
-            top: 104px;
-        }
-        
-        .section-header {
-            top: 168px;
-        }
-        
-        .ad-title {
-            font-size: 12px;
-        }
-        
-        .ad-price {
-            font-size: 14px;
-        }
-        
-        .ad-image {
-            height: 120px;
-        }
+    }
+
+    /* Улучшение производительности */
+    .ad-card, .category, .nav-btn, .messages-btn {
+        will-change: transform;
+        backface-visibility: hidden;
     }
 
     /* Плавный скролл */
@@ -879,32 +724,28 @@
         scroll-behavior: smooth;
     }
 
-    /* Запрет выделения текста для лучшего UX на мобильных */
-    .category,
-    .nav-btn,
-    .ad-card,
-    .messages-btn {
-        user-select: none;
-        -webkit-user-select: none;
-    }
-
-    /* Улучшение скролла для iOS */
-    .content-wrapper,
-    .main-content {
+    /* Улучшение скролла */
+    .content-wrapper, .main-content {
         -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    
+    .content-wrapper::-webkit-scrollbar,
+    .main-content::-webkit-scrollbar {
+        display: none;
     }
 </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- ЗАКРЕПЛЕННЫЙ ХЕДЕР -->
+        <!-- ХЕДЕР -->
         <div class="header">
             <div class="logo">
                 <i class="fa fa-diamond"></i>
                 <span>Zeeptook</span>
             </div>
             <div class="header-actions">
-                <!-- Кнопка сообщений (только иконка) -->
                 <a href="messages.html" class="messages-btn">
                     <i class="fa fa-comment"></i>
                 </a>
@@ -913,19 +754,11 @@
         
         <!-- ОСНОВНОЙ КОНТЕНТ -->
         <div class="content-wrapper">
-            <!-- ЗАКРЕПЛЕННЫЕ КАТЕГОРИИ (сначала, как на изображении) -->
-            <div class="categories-section">
-                <div class="categories-scroll" id="categories-container">
-                    <div class="category active" data-category="all">Все</div>
-                    <!-- Категории будут загружены с сервера -->
-                </div>
-            </div>
-            
-            <!-- ЗАКРЕПЛЕННЫЙ ПОИСК (после категорий, как на изображении) -->
+            <!-- ПОИСК - СВЕРХУ -->
             <div class="search-section">
                 <div class="search-container">
                     <div class="search-box">
-                        <input type="text" id="search-input" placeholder="Поиск игровых аккаунтов...">
+                        <input type="text" id="search-input" placeholder="Поиск товаров и услуг...">
                         <button id="search-btn">
                             <i class="fa fa-search"></i>
                         </button>
@@ -933,17 +766,23 @@
                 </div>
             </div>
             
+            <!-- КАТЕГОРИИ - ПОД ПОИСКОМ -->
+            <div class="categories-section">
+                <div class="categories-grid" id="categories-container">
+                    <!-- Категории загружаются скриптом -->
+                </div>
+            </div>
+            
             <!-- ОСНОВНОЙ КОНТЕНТ -->
             <div class="main-content">
                 <div class="section-header">
-                    <div class="section-title">Игровые аккаунты</div>
-                    <a href="#" class="view-all">Все</a>
+                    <div class="section-title">Популярные объявления</div>
                 </div>
                 
                 <div class="ads-grid" id="ads-container">
                     <div class="initial-loading">
                         <div class="loading-spinner"></div>
-                        <div>Загрузка объявлений...</div>
+                        <div>Загрузка...</div>
                     </div>
                 </div>
                 
@@ -953,13 +792,12 @@
             </div>
         </div>
         
-        <!-- ЗАКРЕПЛЕННОЕ НИЖНЕЕ МЕНЮ -->
+        <!-- НИЖНЕЕ МЕНЮ -->
         <div class="bottom-nav">
             <a href="index.html" class="nav-btn active">
                 <i class="fa fa-home"></i>
                 <span>Главная</span>
             </a>
-            <!-- Изменено: "Чаты" на "Избранное" -->
             <a href="favorites.html" class="nav-btn">
                 <i class="fa fa-heart"></i>
                 <span>Избранное</span>
@@ -980,85 +818,52 @@
     </div>
 
     <script>
-        // Переменные для управления загрузкой объявлений
+        // ОПТИМИЗИРОВАННАЯ ВЕРСИЯ - БЫСТРАЯ ЗАГРУЗКА
         let currentPage = 1;
         let totalPages = 1;
         let currentCategory = 'all';
         let currentSearch = '';
         let isLoading = false;
-        let token = localStorage.getItem('token');
+        let isInitialLoad = true;
         let ads = [];
-        let imageLoadQueue = [];
-
-        // API базовый URL
         const API_BASE = '/api';
+        const IMAGE_BATCH_SIZE = 2; // Загружаем по 2 изображения за раз
+        let imageLoadQueue = [];
+        let isProcessingImages = false;
 
-        // Функция для загрузки категорий
-        async function loadCategories() {
-            try {
-                const response = await fetch(`${API_BASE}/categories`);
-                if (!response.ok) throw new Error('Failed to load categories');
-                
-                const categories = await response.json();
-                const container = document.getElementById('categories-container');
-                
-                // Очищаем контейнер, оставляя только "Все"
-                const allCategory = container.querySelector('[data-category="all"]');
-                container.innerHTML = '';
-                container.appendChild(allCategory);
-                
-                // Добавляем категории с сервера
-                categories.forEach(category => {
-                    const categoryElement = document.createElement('div');
-                    categoryElement.className = 'category';
-                    categoryElement.textContent = category.name;
-                    categoryElement.setAttribute('data-category', category.name);
-                    container.appendChild(categoryElement);
-                });
-                
-                setupCategories();
-                
-            } catch (error) {
-                console.error('Error loading categories:', error);
-                // Если категории не загрузились, показываем игровые категории
-                showGameCategories();
-            }
-        }
+        // Кэш для изображений
+        const imageCache = new Map();
 
-        // Функция для показа игровых категорий
-        function showGameCategories() {
+        // Предустановленные категории для мгновенной загрузки
+        const defaultCategories = [
+            { name: 'Все', icon: 'fa-th-large', data: 'all' },
+            { name: 'Игры', icon: 'fa-gamepad', data: 'games' },
+            { name: 'Аккаунты', icon: 'fa-user', data: 'accounts' },
+            { name: 'Гаджеты', icon: 'fa-mobile', data: 'gadgets' },
+            { name: 'Ключи', icon: 'fa-key', data: 'keys' },
+            { name: 'Скины', icon: 'fa-paint-brush', data: 'skins' },
+            { name: 'Услуги', icon: 'fa-cogs', data: 'services' },
+            { name: 'Другое', icon: 'fa-ellipsis-h', data: 'other' }
+        ];
+
+        // Быстрая загрузка категорий
+        function loadCategoriesFast() {
             const container = document.getElementById('categories-container');
+            container.innerHTML = '';
             
-            // Игровые категории
-            const gameCategories = [
-                'PUBG Mobile',
-                'Free Fire',
-                'World of Tanks',
-                'Call of Duty',
-                'Genshin Impact',
-                'Mobile Legends',
-                'Clash of Clans',
-                'Clash Royale',
-                'Brawl Stars',
-                'Roblox'
-            ];
-            
-            // Очистка контейнера
-            container.innerHTML = '<div class="category active" data-category="all">Все</div>';
-
-            gameCategories.forEach(category => {
+            defaultCategories.forEach(cat => {
                 const categoryElement = document.createElement('div');
-                categoryElement.className = 'category';
-                categoryElement.textContent = category;
-                categoryElement.setAttribute('data-category', category);
+                categoryElement.className = cat.data === 'all' ? 'category active' : 'category';
+                categoryElement.innerHTML = `<i class="fa ${cat.icon}"></i><span>${cat.name}</span>`;
+                categoryElement.setAttribute('data-category', cat.data);
                 container.appendChild(categoryElement);
             });
             
             setupCategories();
         }
 
-        // Функция для получения объявлений с сервера
-        async function fetchAds(page = 1, category = 'all', search = '') {
+        // Супер-оптимизированная загрузка объявлений
+        async function fetchAdsOptimized(page = 1, category = 'all', search = '') {
             if (isLoading) return;
             
             isLoading = true;
@@ -1066,67 +871,62 @@
             const loadMoreBtn = document.getElementById('load-more-btn');
             
             try {
-                // Показываем индикатор загрузки только при первой загрузке
-                if (page === 1) {
-                    adsContainer.innerHTML = `
-                        <div class="initial-loading">
-                            <div class="loading-spinner"></div>
-                            <div>Загрузка объявлений...</div>
-                        </div>
-                    `;
-                } else {
-                    adsContainer.classList.add('loading');
-                    loadMoreBtn.disabled = true;
-                    loadMoreBtn.textContent = 'Загрузка...';
+                // Минимальный индикатор загрузки
+                if (page === 1 && isInitialLoad) {
+                    // Сохраняем текущее состояние, если есть
+                    const existingAds = adsContainer.querySelectorAll('.ad-card');
+                    if (existingAds.length === 0) {
+                        adsContainer.innerHTML = `
+                            <div class="initial-loading">
+                                <div class="loading-spinner"></div>
+                                <div>Загрузка...</div>
+                            </div>
+                        `;
+                    }
                 }
 
-                // Формируем URL для запроса
+                // Формируем URL
                 let url = `${API_BASE}/ads?page=${page}&limit=12`;
-                if (category !== 'all') {
-                    url += `&category=${encodeURIComponent(category)}`;
-                }
-                if (search) {
-                    url += `&search=${encodeURIComponent(search)}`;
-                }
+                if (category !== 'all') url += `&category=${encodeURIComponent(category)}`;
+                if (search) url += `&search=${encodeURIComponent(search)}`;
 
-                const options = {
-                    method: 'GET',
-                    headers: {}
-                };
+                const options = { method: 'GET' };
+                const token = localStorage.getItem('token');
+                if (token) options.headers = { 'Authorization': `Bearer ${token}` };
 
-                // Добавляем токен авторизации, если есть
-                if (token) {
-                    options.headers['Authorization'] = `Bearer ${token}`;
-                }
+                // Fetch с таймаутом
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+                options.signal = controller.signal;
 
                 const response = await fetch(url, options);
+                clearTimeout(timeoutId);
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
                 const data = await response.json();
                 
-                // Сохраняем объявления
+                // Сохраняем данные
                 if (page === 1) {
                     ads = data.ads;
                 } else {
                     ads = [...ads, ...data.ads];
                 }
                 
-                // Обновляем информацию о пагинации
                 currentPage = data.page;
                 totalPages = data.totalPages;
                 
-                // СНАЧАЛА ОТОБРАЖАЕМ КАРТОЧКИ БЕЗ ИЗОБРАЖЕНИЙ
-                displayAdsCards(data.ads, page === 1);
+                // МГНОВЕННО отображаем карточки БЕЗ изображений
+                displayAdsFast(data.ads, page === 1);
                 
-                // ЗАТЕМ ПОСТЕПЕННО ЗАГРУЖАЕМ ИЗОБРАЖЕНИЯ
-                setTimeout(() => {
-                    loadImagesForAds(data.ads);
-                }, 100);
+                // Потом постепенно грузим изображения
+                if (data.ads.length > 0) {
+                    setTimeout(() => {
+                        queueImagesForLoading(data.ads);
+                    }, 100);
+                }
                 
-                // Управляем кнопкой "Загрузить еще"
+                // Управление кнопкой
                 if (currentPage < totalPages) {
                     loadMoreBtn.style.display = 'block';
                     loadMoreBtn.disabled = false;
@@ -1135,20 +935,29 @@
                     loadMoreBtn.style.display = 'none';
                 }
                 
+                isInitialLoad = false;
+                
             } catch (error) {
-                console.error('Ошибка при загрузке объявлений:', error);
-                showError('Не удалось загрузить объявления. Проверьте подключение к интернету.');
+                console.error('Ошибка:', error);
+                // Показываем только если это первая загрузка
+                if (page === 1 && isInitialLoad) {
+                    showError('Не удалось загрузить объявления');
+                }
             } finally {
                 isLoading = false;
                 adsContainer.classList.remove('loading');
             }
         }
 
-        // Функция для ОТОБРАЖЕНИЯ КАРТОЧЕК БЕЗ ИЗОБРАЖЕНИЙ
-        function displayAdsCards(adsToDisplay, clearContainer = true) {
+        // Быстрое отображение карточек
+        function displayAdsFast(adsToDisplay, clearContainer = true) {
             const adsContainer = document.getElementById('ads-container');
             
             if (clearContainer) {
+                // Сохраняем существующие карточки при перезагрузке
+                const existingAds = adsContainer.querySelectorAll('.ad-card[data-ad-id]');
+                if (existingAds.length > 0 && !clearContainer) return;
+                
                 adsContainer.innerHTML = '';
             }
             
@@ -1156,454 +965,375 @@
                 adsContainer.innerHTML = `
                     <div class="empty-state">
                         <i class="fa fa-inbox"></i>
-                        <h3>Объявления не найдены</h3>
-                        <p>Попробуйте изменить параметры поиска</p>
+                        <h3>Ничего не найдено</h3>
+                        <p>Попробуйте изменить поиск</p>
                     </div>
                 `;
                 return;
             }
             
-            // Создаем карточки с заглушками для изображений
+            // Создаем карточки быстро
+            const fragment = document.createDocumentFragment();
+            
             adsToDisplay.forEach((ad, index) => {
-                const adElement = createAdCardWithoutImages(ad, index);
-                adsContainer.appendChild(adElement);
+                const adElement = createFastAdCard(ad, index);
+                fragment.appendChild(adElement);
                 
-                // Анимация появления карточки
-                setTimeout(() => {
-                    adElement.style.opacity = '1';
-                    adElement.style.transform = 'translateY(0)';
-                }, index * 30);
+                // Постепенное появление
+                adElement.style.animationDelay = `${index * 0.05}s`;
             });
+            
+            adsContainer.appendChild(fragment);
         }
 
-        // Функция для создания карточки БЕЗ ИЗОБРАЖЕНИЙ (только заглушка)
-        function createAdCardWithoutImages(ad, index) {
+        // Быстрое создание карточки
+        function createFastAdCard(ad, index) {
             const adElement = document.createElement('div');
             adElement.className = 'ad-card';
             adElement.setAttribute('data-ad-id', ad.id);
-            adElement.setAttribute('data-ad-index', index);
-            adElement.style.animationDelay = `${index * 0.03}s`;
-            adElement.style.opacity = '0';
-            adElement.style.transform = 'translateY(5px)';
-            adElement.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
             
-            // Форматируем цену
+            // Форматируем данные
             const priceFormatted = ad.price ? 
                 new Intl.NumberFormat('ru-RU').format(ad.price) + ' ₽' : 
                 'Договорная';
             
-            // Форматируем время
-            const timeAgo = ad.created_at ? formatTimeAgo(ad.created_at) : 'Недавно';
+            const timeAgo = formatTimeAgoFast(ad.created_at);
             
-            // Восстанавливаем состояние избранного
+            // Проверяем избранное
             const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-            const favoriteIds = favorites.map(fav => fav.id);
-            const isFavorite = favoriteIds.includes(ad.id);
+            const isFavorite = favorites.some(fav => fav.id === ad.id);
             
-            // Создаем HTML с заглушкой для изображения
-            const adHTML = `
+            // HTML БЕЗ изображений
+            adElement.innerHTML = `
                 <div class="ad-image" data-ad-id="${ad.id}">
                     <div class="ad-image-placeholder">
-                        <i class="fa fa-gamepad"></i>
+                        <i class="fa fa-image"></i>
                         <span>Загрузка...</span>
                     </div>
-                    <div class="image-loader"></div>
                 </div>
                 <div class="ad-content">
                     <div class="ad-header">
-                        <div class="ad-category">${ad.category || 'Игры'}</div>
+                        <div class="ad-category">${ad.category || 'Товар'}</div>
                         <button class="ad-favorite ${isFavorite ? 'active' : ''}" data-ad-id="${ad.id}">
                             <i class="fa fa-heart"></i>
                         </button>
                     </div>
-                    <div class="ad-title">${ad.title || 'Игровой аккаунт'}</div>
-                    <div class="ad-description">${ad.description || 'Описание отсутствует'}</div>
+                    <div class="ad-title">${ad.title || 'Объявление'}</div>
+                    <div class="ad-description">${ad.description || 'Нет описания'}</div>
                     <div class="ad-footer">
                         <div class="ad-price">${priceFormatted}</div>
                         <div class="ad-meta">
-                            <i class="fa fa-eye"></i>
-                            <span>${ad.views || 0}</span>
-                            <span style="margin-left: 8px;">${timeAgo}</span>
+                            <span>${timeAgo}</span>
                         </div>
                     </div>
                 </div>
             `;
             
-            adElement.innerHTML = adHTML;
-            
-            // Добавляем обработчики событий
+            // Быстрые обработчики
             const favoriteBtn = adElement.querySelector('.ad-favorite');
-            favoriteBtn.addEventListener('click', async (e) => {
+            favoriteBtn.onclick = (e) => {
                 e.stopPropagation();
-                await toggleFavorite(ad.id, favoriteBtn, ad);
-            });
+                toggleFavoriteFast(ad.id, favoriteBtn, ad);
+            };
             
-            adElement.addEventListener('click', () => {
-                openAdDetails(ad.id);
-            });
+            adElement.onclick = () => {
+                window.location.href = `ad-details.html?id=${ad.id}`;
+            };
             
             return adElement;
         }
 
-        // Функция для ПОСТЕПЕННОЙ ЗАГРУЗКИ ИЗОБРАЖЕНИЙ
-        function loadImagesForAds(adsToLoad) {
-            // Очищаем очередь
+        // Оптимизированная очередь загрузки изображений
+        function queueImagesForLoading(adsToLoad) {
+            // Очищаем старую очередь
             imageLoadQueue = [];
             
-            // Добавляем все объявления в очередь загрузки
-            adsToLoad.forEach((ad, index) => {
+            // Добавляем в очередь
+            adsToLoad.forEach(ad => {
                 const imageContainer = document.querySelector(`.ad-image[data-ad-id="${ad.id}"]`);
                 if (imageContainer) {
                     imageLoadQueue.push({
                         adId: ad.id,
                         ad: ad,
-                        container: imageContainer,
-                        index: index
+                        container: imageContainer
                     });
                 }
             });
             
-            // Запускаем загрузку с задержками
-            processImageQueue();
+            // Запускаем обработку, если не запущена
+            if (!isProcessingImages) {
+                processImageQueueOptimized();
+            }
         }
 
-        // Функция для обработки очереди загрузки изображений
-        function processImageQueue() {
-            if (imageLoadQueue.length === 0) return;
+        // Оптимизированная обработка очереди изображений
+        async function processImageQueueOptimized() {
+            if (imageLoadQueue.length === 0 || isProcessingImages) return;
             
-            // Берем первые 2-3 изображения для параллельной загрузки
-            const batchSize = Math.min(3, imageLoadQueue.length);
+            isProcessingImages = true;
             
-            for (let i = 0; i < batchSize; i++) {
-                const item = imageLoadQueue.shift();
-                if (item) {
-                    loadSingleImage(item);
-                }
-            }
+            // Берем небольшую партию
+            const batch = imageLoadQueue.splice(0, IMAGE_BATCH_SIZE);
             
-            // Продолжаем загрузку через небольшую задержку
+            // Загружаем параллельно
+            const promises = batch.map(item => loadImageOptimized(item));
+            await Promise.all(promises);
+            
+            // Продолжаем с небольшой задержкой
             setTimeout(() => {
+                isProcessingImages = false;
                 if (imageLoadQueue.length > 0) {
-                    processImageQueue();
+                    processImageQueueOptimized();
                 }
             }, 300);
         }
 
-        // Функция для загрузки одного изображения
-        function loadSingleImage({ adId, ad, container, index }) {
+        // Оптимизированная загрузка одного изображения
+        async function loadImageOptimized({ adId, ad, container }) {
             const placeholder = container.querySelector('.ad-image-placeholder');
-            const loader = container.querySelector('.image-loader');
             
-            // Показываем лоадер
-            if (loader) {
-                loader.classList.add('active');
-            }
-            
-            // Получаем URL изображения
-            let imageUrl = getImageUrlFromAd(ad);
-            
+            // Пытаемся получить URL изображения
+            const imageUrl = getImageUrlFast(ad);
             if (!imageUrl) {
-                // Если нет изображения, оставляем заглушку
-                if (loader) loader.classList.remove('active');
                 if (placeholder) {
-                    placeholder.querySelector('span').textContent = 'Нет изображения';
+                    placeholder.querySelector('span').textContent = 'Нет фото';
                 }
                 return;
             }
             
-            // Создаем объект Image для предзагрузки
-            const img = new Image();
+            // Проверяем кэш
+            if (imageCache.has(imageUrl)) {
+                applyCachedImage(container, imageCache.get(imageUrl));
+                return;
+            }
             
-            img.onload = function() {
-                // Создаем элемент img для вставки
+            // Загружаем с таймаутом
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                
+                const response = await fetch(imageUrl, { 
+                    signal: controller.signal,
+                    mode: 'cors'
+                });
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) throw new Error('Image load failed');
+                
+                // Создаем blob URL для экономии памяти
+                const blob = await response.blob();
+                const objectUrl = URL.createObjectURL(blob);
+                
+                // Кэшируем
+                imageCache.set(imageUrl, objectUrl);
+                
+                // Применяем
+                applyCachedImage(container, objectUrl);
+                
+            } catch (error) {
+                if (placeholder) {
+                    placeholder.querySelector('span').textContent = 'Ошибка';
+                }
+            }
+        }
+
+        // Применение кэшированного изображения
+        function applyCachedImage(container, imageUrl) {
+            const img = new Image();
+            img.onload = () => {
+                container.innerHTML = '';
                 const imgElement = document.createElement('img');
                 imgElement.className = 'ad-image-img';
                 imgElement.src = imageUrl;
-                imgElement.alt = ad.title || 'Игровой аккаунт';
+                imgElement.alt = '';
                 imgElement.loading = 'lazy';
-                
-                // Заменяем содержимое контейнера
-                container.innerHTML = '';
                 container.appendChild(imgElement);
                 
-                // Анимация появления
+                // Плавное появление
                 setTimeout(() => {
                     imgElement.classList.add('loaded');
                 }, 50);
             };
-            
-            img.onerror = function() {
-                // Ошибка загрузки - оставляем заглушку
-                if (loader) loader.classList.remove('active');
-                if (placeholder) {
-                    placeholder.querySelector('span').textContent = 'Ошибка загрузки';
-                }
-            };
-            
-            // Начинаем загрузку
             img.src = imageUrl;
         }
 
-        // Функция для получения URL изображения из объявления
-        function getImageUrlFromAd(ad) {
-            let imageUrl = '';
-            
-            // Если есть photos массив от сервера
+        // Быстрое получение URL изображения
+        function getImageUrlFast(ad) {
             if (ad.photos && ad.photos.length > 0) {
-                const firstPhoto = ad.photos[0];
-                if (firstPhoto.image_data) {
-                    // Если это base64 строка с префиксом
-                    if (firstPhoto.image_data.startsWith('data:image')) {
-                        imageUrl = firstPhoto.image_data;
-                    } 
-                    // Если это URL
-                    else if (firstPhoto.image_data.startsWith('http')) {
-                        imageUrl = firstPhoto.image_data;
-                    }
-                    // Если это просто строка base64 без префикса
-                    else if (firstPhoto.image_data.length > 100) {
-                        imageUrl = `data:image/jpeg;base64,${firstPhoto.image_data}`;
+                const photo = ad.photos[0];
+                if (photo.image_data) {
+                    if (photo.image_data.startsWith('http')) {
+                        return photo.image_data;
+                    } else if (photo.image_data.startsWith('data:image')) {
+                        return photo.image_data;
                     }
                 }
             }
-            // Если есть image поле в самом объявлении
-            else if (ad.image) {
-                if (ad.image.startsWith('data:image') || ad.image.startsWith('http')) {
-                    imageUrl = ad.image;
-                }
+            if (ad.image && (ad.image.startsWith('http') || ad.image.startsWith('data:image'))) {
+                return ad.image;
             }
-            
-            return imageUrl;
+            return null;
         }
 
-        // Функция для добавления/удаления из избранного
-        async function toggleFavorite(adId, favoriteBtn, ad) {
-            // Сохраняем в localStorage независимо от авторизации
+        // Быстрое переключение избранного
+        function toggleFavoriteFast(adId, favoriteBtn, ad) {
             let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
             
             if (favoriteBtn.classList.contains('active')) {
-                // Удаляем из избранного
                 favorites = favorites.filter(fav => fav.id !== adId);
                 favoriteBtn.classList.remove('active');
-                showNotification('Удалено из избранного');
+                showQuickNotification('Удалено');
             } else {
-                // Добавляем в избранное
                 const favoriteAd = {
                     id: ad.id,
                     title: ad.title,
-                    description: ad.description,
                     price: ad.price,
-                    category: ad.category,
-                    photos: ad.photos || [],
-                    image: ad.image,
-                    views: ad.views,
-                    created_at: ad.created_at || new Date().toISOString()
+                    category: ad.category
                 };
                 favorites.push(favoriteAd);
                 favoriteBtn.classList.add('active');
-                showNotification('Добавлено в избранное');
+                showQuickNotification('В избранное');
             }
             
-            // Сохраняем обновленный список в localStorage
             localStorage.setItem('favorites', JSON.stringify(favorites));
-            
-            // Если пользователь авторизован, синхронизируем с сервером
-            if (token) {
-                try {
-                    const isCurrentlyFavorite = favoriteBtn.classList.contains('active');
-                    const url = `${API_BASE}/favorites/${adId}`;
-                    const options = {
-                        method: isCurrentlyFavorite ? 'POST' : 'DELETE',
-                        headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        }
-                    };
-                    
-                    await fetch(url, options);
-                } catch (error) {
-                    console.error('Error syncing favorites with server:', error);
-                }
+        }
+
+        // Быстрое форматирование времени
+        function formatTimeAgoFast(dateString) {
+            try {
+                const now = Date.now();
+                const date = new Date(dateString).getTime();
+                const diff = now - date;
+                
+                if (diff < 3600000) return `${Math.floor(diff / 60000)} мин`;
+                if (diff < 86400000) return `${Math.floor(diff / 3600000)} ч`;
+                if (diff < 604800000) return `${Math.floor(diff / 86400000)} д`;
+                return '> нед';
+            } catch {
+                return 'недавно';
             }
         }
 
-        // Функция для открытия деталей объявления
-        function openAdDetails(adId) {
-            window.location.href = `ad-details.html?id=${adId}`;
+        // Быстрое уведомление
+        function showQuickNotification(message) {
+            const existing = document.querySelector('.quick-notification');
+            if (existing) existing.remove();
+            
+            const notification = document.createElement('div');
+            notification.className = 'quick-notification';
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 70px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--primary);
+                color: white;
+                padding: 8px 16px;
+                border-radius: 20px;
+                font-size: 14px;
+                z-index: 10000;
+                animation: slideDown 0.3s ease;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideUp 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
         }
 
-        // Функция для поиска
+        // Настройка поиска
         function setupSearch() {
             const searchInput = document.getElementById('search-input');
             const searchBtn = document.getElementById('search-btn');
             
             const performSearch = () => {
-                const query = searchInput.value.trim();
-                currentSearch = query;
+                currentSearch = searchInput.value.trim();
                 currentPage = 1;
-                fetchAds(1, currentCategory, currentSearch);
+                fetchAdsOptimized(1, currentCategory, currentSearch);
             };
             
-            searchBtn.addEventListener('click', performSearch);
-            searchInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    performSearch();
-                }
-            });
-            
-            // Очистка поиска при клике на "Все" в категориях
-            const allCategory = document.querySelector('[data-category="all"]');
-            if (allCategory) {
-                allCategory.addEventListener('click', () => {
-                    searchInput.value = '';
-                    currentSearch = '';
-                });
-            }
+            searchBtn.onclick = performSearch;
+            searchInput.onkeypress = (e) => e.key === 'Enter' && performSearch();
         }
 
-        // Функция для настройки категорий
+        // Настройка категорий
         function setupCategories() {
             const categories = document.querySelectorAll('.category');
-            categories.forEach(category => {
-                category.addEventListener('click', function() {
-                    const categoryValue = this.getAttribute('data-category');
-                    
+            categories.forEach(cat => {
+                cat.onclick = function() {
                     categories.forEach(c => c.classList.remove('active'));
                     this.classList.add('active');
                     
-                    currentCategory = categoryValue;
+                    currentCategory = this.getAttribute('data-category');
                     currentPage = 1;
-                    fetchAds(1, currentCategory, currentSearch);
-                });
+                    fetchAdsOptimized(1, currentCategory, currentSearch);
+                };
             });
         }
 
-        // Функция для показа ошибок
+        // Показать ошибку
         function showError(message) {
             const adsContainer = document.getElementById('ads-container');
             adsContainer.innerHTML = `
                 <div class="error-state">
                     <i class="fa fa-exclamation-triangle"></i>
-                    <h3>Ошибка загрузки</h3>
                     <p>${message}</p>
-                    <button class="retry-btn" onclick="fetchAds(1, currentCategory, currentSearch)">Попробовать снова</button>
+                    <button class="retry-btn" onclick="fetchAdsOptimized(1, currentCategory, currentSearch)">Повторить</button>
                 </div>
             `;
         }
 
-        // Вспомогательная функция для форматирования времени
-        function formatTimeAgo(dateString) {
-            try {
-                const now = new Date();
-                const date = new Date(dateString);
-                const diffMs = now - date;
-                const diffMins = Math.floor(diffMs / 60000);
-                const diffHours = Math.floor(diffMs / 3600000);
-                const diffDays = Math.floor(diffMs / 86400000);
-
-                if (diffMins < 1) return 'только что';
-                if (diffMins < 60) return `${diffMins} мин`;
-                if (diffHours < 24) return `${diffHours} ч`;
-                if (diffDays < 7) return `${diffDays} д`;
-                return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
-            } catch (e) {
-                return 'Недавно';
-            }
-        }
-
-        // Функция для показа уведомлений
-        function showNotification(message) {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 80px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: #0088cc;
-                color: white;
-                padding: 12px 20px;
-                border-radius: 25px;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-                z-index: 10000;
-                font-weight: 500;
-                animation: slideDown 0.3s ease-out;
-                max-width: 90%;
-                text-align: center;
-                font-size: 14px;
-            `;
-            notification.textContent = message;
+        // ИНИЦИАЛИЗАЦИЯ - МИНИМАЛЬНАЯ И БЫСТРАЯ
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Fast loading...');
             
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.animation = 'slideUp 0.3s ease-in';
-                setTimeout(() => notification.remove(), 300);
-            }, 3000);
-        }
-
-        // Инициализация при загрузке страницы
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Initializing Zeeptook app...');
-            
-            // Проверяем наличие элементов перед их использованием
-            if (!document.getElementById('ads-container')) {
-                console.error('❌ ads-container not found!');
-                return;
-            }
-            
-            // Загружаем данные
-            loadCategories();
-            fetchAds();
-            setupSearch();
-            
-            // Настройка кнопки "Загрузить еще"
-            const loadMoreBtn = document.getElementById('load-more-btn');
-            if (loadMoreBtn) {
-                loadMoreBtn.addEventListener('click', () => {
-                    fetchAds(currentPage + 1, currentCategory, currentSearch);
-                });
-            }
-            
-            // Добавляем стили для анимации уведомлений
+            // Добавляем стили для анимаций
             const style = document.createElement('style');
             style.textContent = `
                 @keyframes slideDown {
-                    from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+                    from { transform: translateX(-50%) translateY(-20px); opacity: 0; }
                     to { transform: translateX(-50%) translateY(0); opacity: 1; }
                 }
                 @keyframes slideUp {
                     from { transform: translateX(-50%) translateY(0); opacity: 1; }
-                    to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+                    to { transform: translateX(-50%) translateY(-20px); opacity: 0; }
                 }
             `;
             document.head.appendChild(style);
+            
+            // Быстро загружаем категории
+            loadCategoriesFast();
+            
+            // Настраиваем поиск
+            setupSearch();
+            
+            // Загружаем объявления
+            fetchAdsOptimized();
+            
+            // Кнопка "Загрузить еще"
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            if (loadMoreBtn) {
+                loadMoreBtn.onclick = () => {
+                    fetchAdsOptimized(currentPage + 1, currentCategory, currentSearch);
+                };
+            }
+            
+            // Предзагрузка следующей страницы при прокрутке
+            window.addEventListener('scroll', () => {
+                const scrollBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 500;
+                if (scrollBottom && !isLoading && currentPage < totalPages) {
+                    fetchAdsOptimized(currentPage + 1, currentCategory, currentSearch);
+                }
+            }, { passive: true });
         });
 
-        // Обработка Google OAuth callback на главной странице
-        function checkForGoogleCallback() {
-            const params = new URLSearchParams(window.location.search);
-            const code = params.get('code');
-            const state = params.get('state');
-            const error = params.get('error');
-
-            if (code && state) {
-                const savedState = sessionStorage.getItem('google_oauth_state');
-                if (state === savedState) {
-                    sessionStorage.removeItem('google_oauth_state');
-                    sessionStorage.setItem('google_auth_code', code);
-                    sessionStorage.setItem('google_auth_state', state);
-                    window.location.href = 'register.html';
-                    return;
-                }
-            }
-
-            if (error) {
-                console.error('Google auth error:', error);
-            }
-        }
-
-        // Проверяем при загрузке главной страницы
-        document.addEventListener('DOMContentLoaded', checkForGoogleCallback);
+        // Очистка кэша при закрытии
+        window.addEventListener('beforeunload', () => {
+            imageCache.forEach(url => URL.revokeObjectURL(url));
+        });
     </script>
 </body>
 </html>
