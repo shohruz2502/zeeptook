@@ -27,6 +27,8 @@
         --chat-bg: #0e1621;
         --input-bg: #242f3d;
         --nav-bg: #17212b;
+        --skeleton-bg: #2a2f36;
+        --skeleton-shine: rgba(255, 255, 255, 0.05);
         --gradient: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
         --radius: 12px;
         --radius-sm: 8px;
@@ -37,6 +39,7 @@
         overflow-x: hidden;
         background: var(--chat-bg);
         color: var(--white);
+        scroll-behavior: smooth;
     }
     
     body {
@@ -69,7 +72,7 @@
     .header {
         background: var(--nav-bg);
         color: var(--white);
-        padding: 12px 16px;
+        padding: 8px 16px;
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -78,47 +81,48 @@
         left: 0;
         right: 0;
         z-index: 1000;
-        height: 60px;
+        height: 56px;
         border-bottom: 1px solid var(--gray-dark);
         max-width: 768px;
         margin: 0 auto;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .logo {
-        font-size: 18px;
+        font-size: 17px;
         font-weight: 600;
         color: var(--white);
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
     }
     
     .logo i {
         color: var(--primary);
-        font-size: 20px;
+        font-size: 18px;
     }
     
     .header-actions {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
     }
     
     .messages-btn {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
         background: var(--gradient);
         color: var(--white);
         border: none;
         border-radius: 50%;
-        font-size: 16px;
+        font-size: 15px;
         cursor: pointer;
         transition: all 0.2s ease;
         text-decoration: none;
-        box-shadow: 0 2px 8px rgba(0, 136, 204, 0.3);
+        box-shadow: 0 2px 6px rgba(0, 136, 204, 0.3);
     }
     
     .messages-btn:active {
@@ -126,55 +130,72 @@
     }
     
     .messages-btn i {
-        font-size: 18px;
+        font-size: 16px;
     }
 
-    /* Search Section - СВЕРХУ */
+    /* Search Section - СВЕРХУ (компактная версия) */
     .search-section {
         background: var(--nav-bg);
         border-bottom: 1px solid var(--gray-dark);
-        padding: 12px 16px;
-        position: sticky;
-        top: 60px;
+        padding: 8px 16px;
+        position: fixed;
+        top: 56px;
         z-index: 999;
-        transition: transform 0.3s ease;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         max-width: 768px;
         margin: 0 auto;
         left: 0;
         right: 0;
+        height: 60px;
+        display: flex;
+        align-items: center;
     }
     
     .search-container {
         position: relative;
+        width: 100%;
     }
     
     .search-box {
         display: flex;
         width: 100%;
-        border-radius: 21px;
+        border-radius: 20px;
         overflow: hidden;
         background: var(--input-bg);
         border: 1px solid var(--gray-dark);
         transition: all 0.2s ease;
+        height: 44px;
     }
     
     .search-box:focus-within {
         border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(0, 136, 204, 0.2);
     }
     
     .search-box input {
         flex-grow: 1;
-        padding: 12px 16px;
+        padding: 10px 16px 10px 44px;
         border: none;
         background: transparent;
-        font-size: 15px;
+        font-size: 14px;
         outline: none;
         color: var(--white);
+        width: 100%;
     }
     
     .search-box input::placeholder {
         color: var(--gray-light);
-        font-size: 14px;
+        font-size: 13px;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--gray-light);
+        font-size: 16px;
+        pointer-events: none;
     }
     
     .search-box button {
@@ -184,34 +205,40 @@
         padding: 0 16px;
         cursor: pointer;
         transition: all 0.2s ease;
-        min-width: 46px;
+        min-width: 44px;
+        font-size: 14px;
     }
     
     .search-box button:active {
         transform: scale(0.95);
     }
 
-    /* Categories - ПОД ПОИСКОМ С АНИМАЦИЕЙ */
+    /* Categories - ПОД ПОИСКОМ С АНИМАЦИЕЙ (компактная версия) */
     .categories-section {
         background: var(--nav-bg);
         border-bottom: 1px solid var(--gray-dark);
-        position: sticky;
+        position: fixed;
         z-index: 998;
-        top: 124px; /* header + search */
-        transition: transform 0.3s ease;
+        top: 116px; /* header + search */
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         max-width: 768px;
         margin: 0 auto;
         left: 0;
         right: 0;
+        height: 48px;
+        will-change: transform;
+        transform: translateY(0);
     }
     
     .categories-scroll {
         display: flex;
         overflow-x: auto;
-        padding: 12px 16px;
-        gap: 8px;
+        padding: 8px 16px;
+        gap: 6px;
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
+        height: 100%;
+        align-items: center;
     }
     
     .categories-scroll::-webkit-scrollbar {
@@ -220,10 +247,10 @@
     
     .category {
         flex: 0 0 auto;
-        padding: 8px 16px;
+        padding: 6px 14px;
         background: var(--input-bg);
-        border-radius: 20px;
-        font-size: 14px;
+        border-radius: 18px;
+        font-size: 13px;
         font-weight: 500;
         white-space: nowrap;
         transition: all 0.2s ease;
@@ -236,6 +263,7 @@
         background: var(--gradient);
         color: white;
         border-color: var(--primary);
+        box-shadow: 0 2px 6px rgba(0, 136, 204, 0.3);
     }
     
     .category:active {
@@ -247,10 +275,11 @@
         flex: 1;
         display: flex;
         flex-direction: column;
-        margin-top: 60px;
+        margin-top: 56px;
         margin-bottom: 60px;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+        padding-top: 108px; /* header + search + categories */
     }
 
     /* Main Content */
@@ -307,6 +336,82 @@
     .ad-card:active {
         transform: scale(0.98);
         transition: transform 0.1s ease;
+    }
+    
+    /* Skeleton Loading */
+    .skeleton-card {
+        background: var(--nav-bg);
+        border-radius: var(--radius);
+        overflow: hidden;
+        border: 1px solid var(--gray-dark);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .skeleton-image {
+        width: 100%;
+        height: 160px;
+        background: var(--skeleton-bg);
+        border-radius: var(--radius) var(--radius) 0 0;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .skeleton-image::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
+        animation: skeletonShine 1.5s infinite;
+    }
+    
+    .skeleton-content {
+        padding: 12px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .skeleton-line {
+        height: 12px;
+        background: var(--skeleton-bg);
+        border-radius: 4px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .skeleton-line::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
+        animation: skeletonShine 1.5s infinite 0.3s;
+    }
+    
+    .skeleton-line.short {
+        width: 60%;
+    }
+    
+    .skeleton-line.medium {
+        width: 80%;
+    }
+    
+    .skeleton-line.long {
+        width: 100%;
+    }
+    
+    @keyframes skeletonShine {
+        0% { left: -100%; }
+        100% { left: 100%; }
     }
     
     /* Ad Image */
@@ -693,12 +798,30 @@
         }
         
         .categories-scroll {
-            padding: 10px 16px;
+            padding: 8px 16px;
         }
         
         .category {
-            padding: 6px 14px;
+            padding: 5px 12px;
+            font-size: 12px;
+        }
+        
+        .content-wrapper {
+            padding-top: 104px;
+        }
+        
+        .search-box {
+            height: 40px;
+        }
+        
+        .search-box input {
+            padding: 8px 16px 8px 40px;
             font-size: 13px;
+        }
+        
+        .search-icon {
+            left: 12px;
+            font-size: 15px;
         }
     }
     
@@ -752,19 +875,22 @@
             </div>
         </div>
         
-        <!-- ПОИСК - СВЕРХУ -->
+        <!-- ПОИСК - СВЕРХУ (компактный) -->
         <div class="search-section" id="search-section">
             <div class="search-container">
                 <div class="search-box">
-                    <input type="text" id="search-input" placeholder="Поиск игровых аккаунтов...">
-                    <button id="search-btn">
+                    <div class="search-icon">
                         <i class="fa fa-search"></i>
+                    </div>
+                    <input type="text" id="search-input" placeholder="Поиск игровых аккаунтов...">
+                    <button id="search-clear-btn" style="display: none;">
+                        <i class="fa fa-times"></i>
                     </button>
                 </div>
             </div>
         </div>
         
-        <!-- КАТЕГОРИИ - ПОД ПОИСКОМ -->
+        <!-- КАТЕГОРИИ - ПОД ПОИСКОМ (компактный) -->
         <div class="categories-section" id="categories-section">
             <div class="categories-scroll" id="categories-container">
                 <!-- Категории будут загружены -->
@@ -779,9 +905,24 @@
                 </div>
                 
                 <div class="ads-grid" id="ads-container">
-                    <div class="initial-loading">
-                        <div class="loading-spinner"></div>
-                        <div>Загрузка объявлений...</div>
+                    <!-- Скелетоны при первой загрузке -->
+                    <div class="skeleton-card">
+                        <div class="skeleton-image"></div>
+                        <div class="skeleton-content">
+                            <div class="skeleton-line short"></div>
+                            <div class="skeleton-line medium"></div>
+                            <div class="skeleton-line long"></div>
+                            <div class="skeleton-line short" style="margin-top: auto;"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-card">
+                        <div class="skeleton-image"></div>
+                        <div class="skeleton-content">
+                            <div class="skeleton-line short"></div>
+                            <div class="skeleton-line medium"></div>
+                            <div class="skeleton-line long"></div>
+                            <div class="skeleton-line short" style="margin-top: auto;"></div>
+                        </div>
                     </div>
                 </div>
                 
@@ -805,7 +946,7 @@
                 <i class="fa fa-plus"></i>
                 <span>Добавить</span>
             </a>
-            <a href="server.html" class="nav-btn"> <!-- ИСПРАВЛЕНА ССЫЛКА -->
+            <a href="server.html" class="nav-btn">
                 <i class="fa fa-gamepad"></i>
                 <span>Серверы</span>
             </a>
@@ -824,13 +965,52 @@
         let currentSearch = '';
         let isLoading = false;
         let lastScrollTop = 0;
-        let isCategoriesVisible = true;
         let scrollTimeout;
+        let scrollAnimationFrame;
+        let isCategoriesHidden = false;
+        let lastScrollDirection = 'up';
+        
+        // Кеш для данных
+        const DATA_CACHE = {
+            set: function(key, data, category = 'all') {
+                const cacheKey = `${category}_${key}`;
+                const cacheData = {
+                    data: data,
+                    timestamp: Date.now(),
+                    category: category
+                };
+                localStorage.setItem(`cache_${cacheKey}`, JSON.stringify(cacheData));
+            },
+            
+            get: function(key, category = 'all', maxAge = 300000) { // 5 минут по умолчанию
+                const cacheKey = `${category}_${key}`;
+                const cached = localStorage.getItem(`cache_${cacheKey}`);
+                if (!cached) return null;
+                
+                const cacheData = JSON.parse(cached);
+                const age = Date.now() - cacheData.timestamp;
+                
+                if (age > maxAge || cacheData.category !== category) {
+                    localStorage.removeItem(`cache_${cacheKey}`);
+                    return null;
+                }
+                
+                return cacheData.data;
+            },
+            
+            clearCategory: function(category) {
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('cache_') && key.includes(category)) {
+                        localStorage.removeItem(key);
+                    }
+                });
+            }
+        };
         
         // Базовый URL API
         const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
         
-        // Игровые категории (как на фото)
+        // Игровые категории
         const gameCategories = [
             { name: 'Все', data: 'all' },
             { name: 'PUBG Mobile', data: 'pubg' },
@@ -859,7 +1039,28 @@
             setupCategories();
         }
 
-        // Оптимизированная загрузка объявлений
+        // Показать скелетоны
+        function showSkeletons(count = 6) {
+            const adsContainer = document.getElementById('ads-container');
+            adsContainer.innerHTML = '';
+            
+            for (let i = 0; i < count; i++) {
+                const skeleton = document.createElement('div');
+                skeleton.className = 'skeleton-card';
+                skeleton.innerHTML = `
+                    <div class="skeleton-image"></div>
+                    <div class="skeleton-content">
+                        <div class="skeleton-line short"></div>
+                        <div class="skeleton-line medium"></div>
+                        <div class="skeleton-line long"></div>
+                        <div class="skeleton-line short" style="margin-top: auto;"></div>
+                    </div>
+                `;
+                adsContainer.appendChild(skeleton);
+            }
+        }
+
+        // Оптимизированная загрузка объявлений с кешированием
         async function fetchAds(page = 1, category = 'all', search = '') {
             if (isLoading) return;
             
@@ -868,92 +1069,122 @@
             const loadMoreBtn = document.getElementById('load-more-btn');
             
             try {
-                // Индикатор загрузки только для первой страницы
+                // Проверяем кеш для первой страницы
+                if (page === 1 && !search) {
+                    const cachedData = DATA_CACHE.get(`page_${page}`, category);
+                    if (cachedData) {
+                        displayAds(cachedData.ads || [], true);
+                        currentPage = cachedData.page || page;
+                        totalPages = cachedData.totalPages || 1;
+                        
+                        // Показываем кешированные данные мгновенно
+                        setTimeout(() => {
+                            if (currentPage < totalPages) {
+                                loadMoreBtn.style.display = 'block';
+                            }
+                        }, 0);
+                        
+                        // Параллельно загружаем свежие данные
+                        setTimeout(() => fetchFreshAds(page, category, search), 100);
+                        return;
+                    }
+                }
+                
+                // Показываем скелетоны только для первой страницы
                 if (page === 1) {
-                    adsContainer.innerHTML = `
-                        <div class="initial-loading">
-                            <div class="loading-spinner"></div>
-                            <div>Загрузка объявлений...</div>
-                        </div>
-                    `;
+                    showSkeletons();
+                    loadMoreBtn.style.display = 'none';
                 } else {
                     loadMoreBtn.disabled = true;
                     loadMoreBtn.textContent = 'Загрузка...';
                 }
 
-                // Формируем URL с учетом возможных ошибок
-                let url;
-                try {
-                    url = new URL(`${API_BASE}/ads`);
-                } catch (e) {
-                    url = new URL('/api/ads', window.location.origin);
-                }
-                
-                url.searchParams.append('page', page);
-                url.searchParams.append('limit', 12);
-                
-                if (category !== 'all') {
-                    url.searchParams.append('category', category);
-                }
-                if (search) {
-                    url.searchParams.append('search', search);
-                }
-
-                // Опции запроса
-                const options = {
-                    method: 'GET',
-                    headers: {}
-                };
-
-                // Токен авторизации
-                const token = localStorage.getItem('token');
-                if (token) {
-                    options.headers['Authorization'] = `Bearer ${token}`;
-                }
-
-                // Запрос с таймаутом
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000);
-                options.signal = controller.signal;
-
-                const response = await fetch(url.toString(), options);
-                clearTimeout(timeoutId);
-                
-                if (!response.ok) {
-                    throw new Error(`Ошибка ${response.status}`);
-                }
-
-                const data = await response.json();
-                
-                // Обновляем данные
-                currentPage = data.page || page;
-                totalPages = data.totalPages || 1;
-                
-                // Отображаем объявления
-                displayAds(data.ads || [], page === 1);
-                
-                // Управление кнопкой "Загрузить еще"
-                if (currentPage < totalPages) {
-                    loadMoreBtn.style.display = 'block';
-                    loadMoreBtn.disabled = false;
-                    loadMoreBtn.textContent = 'Показать ещё';
-                } else {
-                    loadMoreBtn.style.display = 'none';
-                }
+                // Загрузка свежих данных
+                await fetchFreshAds(page, category, search);
                 
             } catch (error) {
                 console.error('Ошибка загрузки:', error);
                 
-                // Если сервер недоступен, показываем демо-данные
+                // Если сервер недоступен, показываем кешированные данные
                 if (page === 1) {
-                    showDemoAds();
+                    const cachedData = DATA_CACHE.get(`page_${page}`, category, 86400000); // 24 часа
+                    if (cachedData) {
+                        displayAds(cachedData.ads || [], true);
+                    } else {
+                        showDemoAds();
+                    }
                 }
             } finally {
                 isLoading = false;
             }
         }
 
-        // Отображение объявлений
+        // Загрузка свежих данных
+        async function fetchFreshAds(page, category, search) {
+            const adsContainer = document.getElementById('ads-container');
+            const loadMoreBtn = document.getElementById('load-more-btn');
+            
+            let url;
+            try {
+                url = new URL(`${API_BASE}/ads`);
+            } catch (e) {
+                url = new URL('/api/ads', window.location.origin);
+            }
+            
+            url.searchParams.append('page', page);
+            url.searchParams.append('limit', 12);
+            
+            if (category !== 'all') {
+                url.searchParams.append('category', category);
+            }
+            if (search) {
+                url.searchParams.append('search', search);
+                DATA_CACHE.clearCategory(category); // Очищаем кеш при поиске
+            }
+
+            const options = {
+                method: 'GET',
+                headers: {}
+            };
+
+            const token = localStorage.getItem('token');
+            if (token) {
+                options.headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000); // Уменьшен таймаут
+            options.signal = controller.signal;
+
+            const response = await fetch(url.toString(), options);
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`Ошибка ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            // Кешируем данные
+            if (page === 1 && !search) {
+                DATA_CACHE.set(`page_${page}`, data, category);
+            }
+            
+            currentPage = data.page || page;
+            totalPages = data.totalPages || 1;
+            
+            displayAds(data.ads || [], page === 1);
+            
+            if (currentPage < totalPages) {
+                loadMoreBtn.style.display = 'block';
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.textContent = 'Показать ещё';
+            } else {
+                loadMoreBtn.style.display = 'none';
+            }
+        }
+
+        // Отображение объявлений с ленивой загрузкой изображений
         function displayAds(adsArray, clearContainer = true) {
             const adsContainer = document.getElementById('ads-container');
             
@@ -972,7 +1203,6 @@
                 return;
             }
             
-            // Создаем фрагмент для быстрой вставки
             const fragment = document.createDocumentFragment();
             
             adsArray.forEach((ad, index) => {
@@ -982,10 +1212,8 @@
             
             adsContainer.appendChild(fragment);
             
-            // Постепенно загружаем изображения
-            setTimeout(() => {
-                loadImagesLazily(adsArray);
-            }, 100);
+            // Ленивая загрузка изображений
+            initLazyLoading(adsArray);
         }
 
         // Создание карточки объявления
@@ -994,7 +1222,6 @@
             adElement.className = 'ad-card';
             adElement.setAttribute('data-ad-id', ad.id || index);
             
-            // Форматирование данных
             const priceFormatted = ad.price ? 
                 new Intl.NumberFormat('ru-RU').format(ad.price) + ' ₽' : 
                 'Договорная';
@@ -1002,17 +1229,22 @@
             const timeAgo = formatTimeAgo(ad.created_at);
             const gameName = getGameNameFromCategory(ad.category);
             
-            // Избранное
             const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
             const isFavorite = favorites.some(fav => fav.id === ad.id);
             
-            // HTML структура
+            // HTML с lazy loading изображений
             adElement.innerHTML = `
                 <div class="ad-image" data-ad-id="${ad.id || index}">
                     <div class="ad-image-placeholder">
                         <i class="fa fa-gamepad"></i>
                         <span>Загрузка...</span>
                     </div>
+                    <img class="ad-image-img" 
+                         loading="lazy" 
+                         data-src="${getImageUrl(ad)}" 
+                         alt="${ad.title || 'Игровой аккаунт'}"
+                         width="100%"
+                         height="160">
                 </div>
                 <div class="ad-content">
                     <div class="ad-header">
@@ -1032,7 +1264,6 @@
                 </div>
             `;
             
-            // Обработчики событий
             const favoriteBtn = adElement.querySelector('.ad-favorite');
             favoriteBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -1046,73 +1277,37 @@
             return adElement;
         }
 
-        // Ленивая загрузка изображений
-        function loadImagesLazily(adsArray) {
-            const imageContainers = document.querySelectorAll('.ad-image');
+        // Инициализация ленивой загрузки изображений
+        function initLazyLoading(adsArray) {
+            const lazyImages = document.querySelectorAll('.ad-image-img[data-src]');
             
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        const container = entry.target;
-                        const adId = container.getAttribute('data-ad-id');
-                        const ad = adsArray.find(a => (a.id || a.index) == adId);
-                        
-                        if (ad) {
-                            loadImage(container, ad);
+            if ('IntersectionObserver' in window) {
+                const imageObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            img.src = img.dataset.src;
+                            img.classList.add('loaded');
+                            imageObserver.unobserve(img);
                         }
-                        observer.unobserve(container);
-                    }
+                    });
+                }, {
+                    rootMargin: '50px 0px',
+                    threshold: 0.01
                 });
-            }, {
-                rootMargin: '50px 0px',
-                threshold: 0.1
-            });
-            
-            imageContainers.forEach(container => {
-                observer.observe(container);
-            });
-        }
-
-        // Загрузка одного изображения
-        function loadImage(container, ad) {
-            const placeholder = container.querySelector('.ad-image-placeholder');
-            const imageUrl = getImageUrl(ad);
-            
-            if (!imageUrl) {
-                if (placeholder) {
-                    placeholder.querySelector('span').textContent = 'Нет фото';
-                }
-                return;
+                
+                lazyImages.forEach(img => imageObserver.observe(img));
+            } else {
+                // Fallback для старых браузеров
+                lazyImages.forEach(img => {
+                    img.src = img.dataset.src;
+                    img.classList.add('loaded');
+                });
             }
-            
-            const img = new Image();
-            img.onload = function() {
-                container.innerHTML = '';
-                const imgElement = document.createElement('img');
-                imgElement.className = 'ad-image-img';
-                imgElement.src = imageUrl;
-                imgElement.alt = ad.title || 'Игровой аккаунт';
-                
-                container.appendChild(imgElement);
-                
-                // Плавное появление
-                setTimeout(() => {
-                    imgElement.classList.add('loaded');
-                }, 50);
-            };
-            
-            img.onerror = function() {
-                if (placeholder) {
-                    placeholder.querySelector('span').textContent = 'Ошибка';
-                }
-            };
-            
-            img.src = imageUrl;
         }
 
         // Получение URL изображения
         function getImageUrl(ad) {
-            // Приоритет: photos[0] -> image -> демо-изображение
             if (ad.photos && ad.photos.length > 0) {
                 const photo = ad.photos[0];
                 if (photo.image_data) {
@@ -1128,7 +1323,6 @@
                 return ad.image;
             }
             
-            // Демо-изображение
             return getDemoImage(ad.category);
         }
 
@@ -1180,44 +1374,10 @@
                     price: 3700,
                     category: 'cod',
                     created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-                },
-                {
-                    id: 3,
-                    title: 'Free Fire Премиум',
-                    description: 'Аккаунт с боевым пропуском',
-                    price: 2500,
-                    category: 'freefire',
-                    created_at: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
-                },
-                {
-                    id: 4,
-                    title: 'Genshin Impact AR55',
-                    description: 'Аккаунт с 5* персонажами',
-                    price: 5000,
-                    category: 'genshin',
-                    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
-                },
-                {
-                    id: 5,
-                    title: 'Mobile Legends Мифик',
-                    description: 'Высокий рейтинг, много героев',
-                    price: 3200,
-                    category: 'ml',
-                    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
-                },
-                {
-                    id: 6,
-                    title: 'Clash of Clans TH13',
-                    description: 'Городок 13 уровня, полная прокачка',
-                    price: 4200,
-                    category: 'coc',
-                    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
                 }
             ];
             
             displayAds(demoAds, true);
-            
-            // Скрываем кнопку "Загрузить еще"
             document.getElementById('load-more-btn').style.display = 'none';
         }
 
@@ -1290,17 +1450,44 @@
         // Настройка поиска
         function setupSearch() {
             const searchInput = document.getElementById('search-input');
-            const searchBtn = document.getElementById('search-btn');
+            const searchClearBtn = document.getElementById('search-clear-btn');
             
             const performSearch = () => {
                 currentSearch = searchInput.value.trim();
                 currentPage = 1;
+                DATA_CACHE.clearCategory(currentCategory); // Очищаем кеш
                 fetchAds(1, currentCategory, currentSearch);
+                
+                if (currentSearch) {
+                    searchClearBtn.style.display = 'block';
+                } else {
+                    searchClearBtn.style.display = 'none';
+                }
             };
             
-            searchBtn.addEventListener('click', performSearch);
+            // Поиск по кнопке
+            searchClearBtn.addEventListener('click', () => {
+                searchInput.value = '';
+                searchClearBtn.style.display = 'none';
+                performSearch();
+            });
+            
+            // Поиск по Enter
             searchInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') performSearch();
+            });
+            
+            // Поиск с задержкой
+            let searchTimer;
+            searchInput.addEventListener('input', () => {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(performSearch, 500);
+                
+                if (searchInput.value.trim()) {
+                    searchClearBtn.style.display = 'block';
+                } else {
+                    searchClearBtn.style.display = 'none';
+                }
             });
         }
 
@@ -1316,51 +1503,90 @@
                     
                     currentCategory = categoryValue;
                     currentPage = 1;
-                    fetchAds(1, currentCategory, currentSearch);
+                    currentSearch = '';
+                    document.getElementById('search-input').value = '';
+                    document.getElementById('search-clear-btn').style.display = 'none';
+                    
+                    fetchAds(1, currentCategory);
                 });
             });
         }
 
-        // Анимация скрытия/показа категорий при скролле
+        // Оптимизированная анимация скрытия/показа категорий
         function setupScrollAnimation() {
-            const searchSection = document.getElementById('search-section');
             const categoriesSection = document.getElementById('categories-section');
-            let isHidden = false;
+            const searchSection = document.getElementById('search-section');
+            const header = document.querySelector('.header');
+            const contentWrapper = document.querySelector('.content-wrapper');
             
-            window.addEventListener('scroll', () => {
-                clearTimeout(scrollTimeout);
-                
+            let isScrolling;
+            let scrollDirection = 'up';
+            let lastScrollPos = window.pageYOffset || document.documentElement.scrollTop;
+            
+            // Функция для управления видимостью категорий
+            function handleScroll() {
                 const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-                const isScrollingDown = scrollTop > lastScrollTop;
                 
-                // Скрываем при скролле вниз, показываем при скролле вверх или вверху
-                if (isScrollingDown && scrollTop > 100 && !isHidden) {
-                    searchSection.style.transform = 'translateY(0)';
-                    categoriesSection.style.transform = 'translateY(-100%)';
-                    isHidden = true;
-                } else if ((!isScrollingDown || scrollTop <= 100) && isHidden) {
-                    searchSection.style.transform = 'translateY(0)';
-                    categoriesSection.style.transform = 'translateY(0)';
-                    isHidden = false;
+                // Определяем направление скролла
+                if (scrollTop > lastScrollPos) {
+                    scrollDirection = 'down';
+                } else {
+                    scrollDirection = 'up';
                 }
                 
-                lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+                // Показываем/скрываем категории в зависимости от направления и позиции
+                if (scrollDirection === 'down' && scrollTop > 100 && !isCategoriesHidden) {
+                    categoriesSection.style.transform = 'translateY(-100%)';
+                    isCategoriesHidden = true;
+                    contentWrapper.style.paddingTop = '60px'; // header + search
+                } else if ((scrollDirection === 'up' || scrollTop <= 50) && isCategoriesHidden) {
+                    categoriesSection.style.transform = 'translateY(0)';
+                    isCategoriesHidden = false;
+                    contentWrapper.style.paddingTop = '108px'; // header + search + categories
+                }
                 
-                // Задержка перед скрытием
+                // Показываем/скрываем хедер при глубоком скролле
+                if (scrollTop > 200 && scrollDirection === 'down') {
+                    header.style.transform = 'translateY(-100%)';
+                    searchSection.style.transform = 'translateY(-56px)';
+                } else {
+                    header.style.transform = 'translateY(0)';
+                    searchSection.style.transform = 'translateY(0)';
+                }
+                
+                lastScrollPos = scrollTop <= 0 ? 0 : scrollTop;
+                
+                // Сбрасываем таймер для фиксации состояния
+                clearTimeout(scrollTimeout);
                 scrollTimeout = setTimeout(() => {
-                    if (scrollTop <= 100 && isHidden) {
-                        searchSection.style.transform = 'translateY(0)';
+                    if (scrollTop <= 100 && isCategoriesHidden) {
                         categoriesSection.style.transform = 'translateY(0)';
-                        isHidden = false;
+                        isCategoriesHidden = false;
+                        contentWrapper.style.paddingTop = '108px';
                     }
-                }, 150);
-            }, { passive: true });
+                }, 200);
+            }
+            
+            // Оптимизация через requestAnimationFrame
+            function throttledScroll() {
+                if (!isScrolling) {
+                    window.requestAnimationFrame(() => {
+                        handleScroll();
+                        isScrolling = false;
+                    });
+                }
+                isScrolling = true;
+            }
+            
+            // Добавляем обработчик с пассивным слушателем для производительности
+            window.addEventListener('scroll', throttledScroll, { passive: true });
+            
+            // Обработчик для touch устройств
+            window.addEventListener('touchmove', throttledScroll, { passive: true });
         }
 
         // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Zeeptook загружается...');
-            
             // Загружаем категории
             loadCategories();
             
@@ -1379,16 +1605,22 @@
                 fetchAds(currentPage + 1, currentCategory, currentSearch);
             });
             
-            // Добавляем стили для анимации
-            const style = document.createElement('style');
-            style.textContent = `
-                .search-section, .categories-section {
-                    transition: transform 0.3s ease;
+            // Адаптация паддинга контента под мобильные устройства
+            function adjustContentPadding() {
+                const contentWrapper = document.querySelector('.content-wrapper');
+                const isMobile = window.innerWidth <= 480;
+                
+                if (isCategoriesHidden) {
+                    contentWrapper.style.paddingTop = isMobile ? '60px' : '60px';
+                } else {
+                    contentWrapper.style.paddingTop = isMobile ? '104px' : '108px';
                 }
-            `;
-            document.head.appendChild(style);
+            }
+            
+            // Слушатель изменения размера окна
+            window.addEventListener('resize', adjustContentPadding);
+            adjustContentPadding(); // Инициализация
         });
     </script>
 </body>
 </html>
-
