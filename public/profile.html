@@ -254,8 +254,8 @@
             word-break: break-word;
         }
 
-        /* Кнопка просмотра логина/пароля */
-        .view-credentials-btn {
+        /* Кнопка изменения пароля */
+        .change-password-btn {
             background: var(--nav-bg);
             border: none;
             width: 100%;
@@ -272,13 +272,23 @@
             transition: background 0.2s ease;
         }
         
-        .view-credentials-btn:active {
+        .change-password-btn:active {
             background: rgba(0, 136, 204, 0.1);
         }
         
-        .view-credentials-btn i {
+        .change-password-btn i {
             font-size: 12px;
             opacity: 0.7;
+        }
+        
+        .change-password-btn.disabled {
+            color: var(--gray-light);
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        
+        .change-password-btn.disabled:active {
+            background: var(--nav-bg);
         }
 
         /* Menu Items */
@@ -411,6 +421,20 @@
             background: transparent;
             border: 1px solid var(--primary);
             color: var(--primary);
+        }
+        
+        .btn-secondary {
+            background: var(--gray-medium);
+            color: white;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .btn:disabled:active {
+            transform: none;
         }
 
         /* Modal */
@@ -547,19 +571,14 @@
             color: var(--gray-light);
             font-style: italic;
         }
+        
+        .masked-login {
+            letter-spacing: 1px;
+        }
 
         /* Change Password Form */
         .change-password-form {
             margin-top: 20px;
-        }
-        
-        .form-step {
-            display: none;
-        }
-        
-        .form-step.active {
-            display: block;
-            animation: fadeIn 0.3s ease-out;
         }
         
         .form-description {
@@ -583,6 +602,31 @@
         
         .password-input-wrapper {
             position: relative;
+        }
+        
+        .password-requirements {
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--gray-light);
+        }
+        
+        .requirement {
+            display: flex;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        
+        .requirement i {
+            font-size: 10px;
+            margin-right: 6px;
+        }
+        
+        .requirement.met {
+            color: #4caf50;
+        }
+        
+        .requirement.not-met {
+            color: var(--gray-light);
         }
 
         /* Loading */
@@ -717,6 +761,24 @@
             border-bottom-color: rgba(0, 0, 0, 0.9);
         }
 
+        /* Cooldown Timer */
+        .cooldown-timer {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--accent);
+        }
+        
+        .cooldown-info {
+            padding: 12px;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: var(--radius-sm);
+            border-left: 3px solid var(--accent);
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: var(--accent);
+        }
+
         /* Responsive */
         @media (max-width: 360px) {
             .header {
@@ -831,10 +893,10 @@
                 </div>
             </div>
             
-            <!-- Кнопка просмотра учетных данных -->
-            <button class="view-credentials-btn" onclick="showCredentials()">
-                <span>Показать логин и пароль</span>
-                <i class="fa fa-eye"></i>
+            <!-- Кнопка изменения пароля -->
+            <button class="change-password-btn" id="change-password-btn" onclick="showChangePasswordModal()">
+                <span>Изменить пароль</span>
+                <i class="fa fa-lock"></i>
             </button>
             
             <!-- Информация профиля -->
@@ -893,88 +955,79 @@
         </div>
     </div>
     
-    <!-- Модальное окно с учетными данными -->
-    <div class="modal" id="credentials-modal">
+    <!-- Модальное окно изменения пароля -->
+    <div class="modal" id="change-password-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-title">Ваши учетные данные</div>
-                <button class="modal-close" onclick="closeCredentialsModal()">
+                <div class="modal-title">Изменение пароля</div>
+                <button class="modal-close" onclick="closeChangePasswordModal()">
                     <i class="fa fa-times"></i>
                 </button>
             </div>
             <div class="modal-body">
-                <!-- Шаг 1: Проверка пароля -->
-                <div class="form-step active" id="password-check-step">
-                    <div class="form-description">
-                        Для просмотра полных учетных данных необходимо подтвердить ваш текущий пароль.
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Текущий пароль</label>
-                        <div class="password-input-wrapper">
-                            <input type="password" class="form-input" id="current-password" placeholder="Введите текущий пароль">
-                            <button type="button" class="password-toggle" onclick="togglePassword('current-password')">
-                                <i class="fa fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="form-actions">
-                        <button class="btn btn-outline" onclick="closeCredentialsModal()" style="flex: 1;">Отмена</button>
-                        <button class="btn btn-primary" onclick="verifyPassword()" style="flex: 1;">Проверить</button>
+                <div id="cooldown-info" class="cooldown-info" style="display: none;">
+                    <i class="fa fa-clock-o"></i> 
+                    <span id="cooldown-message">Вы можете изменить пароль только 1 раз в 24 часа. Следующее изменение будет доступно через:</span>
+                    <div class="cooldown-timer" id="cooldown-timer"></div>
+                </div>
+                
+                <div class="credentials-item">
+                    <div class="credentials-label">Ваш логин (Email):</div>
+                    <div class="credentials-value masked-login" id="masked-login">
+                        <!-- Замаскированный логин будет вставлен здесь -->
                     </div>
                 </div>
                 
-                <!-- Шаг 2: Просмотр учетных данных -->
-                <div class="form-step" id="view-credentials-step">
-                    <div class="credentials-item">
-                        <div class="credentials-label">Логин (Email):</div>
-                        <div class="credentials-value" id="credentials-login">faridun.exam@gmail.com</div>
-                    </div>
-                    <div class="credentials-item">
-                        <div class="credentials-label">Пароль:</div>
-                        <div class="credentials-value password-placeholder" id="credentials-password">
-                            [скрыто] 
-                            <span style="color: var(--primary); margin-left: 10px; cursor: pointer;" onclick="showChangePasswordForm()">
-                                <i class="fa fa-edit"></i> Изменить пароль
-                            </span>
-                        </div>
-                    </div>
-                    <div style="margin-top: 20px; padding: 12px; background: rgba(255, 193, 7, 0.1); border-radius: var(--radius-sm); border-left: 3px solid #ffc107;">
-                        <p style="font-size: 13px; color: #ffc107; margin: 0;">
-                            <i class="fa fa-exclamation-triangle"></i> Храните эти данные в безопасном месте
-                        </p>
-                    </div>
-                    <div class="form-actions">
-                        <button class="btn btn-primary" onclick="closeCredentialsModal()" style="flex: 1;">Закрыть</button>
+                <div class="form-description">
+                    Введите новый пароль и подтвердите его. Пароль должен содержать минимум 6 символов.
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Новый пароль</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" class="form-input" id="new-password" 
+                               placeholder="Введите новый пароль" 
+                               oninput="validatePassword()">
+                        <button type="button" class="password-toggle" onclick="togglePassword('new-password')">
+                            <i class="fa fa-eye"></i>
+                        </button>
                     </div>
                 </div>
                 
-                <!-- Шаг 3: Изменение пароля -->
-                <div class="form-step" id="change-password-step">
-                    <div class="form-description">
-                        Введите новый пароль и подтвердите его.
+                <div class="form-group">
+                    <label class="form-label">Подтвердите новый пароль</label>
+                    <div class="password-input-wrapper">
+                        <input type="password" class="form-input" id="confirm-password" 
+                               placeholder="Повторите новый пароль"
+                               oninput="validatePasswordConfirmation()">
+                        <button type="button" class="password-toggle" onclick="togglePassword('confirm-password')">
+                            <i class="fa fa-eye"></i>
+                        </button>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Новый пароль</label>
-                        <div class="password-input-wrapper">
-                            <input type="password" class="form-input" id="new-password" placeholder="Введите новый пароль">
-                            <button type="button" class="password-toggle" onclick="togglePassword('new-password')">
-                                <i class="fa fa-eye"></i>
-                            </button>
-                        </div>
+                </div>
+                
+                <!-- Требования к паролю -->
+                <div class="password-requirements" id="password-requirements">
+                    <div class="requirement not-met" id="req-length">
+                        <i class="fa fa-circle"></i>
+                        <span>Минимум 6 символов</span>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Подтвердите новый пароль</label>
-                        <div class="password-input-wrapper">
-                            <input type="password" class="form-input" id="confirm-password" placeholder="Повторите новый пароль">
-                            <button type="button" class="password-toggle" onclick="togglePassword('confirm-password')">
-                                <i class="fa fa-eye"></i>
-                            </button>
-                        </div>
+                    <div class="requirement not-met" id="req-match">
+                        <i class="fa fa-circle"></i>
+                        <span>Пароли совпадают</span>
                     </div>
-                    <div class="form-actions">
-                        <button class="btn btn-outline" onclick="backToCredentials()" style="flex: 1;">Назад</button>
-                        <button class="btn btn-primary" onclick="changePassword()" style="flex: 1;">Изменить пароль</button>
-                    </div>
+                </div>
+                
+                <div class="form-actions">
+                    <button class="btn btn-outline" onclick="closeChangePasswordModal()" style="flex: 1;">Отмена</button>
+                    <button class="btn btn-primary" id="submit-password-btn" onclick="changePassword()" 
+                            style="flex: 1;" disabled>Изменить пароль</button>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 12px; background: rgba(255, 193, 7, 0.1); border-radius: var(--radius-sm); border-left: 3px solid #ffc107;">
+                    <p style="font-size: 13px; color: #ffc107; margin: 0;">
+                        <i class="fa fa-info-circle"></i> Пароль можно изменить только 1 раз в 24 часа
+                    </p>
                 </div>
             </div>
         </div>
@@ -1006,7 +1059,8 @@
     <script>
         const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
         let currentUser = null;
-        let userCredentials = null;
+        let lastPasswordChange = null;
+        let cooldownTimerInterval = null;
 
         // Проверка авторизации при загрузке
         function checkAuth() {
@@ -1020,6 +1074,7 @@
                 profileSection.style.display = 'block';
                 headerRight.style.display = 'flex';
                 loadProfile();
+                loadPasswordChangeInfo();
             } else {
                 authSection.style.display = 'block';
                 profileSection.style.display = 'none';
@@ -1064,6 +1119,70 @@
             }
         }
 
+        // Загрузка информации о последнем изменении пароля
+        function loadPasswordChangeInfo() {
+            const lastChange = localStorage.getItem('lastPasswordChange');
+            const changeBtn = document.getElementById('change-password-btn');
+            
+            if (lastChange) {
+                lastPasswordChange = new Date(lastChange);
+                const now = new Date();
+                const hoursDiff = (now - lastPasswordChange) / (1000 * 60 * 60);
+                
+                if (hoursDiff < 24) {
+                    // Менее 24 часов прошло, показываем кулдаун
+                    changeBtn.classList.add('disabled');
+                    changeBtn.innerHTML = `
+                        <span>Изменить пароль (кулдаун)</span>
+                        <i class="fa fa-clock-o"></i>
+                    `;
+                    
+                    // Запускаем таймер обновления
+                    updateCooldownDisplay();
+                    if (cooldownTimerInterval) clearInterval(cooldownTimerInterval);
+                    cooldownTimerInterval = setInterval(updateCooldownDisplay, 1000);
+                }
+            }
+        }
+
+        // Обновление отображения кулдауна
+        function updateCooldownDisplay() {
+            if (!lastPasswordChange) return;
+            
+            const now = new Date();
+            const hoursDiff = (now - lastPasswordChange) / (1000 * 60 * 60);
+            const remainingHours = 24 - hoursDiff;
+            
+            if (remainingHours > 0) {
+                const hours = Math.floor(remainingHours);
+                const minutes = Math.floor((remainingHours - hours) * 60);
+                const seconds = Math.floor((((remainingHours - hours) * 60) - minutes) * 60);
+                
+                const changeBtn = document.getElementById('change-password-btn');
+                if (changeBtn) {
+                    changeBtn.innerHTML = `
+                        <span>Изменить пароль (через ${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')})</span>
+                        <i class="fa fa-clock-o"></i>
+                    `;
+                }
+            } else {
+                // Кулдаун закончился
+                const changeBtn = document.getElementById('change-password-btn');
+                if (changeBtn) {
+                    changeBtn.classList.remove('disabled');
+                    changeBtn.innerHTML = `
+                        <span>Изменить пароль</span>
+                        <i class="fa fa-lock"></i>
+                    `;
+                }
+                
+                if (cooldownTimerInterval) {
+                    clearInterval(cooldownTimerInterval);
+                    cooldownTimerInterval = null;
+                }
+            }
+        }
+
         // Обновление интерфейса
         function updateProfileUI(data) {
             const user = data.user;
@@ -1081,12 +1200,6 @@
             document.getElementById('info-username').textContent = user.username || 'Не указан';
             document.getElementById('info-fullname').textContent = user.full_name || 'Не указано';
             document.getElementById('info-joined').textContent = formatDate(user.created_at) || 'Не указана';
-            
-            // Сохраняем учетные данные для отображения
-            userCredentials = {
-                login: user.email || user.username,
-                password_hint: user.password_hint || '********'
-            };
             
             const avatarElement = document.getElementById('profile-avatar');
             if (user.avatar_url) {
@@ -1110,84 +1223,118 @@
             }
         }
 
-        // Показать модальное окно с учетными данными
-        function showCredentials() {
-            // Сбрасываем форму при каждом открытии
-            resetCredentialsModal();
-            document.getElementById('credentials-modal').classList.add('active');
-        }
-
-        // Сброс модального окна учетных данных
-        function resetCredentialsModal() {
-            document.getElementById('current-password').value = '';
-            document.getElementById('new-password').value = '';
-            document.getElementById('confirm-password').value = '';
-            
-            // Показываем первый шаг
-            document.getElementById('password-check-step').classList.add('active');
-            document.getElementById('view-credentials-step').classList.remove('active');
-            document.getElementById('change-password-step').classList.remove('active');
-        }
-
-        // Переключение между шагами
-        function showStep(stepId) {
-            document.querySelectorAll('.form-step').forEach(step => {
-                step.classList.remove('active');
-            });
-            document.getElementById(stepId).classList.add('active');
-        }
-
-        // Проверка пароля
-        async function verifyPassword() {
-            const currentPassword = document.getElementById('current-password').value;
-            
-            if (!currentPassword) {
-                showNotification('Введите текущий пароль', 'error');
+        // Показать модальное окно изменения пароля
+        function showChangePasswordModal() {
+            const changeBtn = document.getElementById('change-password-btn');
+            if (changeBtn.classList.contains('disabled')) {
+                showNotification('Вы можете изменить пароль только 1 раз в 24 часа', 'error');
                 return;
             }
             
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${API_BASE}/verify-password`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        current_password: currentPassword
-                    })
-                });
+            // Проверяем кулдаун
+            const lastChange = localStorage.getItem('lastPasswordChange');
+            if (lastChange) {
+                const lastChangeDate = new Date(lastChange);
+                const now = new Date();
+                const hoursDiff = (now - lastChangeDate) / (1000 * 60 * 60);
                 
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Password verification failed');
+                if (hoursDiff < 24) {
+                    showNotification('Вы можете изменить пароль только 1 раз в 24 часа', 'error');
+                    return;
                 }
-                
-                // Показываем учетные данные
-                showNotification('Пароль подтвержден', 'success');
-                showStep('view-credentials-step');
-                
-                // Устанавливаем логин в форме
-                if (currentUser) {
-                    document.getElementById('credentials-login').textContent = currentUser.email || currentUser.username;
-                }
-                
-            } catch (error) {
-                console.error('Password verification error:', error);
-                showNotification('Неверный пароль', 'error');
             }
+            
+            // Показываем замаскированный логин
+            if (currentUser && currentUser.email) {
+                const email = currentUser.email;
+                const username = email.split('@')[0];
+                const domain = email.split('@')[1];
+                
+                let maskedUsername = '';
+                if (username.length <= 3) {
+                    maskedUsername = username.charAt(0) + '*'.repeat(username.length - 1);
+                } else {
+                    maskedUsername = username.substring(0, 3) + '*'.repeat(username.length - 3);
+                }
+                
+                const maskedLogin = maskedUsername + '@' + domain;
+                document.getElementById('masked-login').textContent = maskedLogin;
+            }
+            
+            // Сбрасываем форму
+            resetChangePasswordForm();
+            document.getElementById('change-password-modal').classList.add('active');
         }
 
-        // Показать форму изменения пароля
-        function showChangePasswordForm() {
-            showStep('change-password-step');
+        // Сброс формы изменения пароля
+        function resetChangePasswordForm() {
+            document.getElementById('new-password').value = '';
+            document.getElementById('confirm-password').value = '';
+            document.getElementById('submit-password-btn').disabled = true;
+            
+            // Сбрасываем требования
+            document.getElementById('req-length').classList.remove('met');
+            document.getElementById('req-length').classList.add('not-met');
+            document.getElementById('req-match').classList.remove('met');
+            document.getElementById('req-match').classList.add('not-met');
         }
 
-        // Вернуться к просмотру учетных данных
-        function backToCredentials() {
-            showStep('view-credentials-step');
+        // Валидация пароля
+        function validatePassword() {
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const lengthReq = document.getElementById('req-length');
+            const matchReq = document.getElementById('req-match');
+            const submitBtn = document.getElementById('submit-password-btn');
+            
+            // Проверка длины
+            if (newPassword.length >= 6) {
+                lengthReq.classList.remove('not-met');
+                lengthReq.classList.add('met');
+                lengthReq.innerHTML = '<i class="fa fa-check-circle"></i><span>Минимум 6 символов</span>';
+            } else {
+                lengthReq.classList.remove('met');
+                lengthReq.classList.add('not-met');
+                lengthReq.innerHTML = '<i class="fa fa-circle"></i><span>Минимум 6 символов</span>';
+            }
+            
+            // Проверка совпадения (только если оба поля заполнены)
+            if (newPassword && confirmPassword) {
+                if (newPassword === confirmPassword) {
+                    matchReq.classList.remove('not-met');
+                    matchReq.classList.add('met');
+                    matchReq.innerHTML = '<i class="fa fa-check-circle"></i><span>Пароли совпадают</span>';
+                } else {
+                    matchReq.classList.remove('met');
+                    matchReq.classList.add('not-met');
+                    matchReq.innerHTML = '<i class="fa fa-circle"></i><span>Пароли совпадают</span>';
+                }
+            }
+            
+            // Активация кнопки
+            const isValid = newPassword.length >= 6 && newPassword === confirmPassword;
+            submitBtn.disabled = !isValid;
+        }
+
+        // Валидация подтверждения пароля
+        function validatePasswordConfirmation() {
+            validatePassword();
+        }
+
+        // Переключение видимости пароля
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const toggle = input.parentNode.querySelector('.password-toggle i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggle.classList.remove('fa-eye');
+                toggle.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                toggle.classList.remove('fa-eye-slash');
+                toggle.classList.add('fa-eye');
+            }
         }
 
         // Изменить пароль
@@ -1195,8 +1342,9 @@
             const newPassword = document.getElementById('new-password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
             
-            if (!newPassword || !confirmPassword) {
-                showNotification('Заполните все поля', 'error');
+            // Дополнительная проверка
+            if (newPassword.length < 6) {
+                showNotification('Пароль должен содержать минимум 6 символов', 'error');
                 return;
             }
             
@@ -1205,13 +1353,48 @@
                 return;
             }
             
-            if (newPassword.length < 6) {
-                showNotification('Пароль должен содержать минимум 6 символов', 'error');
-                return;
-            }
-            
             try {
                 const token = localStorage.getItem('token');
+                
+                // Проверяем, можно ли менять пароль
+                const lastChange = localStorage.getItem('lastPasswordChange');
+                if (lastChange) {
+                    const lastChangeDate = new Date(lastChange);
+                    const now = new Date();
+                    const hoursDiff = (now - lastChangeDate) / (1000 * 60 * 60);
+                    
+                    if (hoursDiff < 24) {
+                        showNotification('Вы можете изменить пароль только 1 раз в 24 часа', 'error');
+                        closeChangePasswordModal();
+                        return;
+                    }
+                }
+                
+                // Локальная симуляция - для демо
+                // В реальном приложении здесь будет запрос к API
+                
+                // Сохраняем время изменения пароля
+                localStorage.setItem('lastPasswordChange', new Date().toISOString());
+                lastPasswordChange = new Date();
+                
+                // Обновляем UI
+                const changeBtn = document.getElementById('change-password-btn');
+                changeBtn.classList.add('disabled');
+                changeBtn.innerHTML = `
+                    <span>Изменить пароль (кулдаун)</span>
+                    <i class="fa fa-clock-o"></i>
+                `;
+                
+                // Запускаем таймер кулдауна
+                updateCooldownDisplay();
+                if (cooldownTimerInterval) clearInterval(cooldownTimerInterval);
+                cooldownTimerInterval = setInterval(updateCooldownDisplay, 1000);
+                
+                showNotification('Пароль успешно изменен!', 'success');
+                closeChangePasswordModal();
+                
+                // В реальном приложении здесь будет запрос к API:
+                /*
                 const response = await fetch(`${API_BASE}/change-password`, {
                     method: 'POST',
                     headers: {
@@ -1230,7 +1413,8 @@
                 }
                 
                 showNotification('Пароль успешно изменен', 'success');
-                closeCredentialsModal();
+                closeChangePasswordModal();
+                */
                 
             } catch (error) {
                 console.error('Password change error:', error);
@@ -1238,26 +1422,9 @@
             }
         }
 
-        // Закрыть модальное окно с учетными данными
-        function closeCredentialsModal() {
-            document.getElementById('credentials-modal').classList.remove('active');
-            resetCredentialsModal();
-        }
-
-        // Переключение видимости пароля
-        function togglePassword(inputId) {
-            const input = document.getElementById(inputId);
-            const toggle = input.parentNode.querySelector('.password-toggle i');
-            
-            if (input.type === 'password') {
-                input.type = 'text';
-                toggle.classList.remove('fa-eye');
-                toggle.classList.add('fa-eye-slash');
-            } else {
-                input.type = 'password';
-                toggle.classList.remove('fa-eye-slash');
-                toggle.classList.add('fa-eye');
-            }
+        // Закрыть модальное окно изменения пароля
+        function closeChangePasswordModal() {
+            document.getElementById('change-password-modal').classList.remove('active');
         }
 
         // Функции модальных окон
@@ -1316,7 +1483,6 @@
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
                 currentUser = null;
-                userCredentials = null;
                 showNotification('Вы вышли из аккаунта');
                 checkAuth();
             }
@@ -1386,12 +1552,16 @@
             });
             
             // Обработка нажатия Enter в формах
-            document.getElementById('current-password')?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') verifyPassword();
+            document.getElementById('new-password')?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !document.getElementById('submit-password-btn').disabled) {
+                    changePassword();
+                }
             });
             
-            document.getElementById('new-password')?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') changePassword();
+            document.getElementById('confirm-password')?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !document.getElementById('submit-password-btn').disabled) {
+                    changePassword();
+                }
             });
             
             document.getElementById('login-password')?.addEventListener('keypress', function(e) {
