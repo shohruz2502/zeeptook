@@ -448,11 +448,6 @@
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Год рождения *</label>
-                    <input type="number" class="form-input" id="reg-birth_year" placeholder="1990" min="1900" max="2024" required>
-                </div>
-                
-                <div class="form-group">
                     <label class="form-label">Пароль *</label>
                     <input type="password" class="form-input" id="reg-password" placeholder="Не менее 6 символов" minlength="6" required>
                     <div class="password-requirements">Минимум 6 символов</div>
@@ -486,11 +481,6 @@
                     <label class="form-label">Имя пользователя *</label>
                     <input type="text" class="form-input" id="google-username" placeholder="Придумайте username" required>
                     <div class="password-requirements">Только буквы, цифры и нижнее подчеркивание</div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Год рождения *</label>
-                    <input type="number" class="form-input" id="google-birth_year" placeholder="1990" min="1900" max="2024" required>
                 </div>
                 
                 <div class="form-group">
@@ -650,7 +640,7 @@ async function handleGoogleAuthorizationCode(code, state) {
         }
     }
 
-    // Вход в аккаунт
+    // Вход в аккаунт - ИСПРАВЛЕННАЯ ВЕРСИЯ
     async function handleLogin(event) {
         event.preventDefault();
         
@@ -687,26 +677,54 @@ async function handleGoogleAuthorizationCode(code, state) {
                 })
             });
 
-            const data = await response.json();
+            // Проверяем статус ответа
+            if (response.status === 404) {
+                throw new Error('Сервер не найден. Проверьте подключение к интернету');
+            }
+            
+            if (response.status === 500) {
+                throw new Error('Внутренняя ошибка сервера');
+            }
+            
+            let data;
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                console.error('Ошибка парсинга JSON:', jsonError);
+                throw new Error('Сервер вернул некорректный ответ');
+            }
             
             if (!response.ok) {
-                throw new Error(data.error || 'Ошибка входа');
+                throw new Error(data.error || 'Ошибка входа. Проверьте логин и пароль');
             }
             
             // Сохраняем токен и пользователя
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            
-            // Показываем успех и редиректим
-            showSuccess('Вход выполнен! Перенаправляем...');
-            
-            setTimeout(() => {
-                window.location.href = 'profile.html';
-            }, 1000);
+            if (data.token && data.user) {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                
+                // Показываем успех и редиректим
+                showSuccess('Вход выполнен! Перенаправляем...');
+                
+                setTimeout(() => {
+                    window.location.href = 'profile.html';
+                }, 1000);
+            } else {
+                throw new Error('Некорректный ответ от сервера');
+            }
             
         } catch (error) {
             console.error('Login error:', error);
-            showError(error.message);
+            
+            // Показываем подробную информацию об ошибке для отладки
+            let errorMessage = error.message;
+            
+            // Если это ошибка сети
+            if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                errorMessage = 'Ошибка сети. Проверьте подключение к интернету';
+            }
+            
+            showError(errorMessage);
             
             // Восстанавливаем кнопку
             btnText.textContent = 'Войти';
@@ -729,16 +747,10 @@ async function handleGoogleAuthorizationCode(code, state) {
         const username = document.getElementById('reg-username').value.trim();
         const email = document.getElementById('reg-email').value.trim();
         const fullName = document.getElementById('reg-full_name').value.trim();
-        const birthYear = parseInt(document.getElementById('reg-birth_year').value);
         const password = document.getElementById('reg-password').value;
-
-        if (isNaN(birthYear)) {
-    showError('Укажите корректный год рождения');
-    return;
-}
         
         // Валидация
-        if (!username || !email || !fullName || !birthYear || !password) {
+        if (!username || !email || !fullName || !password) {
             showError('Заполните все обязательные поля');
             return;
         }
@@ -774,26 +786,54 @@ async function handleGoogleAuthorizationCode(code, state) {
                 })
             });
 
-            const data = await response.json();
+            // Проверяем статус ответа
+            if (response.status === 404) {
+                throw new Error('Сервер не найден. Проверьте подключение к интернету');
+            }
+            
+            if (response.status === 500) {
+                throw new Error('Внутренняя ошибка сервера');
+            }
+            
+            let data;
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                console.error('Ошибка парсинга JSON:', jsonError);
+                throw new Error('Сервер вернул некорректный ответ');
+            }
             
             if (!response.ok) {
                 throw new Error(data.error || 'Ошибка регистрации');
             }
             
             // Сохраняем токен и пользователя
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            
-            // Показываем успех и редиректим
-            showSuccess('Регистрация успешна! Перенаправляем...');
-            
-            setTimeout(() => {
-                window.location.href = 'profile.html';
-            }, 1500);
+            if (data.token && data.user) {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                
+                // Показываем успех и редиректим
+                showSuccess('Регистрация успешна! Перенаправляем...');
+                
+                setTimeout(() => {
+                    window.location.href = 'profile.html';
+                }, 1500);
+            } else {
+                throw new Error('Некорректный ответ от сервера');
+            }
             
         } catch (error) {
             console.error('Registration error:', error);
-            showError(error.message);
+            
+            // Показываем подробную информацию об ошибке для отладки
+            let errorMessage = error.message;
+            
+            // Если это ошибка сети
+            if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                errorMessage = 'Ошибка сети. Проверьте подключение к интернету';
+            }
+            
+            showError(errorMessage);
             
             // Восстанавливаем кнопку
             btnText.textContent = 'Зарегистрироваться';
@@ -807,7 +847,7 @@ async function loadGoogleConfig() {
     try {
         console.log('Загрузка конфигурации Google...');
         
-        // Определяем тип клиента (веб-сайт или вебвью приложение)
+        // Определяем тип клиента (веб-сайт или вебвью приложения)
         const isApp = /(Android|iPhone|iPad|iPod|Mobile)/i.test(navigator.userAgent) && 
                      /WebView|wv|CriOS|FxiOS/.test(navigator.userAgent);
         
@@ -929,10 +969,6 @@ function handleGoogleRedirectAuth() {
         const usernameBase = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '_');
         document.getElementById('google-username').value = usernameBase;
         
-        // Устанавливаем год рождения по умолчанию
-        const currentYear = new Date().getFullYear();
-        document.getElementById('google-birth_year').value = currentYear - 25;
-        
         // Очищаем ошибки
         document.getElementById('modal-error-message').style.display = 'none';
         
@@ -952,11 +988,10 @@ function handleGoogleRedirectAuth() {
         document.getElementById('modal-error-message').style.display = 'none';
         
         const username = document.getElementById('google-username').value.trim();
-        const birthYear = parseInt(document.getElementById('google-birth_year').value);
         const password = document.getElementById('google-password').value;
         
         // Валидация
-        if (!username || !birthYear || !password) {
+        if (!username || !password) {
             showModalError('Заполните все обязательные поля');
             return;
         }
@@ -969,12 +1004,6 @@ function handleGoogleRedirectAuth() {
         
         if (password.length < 6) {
             showModalError('Пароль должен быть не менее 6 символов');
-            return;
-        }
-        
-        const currentYear = new Date().getFullYear();
-        if (birthYear < 1900 || birthYear > currentYear) {
-            showModalError('Укажите корректный год рождения');
             return;
         }
         
@@ -995,35 +1024,53 @@ function handleGoogleRedirectAuth() {
                     full_name: googleUserData.full_name,
                     username: username,
                     password: password,
-                    birth_year: birthYear,
                     avatar_url: googleUserData.avatar_url || '',
                     auth_method: 'google'
                 })
             });
 
-            const data = await response.json();
+            let data;
+            try {
+                data = await response.json();
+            } catch (jsonError) {
+                console.error('Ошибка парсинга JSON:', jsonError);
+                throw new Error('Сервер вернул некорректный ответ');
+            }
             
             if (!response.ok) {
                 throw new Error(data.error || 'Ошибка регистрации');
             }
             
             // Сохраняем токен и пользователя
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            
-            // Скрываем модальное окно
-            document.getElementById('google-complete-modal').style.display = 'none';
-            
-            // Показываем успех и редиректим
-            showSuccess('Регистрация завершена! Перенаправляем...');
-            
-            setTimeout(() => {
-                window.location.href = 'profile.html';
-            }, 1500);
+            if (data.token && data.user) {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                
+                // Скрываем модальное окно
+                document.getElementById('google-complete-modal').style.display = 'none';
+                
+                // Показываем успех и редиректим
+                showSuccess('Регистрация завершена! Перенаправляем...');
+                
+                setTimeout(() => {
+                    window.location.href = 'profile.html';
+                }, 1500);
+            } else {
+                throw new Error('Некорректный ответ от сервера');
+            }
             
         } catch (error) {
             console.error('Google complete registration error:', error);
-            showModalError(error.message);
+            
+            // Показываем подробную информацию об ошибке для отладки
+            let errorMessage = error.message;
+            
+            // Если это ошибка сети
+            if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+                errorMessage = 'Ошибка сети. Проверьте подключение к интернету';
+            }
+            
+            showModalError(errorMessage);
             
             // Восстанавливаем кнопку
             btnText.textContent = 'Завершить регистрацию';
@@ -1084,10 +1131,6 @@ function handleGoogleRedirectAuth() {
         
         // Обработчик кнопки Google
         document.getElementById('google-auth-btn').addEventListener('click', handleGoogleRedirectAuth);
-        
-        // Автозаполнение года рождения
-        const currentYear = new Date().getFullYear();
-        document.getElementById('reg-birth_year').value = currentYear - 25;
         
         // Валидация username в реальном времени
         document.getElementById('reg-username').addEventListener('input', function(e) {
