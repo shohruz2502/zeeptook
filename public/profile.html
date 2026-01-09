@@ -538,6 +538,52 @@
             word-break: break-all;
             color: var(--white);
         }
+        
+        .partial-login {
+            letter-spacing: 1px;
+        }
+        
+        .password-placeholder {
+            color: var(--gray-light);
+            font-style: italic;
+        }
+
+        /* Change Password Form */
+        .change-password-form {
+            margin-top: 20px;
+        }
+        
+        .form-step {
+            display: none;
+        }
+        
+        .form-step.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .form-description {
+            font-size: 13px;
+            color: var(--gray-light);
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+        
+        .password-toggle {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--gray-light);
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .password-input-wrapper {
+            position: relative;
+        }
 
         /* Loading */
         .loading {
@@ -811,33 +857,7 @@
                 </div>
             </div>
             
-            <!-- Дополнительные действия -->
-            <div class="menu-list">
-                <div class="menu-item" onclick="editProfile()">
-                    <div class="menu-icon">
-                        <i class="fa fa-edit"></i>
-                    </div>
-                    <div class="menu-content">
-                        <div class="menu-title">Редактировать профиль</div>
-                        <div class="menu-description">Изменить личную информацию</div>
-                    </div>
-                    <div class="menu-arrow">
-                        <i class="fa fa-chevron-right"></i>
-                    </div>
-                </div>
-                <div class="menu-item" onclick="showMyAds()">
-                    <div class="menu-icon">
-                        <i class="fa fa-list"></i>
-                    </div>
-                    <div class="menu-content">
-                        <div class="menu-title">Мои объявления</div>
-                        <div class="menu-description">Управление вашими объявлениями</div>
-                    </div>
-                    <div class="menu-arrow">
-                        <i class="fa fa-chevron-right"></i>
-                    </div>
-                </div>
-            </div>
+            <!-- Дополнительные действия УДАЛЕНЫ -->
         </div>
     </div>
     
@@ -883,18 +903,78 @@
                 </button>
             </div>
             <div class="modal-body">
-                <div class="credentials-item">
-                    <div class="credentials-label">Логин (Email или имя пользователя):</div>
-                    <div class="credentials-value" id="credentials-login">Загрузка...</div>
+                <!-- Шаг 1: Проверка пароля -->
+                <div class="form-step active" id="password-check-step">
+                    <div class="form-description">
+                        Для просмотра полных учетных данных необходимо подтвердить ваш текущий пароль.
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Текущий пароль</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" class="form-input" id="current-password" placeholder="Введите текущий пароль">
+                            <button type="button" class="password-toggle" onclick="togglePassword('current-password')">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-outline" onclick="closeCredentialsModal()" style="flex: 1;">Отмена</button>
+                        <button class="btn btn-primary" onclick="verifyPassword()" style="flex: 1;">Проверить</button>
+                    </div>
                 </div>
-                <div class="credentials-item">
-                    <div class="credentials-label">Пароль:</div>
-                    <div class="credentials-value" id="credentials-password">••••••••</div>
+                
+                <!-- Шаг 2: Просмотр учетных данных -->
+                <div class="form-step" id="view-credentials-step">
+                    <div class="credentials-item">
+                        <div class="credentials-label">Логин (Email):</div>
+                        <div class="credentials-value" id="credentials-login">faridun.exam@gmail.com</div>
+                    </div>
+                    <div class="credentials-item">
+                        <div class="credentials-label">Пароль:</div>
+                        <div class="credentials-value password-placeholder" id="credentials-password">
+                            [скрыто] 
+                            <span style="color: var(--primary); margin-left: 10px; cursor: pointer;" onclick="showChangePasswordForm()">
+                                <i class="fa fa-edit"></i> Изменить пароль
+                            </span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; padding: 12px; background: rgba(255, 193, 7, 0.1); border-radius: var(--radius-sm); border-left: 3px solid #ffc107;">
+                        <p style="font-size: 13px; color: #ffc107; margin: 0;">
+                            <i class="fa fa-exclamation-triangle"></i> Храните эти данные в безопасном месте
+                        </p>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-primary" onclick="closeCredentialsModal()" style="flex: 1;">Закрыть</button>
+                    </div>
                 </div>
-                <div style="margin-top: 20px; padding: 12px; background: rgba(255, 193, 7, 0.1); border-radius: var(--radius-sm); border-left: 3px solid #ffc107;">
-                    <p style="font-size: 13px; color: #ffc107; margin: 0;">
-                        <i class="fa fa-exclamation-triangle"></i> Храните эти данные в безопасном месте
-                    </p>
+                
+                <!-- Шаг 3: Изменение пароля -->
+                <div class="form-step" id="change-password-step">
+                    <div class="form-description">
+                        Введите новый пароль и подтвердите его.
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Новый пароль</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" class="form-input" id="new-password" placeholder="Введите новый пароль">
+                            <button type="button" class="password-toggle" onclick="togglePassword('new-password')">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Подтвердите новый пароль</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" class="form-input" id="confirm-password" placeholder="Повторите новый пароль">
+                            <button type="button" class="password-toggle" onclick="togglePassword('confirm-password')">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-outline" onclick="backToCredentials()" style="flex: 1;">Назад</button>
+                        <button class="btn btn-primary" onclick="changePassword()" style="flex: 1;">Изменить пароль</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1005,7 +1085,7 @@
             // Сохраняем учетные данные для отображения
             userCredentials = {
                 login: user.email || user.username,
-                password: user.password_hint || '********'
+                password_hint: user.password_hint || '********'
             };
             
             const avatarElement = document.getElementById('profile-avatar');
@@ -1030,21 +1110,154 @@
             }
         }
 
-        // Показать учетные данные
+        // Показать модальное окно с учетными данными
         function showCredentials() {
-            if (!userCredentials) {
-                showNotification('Данные не загружены', 'error');
+            // Сбрасываем форму при каждом открытии
+            resetCredentialsModal();
+            document.getElementById('credentials-modal').classList.add('active');
+        }
+
+        // Сброс модального окна учетных данных
+        function resetCredentialsModal() {
+            document.getElementById('current-password').value = '';
+            document.getElementById('new-password').value = '';
+            document.getElementById('confirm-password').value = '';
+            
+            // Показываем первый шаг
+            document.getElementById('password-check-step').classList.add('active');
+            document.getElementById('view-credentials-step').classList.remove('active');
+            document.getElementById('change-password-step').classList.remove('active');
+        }
+
+        // Переключение между шагами
+        function showStep(stepId) {
+            document.querySelectorAll('.form-step').forEach(step => {
+                step.classList.remove('active');
+            });
+            document.getElementById(stepId).classList.add('active');
+        }
+
+        // Проверка пароля
+        async function verifyPassword() {
+            const currentPassword = document.getElementById('current-password').value;
+            
+            if (!currentPassword) {
+                showNotification('Введите текущий пароль', 'error');
                 return;
             }
             
-            document.getElementById('credentials-login').textContent = userCredentials.login;
-            document.getElementById('credentials-password').textContent = userCredentials.password;
-            document.getElementById('credentials-modal').classList.add('active');
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_BASE}/verify-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        current_password: currentPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Password verification failed');
+                }
+                
+                // Показываем учетные данные
+                showNotification('Пароль подтвержден', 'success');
+                showStep('view-credentials-step');
+                
+                // Устанавливаем логин в форме
+                if (currentUser) {
+                    document.getElementById('credentials-login').textContent = currentUser.email || currentUser.username;
+                }
+                
+            } catch (error) {
+                console.error('Password verification error:', error);
+                showNotification('Неверный пароль', 'error');
+            }
+        }
+
+        // Показать форму изменения пароля
+        function showChangePasswordForm() {
+            showStep('change-password-step');
+        }
+
+        // Вернуться к просмотру учетных данных
+        function backToCredentials() {
+            showStep('view-credentials-step');
+        }
+
+        // Изменить пароль
+        async function changePassword() {
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            if (!newPassword || !confirmPassword) {
+                showNotification('Заполните все поля', 'error');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showNotification('Пароли не совпадают', 'error');
+                return;
+            }
+            
+            if (newPassword.length < 6) {
+                showNotification('Пароль должен содержать минимум 6 символов', 'error');
+                return;
+            }
+            
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch(`${API_BASE}/change-password`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        new_password: newPassword
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Password change failed');
+                }
+                
+                showNotification('Пароль успешно изменен', 'success');
+                closeCredentialsModal();
+                
+            } catch (error) {
+                console.error('Password change error:', error);
+                showNotification('Ошибка при изменении пароля', 'error');
+            }
         }
 
         // Закрыть модальное окно с учетными данными
         function closeCredentialsModal() {
             document.getElementById('credentials-modal').classList.remove('active');
+            resetCredentialsModal();
+        }
+
+        // Переключение видимости пароля
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            const toggle = input.parentNode.querySelector('.password-toggle i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                toggle.classList.remove('fa-eye');
+                toggle.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                toggle.classList.remove('fa-eye-slash');
+                toggle.classList.add('fa-eye');
+            }
         }
 
         // Функции модальных окон
@@ -1114,15 +1327,6 @@
             showNotification('Настройки будут доступны в следующем обновлении', 'info');
         }
 
-        // Другие функции
-        function editProfile() {
-            showNotification('Редактирование профиля будет доступно в следующем обновлении', 'info');
-        }
-
-        function showMyAds() {
-            showNotification('Раздел "Мои объявления" будет доступен в следующем обновлении', 'info');
-        }
-
         // Вспомогательные функции
         function formatDate(dateString) {
             if (!dateString) return '';
@@ -1181,13 +1385,18 @@
                 }
             });
             
-            // Обработка нажатия Enter в форме входа
-            const loginPassword = document.getElementById('login-password');
-            if (loginPassword) {
-                loginPassword.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') login();
-                });
-            }
+            // Обработка нажатия Enter в формах
+            document.getElementById('current-password')?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') verifyPassword();
+            });
+            
+            document.getElementById('new-password')?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') changePassword();
+            });
+            
+            document.getElementById('login-password')?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') login();
+            });
         });
 
         // Стили для анимации уведомлений
