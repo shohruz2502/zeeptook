@@ -414,8 +414,8 @@
             <!-- Форма входа -->
             <form id="login-form" style="display: block;">
                 <div class="form-group">
-                    <label class="form-label">Email или имя пользователя</label>
-                    <input type="text" class="form-input" id="login-username" placeholder="Введите email или username" required>
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="login-email" placeholder="Введите email" required>
                 </div>
                 
                 <div class="form-group">
@@ -445,6 +445,11 @@
                 <div class="form-group">
                     <label class="form-label">Полное имя *</label>
                     <input type="text" class="form-input" id="reg-full_name" placeholder="Иванов Иван" required>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Год рождения *</label>
+                    <input type="number" class="form-input" id="reg-birth_year" placeholder="1990" min="1900" max="2024" required>
                 </div>
                 
                 <div class="form-group">
@@ -484,9 +489,8 @@
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Пароль *</label>
-                    <input type="password" class="form-input" id="google-password" placeholder="Не менее 6 символов" minlength="6" required>
-                    <div class="password-requirements">Минимум 6 символов</div>
+                    <label class="form-label">Год рождения *</label>
+                    <input type="number" class="form-input" id="google-birth_year" placeholder="1990" min="1900" max="2024" required>
                 </div>
                 
                 <button type="submit" class="btn btn-primary" id="google-complete-btn">
@@ -651,12 +655,17 @@ async function handleGoogleAuthorizationCode(code, state) {
         // Скрываем предыдущие сообщения
         hideMessages();
         
-        const username = document.getElementById('login-username').value.trim();
+        const email = document.getElementById('login-email').value.trim();
         const password = document.getElementById('login-password').value;
         
         // Валидация
-        if (!username || !password) {
+        if (!email || !password) {
             showError('Заполните все поля');
+            return;
+        }
+        
+        if (!isValidEmail(email)) {
+            showError('Введите корректный email');
             return;
         }
         
@@ -672,7 +681,7 @@ async function handleGoogleAuthorizationCode(code, state) {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    username: username,
+                    email: email, // Используем email вместо username
                     password: password
                 })
             });
@@ -680,10 +689,6 @@ async function handleGoogleAuthorizationCode(code, state) {
             // Проверяем статус ответа
             if (response.status === 404) {
                 throw new Error('Сервер не найден. Проверьте подключение к интернету');
-            }
-            
-            if (response.status === 500) {
-                throw new Error('Внутренняя ошибка сервера');
             }
             
             let data;
@@ -695,7 +700,7 @@ async function handleGoogleAuthorizationCode(code, state) {
             }
             
             if (!response.ok) {
-                throw new Error(data.error || 'Ошибка входа. Проверьте логин и пароль');
+                throw new Error(data.error || 'Неверный email или пароль');
             }
             
             // Сохраняем токен и пользователя
@@ -747,10 +752,11 @@ async function handleGoogleAuthorizationCode(code, state) {
         const username = document.getElementById('reg-username').value.trim();
         const email = document.getElementById('reg-email').value.trim();
         const fullName = document.getElementById('reg-full_name').value.trim();
+        const birthYear = parseInt(document.getElementById('reg-birth_year').value);
         const password = document.getElementById('reg-password').value;
         
         // Валидация
-        if (!username || !email || !fullName || !password) {
+        if (!username || !email || !fullName || !birthYear || !password) {
             showError('Заполните все обязательные поля');
             return;
         }
@@ -761,8 +767,19 @@ async function handleGoogleAuthorizationCode(code, state) {
             return;
         }
         
+        if (!isValidEmail(email)) {
+            showError('Введите корректный email');
+            return;
+        }
+        
         if (password.length < 6) {
             showError('Пароль должен быть не менее 6 символов');
+            return;
+        }
+        
+        const currentYear = new Date().getFullYear();
+        if (birthYear < 1900 || birthYear > currentYear) {
+            showError('Укажите корректный год рождения');
             return;
         }
         
@@ -782,6 +799,7 @@ async function handleGoogleAuthorizationCode(code, state) {
                     email: email,
                     password: password,
                     full_name: fullName,
+                    birth_year: birthYear, // Добавляем год рождения
                     auth_method: 'email'
                 })
             });
@@ -789,10 +807,6 @@ async function handleGoogleAuthorizationCode(code, state) {
             // Проверяем статус ответа
             if (response.status === 404) {
                 throw new Error('Сервер не найден. Проверьте подключение к интернету');
-            }
-            
-            if (response.status === 500) {
-                throw new Error('Внутренняя ошибка сервера');
             }
             
             let data;
@@ -840,6 +854,12 @@ async function handleGoogleAuthorizationCode(code, state) {
             btnIcon.className = 'fa fa-user-plus';
             submitBtn.disabled = false;
         }
+    }
+
+    // Валидация email
+    function isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
     }
 
     // Загрузка конфигурации Google с определением типа клиента
@@ -969,6 +989,10 @@ function handleGoogleRedirectAuth() {
         const usernameBase = email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '_');
         document.getElementById('google-username').value = usernameBase;
         
+        // Устанавливаем год рождения по умолчанию
+        const currentYear = new Date().getFullYear();
+        document.getElementById('google-birth_year').value = currentYear - 25;
+        
         // Очищаем ошибки
         document.getElementById('modal-error-message').style.display = 'none';
         
@@ -988,10 +1012,10 @@ function handleGoogleRedirectAuth() {
         document.getElementById('modal-error-message').style.display = 'none';
         
         const username = document.getElementById('google-username').value.trim();
-        const password = document.getElementById('google-password').value;
+        const birthYear = parseInt(document.getElementById('google-birth_year').value);
         
         // Валидация
-        if (!username || !password) {
+        if (!username || !birthYear) {
             showModalError('Заполните все обязательные поля');
             return;
         }
@@ -1002,8 +1026,9 @@ function handleGoogleRedirectAuth() {
             return;
         }
         
-        if (password.length < 6) {
-            showModalError('Пароль должен быть не менее 6 символов');
+        const currentYear = new Date().getFullYear();
+        if (birthYear < 1900 || birthYear > currentYear) {
+            showModalError('Укажите корректный год рождения');
             return;
         }
         
@@ -1023,7 +1048,7 @@ function handleGoogleRedirectAuth() {
                     email: googleUserData.email,
                     full_name: googleUserData.full_name,
                     username: username,
-                    password: password,
+                    birth_year: birthYear, // Добавляем год рождения
                     avatar_url: googleUserData.avatar_url || '',
                     auth_method: 'google'
                 })
@@ -1131,6 +1156,10 @@ function handleGoogleRedirectAuth() {
         
         // Обработчик кнопки Google
         document.getElementById('google-auth-btn').addEventListener('click', handleGoogleRedirectAuth);
+        
+        // Автозаполнение года рождения
+        const currentYear = new Date().getFullYear();
+        document.getElementById('reg-birth_year').value = currentYear - 25;
         
         // Валидация username в реальном времени
         document.getElementById('reg-username').addEventListener('input', function(e) {
