@@ -46,45 +46,6 @@
             font-size: 15px;
         }
 
-        /* Кнопка назад к серверам */
-        .back-to-servers {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1000;
-            display: none;
-        }
-
-        .back-to-servers-btn {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
-            color: var(--white);
-            padding: 10px 20px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            text-decoration: none;
-            border: none;
-            font-family: inherit;
-        }
-
-        .back-to-servers-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateX(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-
-        .back-to-servers-btn:active {
-            transform: scale(0.95);
-        }
-
         /* Telegram-like header */
         .header {
             background: var(--nav-bg);
@@ -140,27 +101,26 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 24px;
+            justify-content: flex-start;
             z-index: 100;
             transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
+            padding-top: 60px; /* Отступ для header */
         }
 
         .choice-screen.hidden {
-            transform: translateY(-100%);
+            transform: translateX(-100%);
         }
 
         .server-info {
             text-align: center;
-            margin-bottom: 40px;
+            margin: 20px 16px;
             padding: 20px;
             background: rgba(26, 26, 26, 0.8);
             border-radius: 24px;
             border: 1px solid rgba(102, 126, 234, 0.2);
-            max-width: 500px;
-            width: 100%;
+            width: calc(100% - 32px);
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
@@ -210,97 +170,94 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .choices-container {
+        /* Список чатов в стиле Telegram */
+        .chat-list {
             width: 100%;
-            max-width: 500px;
+            padding: 0 16px 20px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            margin-bottom: 30px;
+            gap: 1px;
         }
 
-        .choice-button {
-            background: rgba(26, 26, 26, 0.8);
-            border: 2px solid rgba(0, 136, 204, 0.3);
-            border-radius: 20px;
-            padding: 32px 28px;
+        .chat-item {
+            background: var(--nav-bg);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            margin-bottom: 8px;
+        }
+
+        .chat-item:hover {
+            background: var(--gray-dark);
+            transform: translateX(4px);
+        }
+
+        .chat-item:active {
+            transform: scale(0.98);
+        }
+
+        .chat-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-        }
-
-        .choice-button:hover {
-            transform: translateY(-6px);
-            border-color: rgba(0, 136, 204, 0.6);
-            box-shadow: 0 15px 40px rgba(0, 136, 204, 0.25);
-        }
-
-        .choice-button:active {
-            transform: translateY(-2px);
-        }
-
-        .choice-icon {
-            font-size: 56px;
-            margin-bottom: 20px;
-            position: relative;
-            z-index: 1;
-        }
-
-        .choice-title {
             font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 12px;
-            position: relative;
-            z-index: 1;
-            color: var(--white);
-        }
-
-        .choice-description {
-            color: var(--gray-light);
-            font-size: 16px;
-            text-align: center;
-            line-height: 1.5;
-            position: relative;
-            z-index: 1;
-        }
-
-        .subscribe-button {
+            flex-shrink: 0;
             background: var(--gradient);
             color: white;
-            border: none;
-            border-radius: 18px;
-            padding: 24px 32px;
-            font-size: 20px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            width: 100%;
-            max-width: 500px;
-            margin-top: 10px;
-            box-shadow: 0 10px 30px rgba(0, 136, 204, 0.3);
-            position: relative;
+        }
+
+        .chat-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .chat-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--white);
+            margin-bottom: 4px;
+        }
+
+        .chat-description {
+            font-size: 14px;
+            color: var(--gray-light);
+            white-space: nowrap;
             overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .subscribe-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 40px rgba(0, 136, 204, 0.4);
+        .chat-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
         }
 
-        .subscribe-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
+        .chat-time {
+            font-size: 12px;
+            color: var(--gray-light);
         }
 
-        /* Чат окна (Телеграм стиль) */
+        .chat-unread {
+            background: var(--primary);
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 10px;
+            min-width: 20px;
+            text-align: center;
+        }
+
+        /* Обновленные чат окна */
         .chat-screen {
             position: absolute;
             top: 0;
@@ -337,6 +294,10 @@
         .exchange-chat .typing-indicator {
             background: var(--exchange-bg);
             border: 1px solid rgba(255, 149, 0, 0.2);
+        }
+
+        .exchange-chat .chat-avatar {
+            background: linear-gradient(135deg, #ff9500 0%, #ff5e3a 100%);
         }
 
         .chat-header-bar {
@@ -682,6 +643,35 @@
             animation: bounce 2s infinite;
         }
 
+        /* Subscribe button */
+        .subscribe-button {
+            background: var(--gradient);
+            color: white;
+            border: none;
+            border-radius: 18px;
+            padding: 18px 32px;
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: calc(100% - 32px);
+            margin: 20px 16px;
+            box-shadow: 0 10px 30px rgba(0, 136, 204, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .subscribe-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0, 136, 204, 0.4);
+        }
+
+        .subscribe-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         /* Animations */
         @keyframes fadeInUp {
             from {
@@ -770,49 +760,12 @@
                 font-size: 24px;
             }
 
-            .choice-button {
-                padding: 24px 20px;
-            }
-
-            .choice-icon {
-                font-size: 48px;
-            }
-
-            .choice-title {
-                font-size: 20px;
-            }
-
             .messages-container {
                 padding: 12px;
             }
 
             .message {
                 max-width: 90%;
-            }
-
-            .back-to-servers {
-                top: 16px;
-                left: 16px;
-            }
-
-            .back-to-servers-btn {
-                padding: 8px 16px;
-                font-size: 13px;
-            }
-        }
-
-        @media (max-height: 700px) {
-            .choice-icon {
-                font-size: 48px;
-            }
-
-            .choice-button {
-                padding: 24px 20px;
-            }
-
-            .server-info {
-                margin-bottom: 30px;
-                padding: 16px;
             }
         }
 
@@ -831,11 +784,12 @@
 </head>
 <body>
     <div class="app-container" id="appContainer">
-        <!-- Кнопка назад к списку серверов -->
-        <div class="back-to-servers" id="backToServers">
-            <button class="back-to-servers-btn" onclick="goBackToServers()">
-                ← Назад к серверам
-            </button>
+        <!-- Header для экрана выбора -->
+        <div class="header" id="choiceHeader">
+            <a href="server-page.html" class="back-btn">
+                <i class="fa fa-arrow-left"></i>
+            </a>
+            <div class="page-title" id="serverNameHeader">Сервер</div>
         </div>
 
         <!-- Экран выбора -->
@@ -858,8 +812,36 @@
                 </div>
             </div>
 
-            <div class="choices-container" id="choicesContainer">
-                <!-- Будет заполнено через JS -->
+            <div class="chat-list" id="chatList" style="display: none;">
+                <!-- Общий чат -->
+                <div class="chat-item" onclick="openGeneralChat()">
+                    <div class="chat-avatar">
+                        <i class="fa fa-comments"></i>
+                    </div>
+                    <div class="chat-info">
+                        <div class="chat-title">Общий чат</div>
+                        <div class="chat-description">Общайтесь со всеми участниками сервера</div>
+                    </div>
+                    <div class="chat-meta">
+                        <div class="chat-time" id="generalLastTime">только что</div>
+                        <div class="chat-unread" id="generalUnreadCount" style="display: none;">0</div>
+                    </div>
+                </div>
+
+                <!-- Чат обмена -->
+                <div class="chat-item" onclick="openExchangeChat()">
+                    <div class="chat-avatar">
+                        <i class="fa fa-exchange"></i>
+                    </div>
+                    <div class="chat-info">
+                        <div class="chat-title">Чат обмена</div>
+                        <div class="chat-description">Договаривайтесь о сделках и обменах</div>
+                    </div>
+                    <div class="chat-meta">
+                        <div class="chat-time" id="exchangeLastTime">только что</div>
+                        <div class="chat-unread" id="exchangeUnreadCount" style="display: none;">0</div>
+                    </div>
+                </div>
             </div>
 
             <button class="subscribe-button" id="subscribeButton" style="display: none;" onclick="subscribeToServer()">
@@ -976,7 +958,6 @@
         let exchangeWs = null;
         let currentChatType = null; // 'general' или 'exchange'
         let messageCount = 0; // Counter for unique message IDs
-        let pendingMessages = new Map(); // Map for tracking pending messages
 
         // Получаем ID сервера из URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -985,16 +966,11 @@
         // Проверка авторизации
         const token = localStorage.getItem('token');
         if (!token) {
-            window.location.href = 'register.html';
+            window.location.href = '/login.html';
         }
 
         if (!serverId) {
             window.location.href = '/server-page.html';
-        }
-
-        // Назад к списку серверов
-        function goBackToServers() {
-            window.location.href = 'server-page.html';
         }
 
         // Утилиты
@@ -1087,7 +1063,7 @@
 
         // Назад к экрану выбора
         function showChoiceScreen() {
-            document.getElementById('backToServers').style.display = 'block';
+            document.getElementById('choiceHeader').style.display = 'flex';
             document.getElementById('choiceScreen').classList.remove('hidden');
             document.getElementById('generalChatScreen').classList.remove('active');
             document.getElementById('exchangeChatScreen').classList.remove('active');
@@ -1106,7 +1082,7 @@
                 // Показываем экран загрузки
                 document.getElementById('loadingScreen').style.display = 'flex';
                 document.getElementById('serverInfo').style.display = 'none';
-                document.getElementById('choicesContainer').innerHTML = '';
+                document.getElementById('chatList').style.display = 'none';
                 document.getElementById('subscribeButton').style.display = 'none';
 
                 const response = await fetch(`${API_BASE}/server/${serverId}/info`, {
@@ -1138,27 +1114,27 @@
                         isBanned
                     });
 
-                    // Скрываем экран загрузки, показываем информацию
+                    // Скрываем экран загрузки
                     document.getElementById('loadingScreen').style.display = 'none';
-                    document.getElementById('serverInfo').style.display = 'block';
 
                     renderServerInfo();
-                    setupChoices();
+                    setupChatList();
 
                 } else {
                     const error = await response.json().catch(() => ({ error: 'Ошибка сервера' }));
                     console.error('❌ Ошибка API:', error);
-                    showErrorInChoices(error.error || 'Ошибка загрузки сервера');
+                    showError('Ошибка загрузки сервера: ' + (error.error || 'Неизвестная ошибка'));
                 }
             } catch (error) {
                 console.error('❌ Ошибка загрузки сервера:', error);
-                showErrorInChoices('Не удалось загрузить информацию о сервере. Проверьте подключение.');
+                showError('Не удалось загрузить информацию о сервере. Проверьте подключение.');
             }
         }
 
         function renderServerInfo() {
             try {
                 const serverNameEl = document.getElementById('serverName');
+                const serverNameHeaderEl = document.getElementById('serverNameHeader');
                 const serverAvatarEl = document.getElementById('serverAvatar');
                 const memberCountEl = document.getElementById('memberCount');
                 const messageCountEl = document.getElementById('messageCount');
@@ -1172,8 +1148,9 @@
 
                 // Безопасно устанавливаем значения
                 if (serverNameEl) serverNameEl.textContent = currentServer.name || 'Сервер';
+                if (serverNameHeaderEl) serverNameHeaderEl.textContent = currentServer.name || 'Сервер';
                 if (generalChatTitleEl) generalChatTitleEl.textContent = currentServer.name || 'Общий чат';
-                if (exchangeChatTitleEl) exchangeChatTitleEl.textContent = 'Чат обмена - ' + (currentServer.name || 'Сервер');
+                if (exchangeChatTitleEl) exchangeChatTitleEl.textContent = currentServer.name + ' - Обмен' || 'Чат обмена';
 
                 if (serverAvatarEl) {
                     serverAvatarEl.textContent = (currentServer.name || 'S').charAt(0).toUpperCase();
@@ -1196,27 +1173,26 @@
                         `${currentServer.message_count || 0} ${getPluralForm(currentServer.message_count || 0, ['сообщение', 'сообщения', 'сообщений'])}`;
                 }
 
+                // Показываем информацию о сервере
+                document.getElementById('serverInfo').style.display = 'block';
                 console.log('✅ Информация о сервере отрендерена');
             } catch (error) {
                 console.error('❌ Ошибка в renderServerInfo:', error);
             }
         }
 
-        // Настройка экрана выбора
-        function setupChoices() {
-            const container = document.getElementById('choicesContainer');
+        // Настройка списка чатов
+        function setupChatList() {
+            const chatList = document.getElementById('chatList');
             const subscribeBtn = document.getElementById('subscribeButton');
 
-            if (!container || !subscribeBtn) {
-                console.error('❌ Не найден контейнер выбора или кнопка подписки');
+            if (!chatList || !subscribeBtn) {
+                console.error('❌ Не найден список чатов или кнопка подписки');
                 return;
             }
 
-            // Всегда показываем кнопку "Назад к серверам" на экране выбора
-            document.getElementById('backToServers').style.display = 'block';
-
             if (isBanned) {
-                container.innerHTML = `
+                chatList.innerHTML = `
                     <div class="error-message">
                         ⚠️ Вы забанены на этом сервере и не можете присоединиться
                     </div>
@@ -1226,34 +1202,17 @@
             }
 
             if (!isSubscribed) {
-                container.innerHTML = `
-                    <div class="success-message">
-                        👋 Подпишитесь на сервер, чтобы получить доступ к чату и обменам
-                    </div>
-                `;
+                chatList.style.display = 'none';
                 subscribeBtn.style.display = 'block';
                 return;
             }
 
+            // Показываем список чатов
+            chatList.style.display = 'block';
             subscribeBtn.style.display = 'none';
-
-            container.innerHTML = `
-                <div class="choice-button" onclick="openGeneralChat()">
-                    <div class="choice-icon">💬</div>
-                    <div class="choice-title">Общий чат</div>
-                    <div class="choice-description">
-                        Общайтесь со всеми участниками сервера в реальном времени. Обсуждения, вопросы, помощь
-                    </div>
-                </div>
-                
-                <div class="choice-button" onclick="openExchangeChat()">
-                    <div class="choice-icon">🔄</div>
-                    <div class="choice-title">Чат обмена</div>
-                    <div class="choice-description">
-                        Договаривайтесь о сделках, предлагайте обмены, находите партнеров для торговли
-                    </div>
-                </div>
-            `;
+            
+            // Загружаем последние сообщения для каждого чата
+            loadLastMessages();
         }
 
         // Подписка на сервер
@@ -1284,22 +1243,59 @@
                     console.log('✅ Подписка успешна:', data);
 
                     isSubscribed = true;
-                    setupChoices();
-
-                    // Показываем уведомление
-                    showSuccessInChoices(data.message || '🎉 Вы успешно подписались на сервер!');
+                    setupChatList();
+                    showNotification('🎉 Вы успешно подписались на сервер!', 'success');
 
                 } else {
                     const error = await response.json().catch(() => ({ error: 'Ошибка сервера' }));
                     console.error('❌ Ошибка подписки:', error);
-                    showErrorInChoices(error.error || '❌ Ошибка подписки');
+                    showNotification(error.error || '❌ Ошибка подписки', 'error');
                 }
             } catch (error) {
                 console.error('❌ Ошибка сети при подписке:', error);
-                showErrorInChoices('🌐 Ошибка соединения с сервером');
+                showNotification('🌐 Ошибка соединения с сервером', 'error');
             } finally {
                 button.textContent = originalText;
                 button.disabled = false;
+            }
+        }
+
+        // Загрузка последних сообщений для списка чатов
+        async function loadLastMessages() {
+            try {
+                // Загружаем последнее сообщение для общего чата
+                const generalResponse = await fetch(`${API_BASE}/server/${serverId}/messages?type=general&limit=1`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (generalResponse.ok) {
+                    const data = await generalResponse.json();
+                    if (data.messages && data.messages.length > 0) {
+                        const lastMessage = data.messages[data.messages.length - 1];
+                        document.getElementById('generalLastTime').textContent = formatTime(lastMessage.created_at);
+                    }
+                }
+
+                // Загружаем последнее сообщение для чата обмена
+                const exchangeResponse = await fetch(`${API_BASE}/server/${serverId}/messages?type=exchange&limit=1`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (exchangeResponse.ok) {
+                    const data = await exchangeResponse.json();
+                    if (data.messages && data.messages.length > 0) {
+                        const lastMessage = data.messages[data.messages.length - 1];
+                        document.getElementById('exchangeLastTime').textContent = formatTime(lastMessage.created_at);
+                    }
+                }
+            } catch (error) {
+                console.error('❌ Ошибка загрузки последних сообщений:', error);
             }
         }
 
@@ -1307,7 +1303,7 @@
         async function openGeneralChat() {
             try {
                 currentChatType = 'general';
-                document.getElementById('backToServers').style.display = 'none';
+                document.getElementById('choiceHeader').style.display = 'none';
                 document.getElementById('choiceScreen').classList.add('hidden');
                 document.getElementById('generalChatScreen').classList.add('active');
                 
@@ -1333,7 +1329,7 @@
         async function openExchangeChat() {
             try {
                 currentChatType = 'exchange';
-                document.getElementById('backToServers').style.display = 'none';
+                document.getElementById('choiceHeader').style.display = 'none';
                 document.getElementById('choiceScreen').classList.add('hidden');
                 document.getElementById('exchangeChatScreen').classList.add('active');
                 
@@ -1371,12 +1367,8 @@
 
                 console.log(`📨 Загрузка сообщений ${type} для сервера:`, serverId);
 
-                // Важно: используем разные endpoint или query параметры для разных чатов
-                const endpoint = type === 'exchange' 
-                    ? `${API_BASE}/server/${serverId}/exchange-messages`  // Отдельный endpoint для обмена
-                    : `${API_BASE}/server/${serverId}/general-messages`; // Отдельный endpoint для общего чата
-
-                const response = await fetch(endpoint, {
+                // Используем общий endpoint с параметром type
+                const response = await fetch(`${API_BASE}/server/${serverId}/messages?type=${type}`, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
@@ -1425,8 +1417,8 @@
                     '💬 Здесь пока нет сообщений. Будьте первым, кто напишет в этом чате!';
                     
                 container.innerHTML = `
-                    <div class="empty-state" style="padding: 40px 20px;">
-                        <i class="fa fa-comments" style="font-size: 48px;"></i>
+                    <div class="empty-state" style="text-align: center; padding: 40px 20px; color: var(--gray-light);">
+                        <i class="fa fa-comments" style="font-size: 48px; margin-bottom: 16px;"></i>
                         <p>${emptyMessage}</p>
                     </div>
                 `;
@@ -1545,14 +1537,10 @@
                 input.value = '';
                 input.style.height = 'auto';
                 
-                // Отправляем на сервер - используем разные endpoint для разных типов
+                // Отправляем на сервер
                 console.log(`📤 Отправка сообщения ${type}:`, message.substring(0, 50) + '...');
 
-                const endpoint = type === 'exchange'
-                    ? `${API_BASE}/server/${serverId}/exchange-messages`
-                    : `${API_BASE}/server/${serverId}/general-messages`;
-
-                const response = await fetch(endpoint, {
+                const response = await fetch(`${API_BASE}/server/${serverId}/messages`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1560,7 +1548,7 @@
                     },
                     body: JSON.stringify({ 
                         content: message,
-                        type: type  // Явно указываем тип чата
+                        type: type
                     })
                 });
 
@@ -1570,7 +1558,7 @@
                     const result = await response.json();
                     
                     // Обновляем статус сообщения на "отправлено"
-                    updateMessageStatus(tempId, 'sent', result.messageId || result.id, type);
+                    updateMessageStatus(tempId, 'sent', result.message?.id, type);
                     
                 } else {
                     const error = await response.json().catch(() => ({ error: 'Ошибка отправки' }));
@@ -1631,44 +1619,6 @@
             // Обновляем data-атрибут, если предоставлен новый ID
             if (newId) {
                 messageElement.dataset.messageId = newId;
-            }
-        }
-
-        // Удаление сообщения
-        async function deleteMessage(messageId, type = 'general') {
-            if (!confirm('Удалить это сообщение?')) return;
-
-            try {
-                console.log('🗑️ Удаление сообщения:', messageId);
-
-                const response = await fetch(`${API_BASE}/server/messages/${messageId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                console.log('📡 Ответ удаления:', response.status);
-
-                if (response.ok) {
-                    // Обновляем интерфейс
-                    const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 'generalMessagesContainer';
-                    const container = document.getElementById(containerId);
-                    const messageElement = container.querySelector(`[data-message-id="${messageId}"]`);
-                    if (messageElement) {
-                        const contentElement = messageElement.querySelector('.message-content');
-                        if (contentElement) {
-                            contentElement.textContent = '[Сообщение удалено]';
-                        }
-                    }
-                } else {
-                    const error = await response.json().catch(() => ({ error: 'Ошибка удаления' }));
-                    showNotification(error.error || '❌ Ошибка удаления сообщения', 'error');
-                }
-            } catch (error) {
-                console.error('❌ Ошибка сети при удалении:', error);
-                showNotification('🌐 Ошибка соединения с сервером', 'error');
             }
         }
 
@@ -1969,8 +1919,8 @@
         }
 
         // Уведомления
-        function showErrorInChoices(message) {
-            const container = document.getElementById('choicesContainer');
+        function showError(message) {
+            const container = document.getElementById('chatList');
             if (container) {
                 container.innerHTML = `
                     <div class="error-message">
@@ -1978,25 +1928,6 @@
                     </div>
                 `;
             }
-        }
-
-        function showSuccessInChoices(message) {
-            const container = document.getElementById('choicesContainer');
-            if (!container) return;
-
-            const successElement = document.createElement('div');
-            successElement.className = 'success-message';
-            successElement.innerHTML = `
-                <div style="margin-bottom: 10px;">${escapeHtml(message)}</div>
-                <div style="font-size: 14px; opacity: 0.8;">Теперь у вас есть доступ ко всем функциям сервера!</div>
-            `;
-            container.prepend(successElement);
-
-            setTimeout(() => {
-                if (successElement.parentNode) {
-                    successElement.remove();
-                }
-            }, 5000);
         }
 
         function showErrorInChat(message, type = 'general') {
