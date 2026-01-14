@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Zeeptook - Игровые аккаунты</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css>
     <style>
-    /* Оптимизированные стили */
+    /* ОПТИМИЗИРОВАННЫЕ СТИЛИ */
     * {
         margin: 0;
         padding: 0;
@@ -28,10 +28,8 @@
         --input-bg: #242f3d;
         --nav-bg: #17212b;
         --skeleton-bg: #2a2f36;
-        --skeleton-shine: rgba(255, 255, 255, 0.05);
         --gradient: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
         --radius: 12px;
-        --radius-sm: 8px;
     }
     
     html, body {
@@ -39,13 +37,12 @@
         overflow-x: hidden;
         background: var(--chat-bg);
         color: var(--white);
-        scroll-behavior: smooth;
     }
     
     body {
         font-size: 15px;
         opacity: 0;
-        animation: pageFadeIn 0.3s ease forwards;
+        animation: pageFadeIn 0.2s ease forwards;
         display: flex;
         flex-direction: column;
         min-height: 100vh;
@@ -65,10 +62,9 @@
         flex-direction: column;
         min-height: 100vh;
         width: 100%;
-        position: relative;
     }
 
-    /* Header */
+    /* Header - УПРОЩЕННЫЙ */
     .header {
         background: var(--nav-bg);
         color: var(--white);
@@ -85,7 +81,6 @@
         border-bottom: 1px solid var(--gray-dark);
         max-width: 768px;
         margin: 0 auto;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .logo {
@@ -120,35 +115,26 @@
         border-radius: 50%;
         font-size: 15px;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: transform 0.1s ease;
         text-decoration: none;
-        box-shadow: 0 2px 6px rgba(0, 136, 204, 0.3);
     }
     
     .messages-btn:active {
         transform: scale(0.95);
     }
-    
-    .messages-btn i {
-        font-size: 16px;
-    }
 
-    /* Search Section - СВЕРХУ (компактная версия) */
+    /* Search Section */
     .search-section {
         background: var(--nav-bg);
         border-bottom: 1px solid var(--gray-dark);
-        padding: 8px 16px;
+        padding: 12px 16px;
         position: fixed;
         top: 56px;
         z-index: 999;
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         max-width: 768px;
         margin: 0 auto;
         left: 0;
         right: 0;
-        height: 60px;
-        display: flex;
-        align-items: center;
     }
     
     .search-container {
@@ -164,12 +150,11 @@
         background: var(--input-bg);
         border: 1px solid var(--gray-dark);
         transition: all 0.2s ease;
-        height: 44px;
+        height: 40px;
     }
     
     .search-box:focus-within {
         border-color: var(--primary);
-        box-shadow: 0 0 0 2px rgba(0, 136, 204, 0.2);
     }
     
     .search-box input {
@@ -208,26 +193,19 @@
         min-width: 44px;
         font-size: 14px;
     }
-    
-    .search-box button:active {
-        transform: scale(0.95);
-    }
 
-    /* Categories - ПОД ПОИСКОМ С АНИМАЦИЕЙ (компактная версия) */
+    /* Categories */
     .categories-section {
         background: var(--nav-bg);
         border-bottom: 1px solid var(--gray-dark);
         position: fixed;
         z-index: 998;
-        top: 116px; /* header + search */
-        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        top: 104px;
         max-width: 768px;
         margin: 0 auto;
         left: 0;
         right: 0;
         height: 48px;
-        will-change: transform;
-        transform: translateY(0);
     }
     
     .categories-scroll {
@@ -263,7 +241,6 @@
         background: var(--gradient);
         color: white;
         border-color: var(--primary);
-        box-shadow: 0 2px 6px rgba(0, 136, 204, 0.3);
     }
     
     .category:active {
@@ -279,7 +256,7 @@
         margin-bottom: 60px;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        padding-top: 108px; /* header + search + categories */
+        padding-top: 152px; /* header + search + categories */
     }
 
     /* Main Content */
@@ -302,17 +279,16 @@
         color: var(--white);
     }
 
-    /* Ads Grid */
+    /* Ads Grid - ОДИН КОЛОНКОЙ ДЛЯ СКОРОЙ ЗАГРУЗКИ */
     .ads-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
+        display: flex;
+        flex-direction: column;
         gap: 12px;
         padding: 0 16px 16px;
         background: var(--chat-bg);
-        min-height: 200px;
     }
 
-    /* Ad Card */
+    /* Ad Card - ОПТИМИЗИРОВАННЫЙ ДЛЯ БЫСТРОЙ ЗАГРУЗКИ */
     .ad-card {
         background: var(--nav-bg);
         border-radius: var(--radius);
@@ -320,17 +296,13 @@
         cursor: pointer;
         border: 1px solid var(--gray-dark);
         display: flex;
-        flex-direction: column;
-        opacity: 0;
-        transform: translateY(10px);
         animation: cardAppear 0.3s ease-out forwards;
+        min-height: 140px;
     }
     
     @keyframes cardAppear {
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     
     .ad-card:active {
@@ -338,134 +310,13 @@
         transition: transform 0.1s ease;
     }
     
-    /* Skeleton Loading */
-    .skeleton-card {
-        background: var(--nav-bg);
-        border-radius: var(--radius);
-        overflow: hidden;
-        border: 1px solid var(--gray-dark);
-        display: flex;
-        flex-direction: column;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .skeleton-image {
-        width: 100%;
-        height: 160px;
-        background: var(--skeleton-bg);
-        border-radius: var(--radius) var(--radius) 0 0;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .skeleton-image::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
-        animation: skeletonShine 1.5s infinite;
-    }
-    
-    .skeleton-content {
-        padding: 12px;
+    /* ЛЕВАЯ ЧАСТЬ: ТЕКСТОВАЯ ИНФОРМАЦИЯ (грузится сразу) */
+    .ad-text-content {
         flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-    
-    .skeleton-line {
-        height: 12px;
-        background: var(--skeleton-bg);
-        border-radius: 4px;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .skeleton-line::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: -100%;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
-        animation: skeletonShine 1.5s infinite 0.3s;
-    }
-    
-    .skeleton-line.short {
-        width: 60%;
-    }
-    
-    .skeleton-line.medium {
-        width: 80%;
-    }
-    
-    .skeleton-line.long {
-        width: 100%;
-    }
-    
-    @keyframes skeletonShine {
-        0% { left: -100%; }
-        100% { left: 100%; }
-    }
-    
-    /* Ad Image */
-    .ad-image {
-        position: relative;
-        width: 100%;
-        height: 160px;
-        background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
-        overflow: hidden;
-        border-radius: var(--radius) var(--radius) 0 0;
-    }
-    
-    .ad-image-img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: opacity 0.3s ease;
-        opacity: 0;
-    }
-    
-    .ad-image-img.loaded {
-        opacity: 1;
-    }
-    
-    .ad-image-placeholder {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: var(--gray-light);
-        gap: 8px;
-        background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
-    }
-    
-    .ad-image-placeholder i {
-        font-size: 32px;
-        opacity: 0.5;
-    }
-    
-    .ad-image-placeholder span {
-        font-size: 12px;
-        opacity: 0.7;
-    }
-    
-    .ad-content {
         padding: 12px;
-        flex: 1;
         display: flex;
         flex-direction: column;
+        min-width: 0; /* Для правильного обрезания текста */
     }
     
     .ad-header {
@@ -508,12 +359,8 @@
         color: var(--accent);
     }
     
-    .ad-favorite:active {
-        transform: scale(0.9);
-    }
-    
     .ad-title {
-        font-size: 15px;
+        font-size: 16px;
         font-weight: 600;
         margin-bottom: 6px;
         color: var(--white);
@@ -522,12 +369,11 @@
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
-        min-height: 40px;
     }
     
     .ad-description {
         color: var(--gray-light);
-        margin-bottom: 10px;
+        margin-bottom: 8px;
         font-size: 13px;
         line-height: 1.4;
         display: -webkit-box;
@@ -547,65 +393,77 @@
     .ad-price {
         font-weight: 700;
         color: var(--primary);
-        font-size: 16px;
+        font-size: 17px;
     }
     
     .ad-meta {
         font-size: 12px;
         color: var(--gray-light);
+    }
+
+    /* ПРАВАЯ ЧАСТЬ: ИЗОБРАЖЕНИЕ (грузится отдельно) */
+    .ad-image-container {
+        width: 120px;
+        height: 140px;
+        flex-shrink: 0;
+        background: var(--gray-dark);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .ad-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .ad-image.loaded {
+        opacity: 1;
+    }
+    
+    .image-placeholder {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
         display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: 4px;
+        justify-content: center;
+        color: var(--gray-light);
+        gap: 6px;
+        background: var(--gray-dark);
+        font-size: 12px;
+    }
+    
+    .image-placeholder i {
+        font-size: 24px;
+        opacity: 0.5;
     }
 
-    /* Empty State */
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        background: var(--nav-bg);
-        margin: 16px;
-        border-radius: var(--radius);
-        border: 1px solid var(--gray-dark);
-        grid-column: 1 / -1;
-    }
-    
-    .empty-state i {
-        font-size: 48px;
-        color: var(--gray-light);
-        margin-bottom: 20px;
-        opacity: 0.6;
-    }
-    
-    .empty-state h3 {
-        font-size: 18px;
-        margin-bottom: 10px;
-        color: var(--white);
-        font-weight: 500;
-    }
-    
-    .empty-state p {
-        font-size: 14px;
-        line-height: 1.5;
-        margin-bottom: 25px;
-        color: var(--gray-light);
-    }
-
-    /* Loading */
+    /* Loading States */
     .initial-loading {
         text-align: center;
-        padding: 60px 20px;
+        padding: 40px 20px;
         color: var(--gray-light);
-        grid-column: 1 / -1;
     }
     
     .loading-spinner {
-        width: 40px;
-        height: 40px;
+        width: 30px;
+        height: 30px;
         border: 3px solid rgba(0, 136, 204, 0.2);
         border-top: 3px solid var(--primary);
         border-radius: 50%;
         animation: spin 1s linear infinite;
-        margin: 0 auto 20px;
+        margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
 
     /* Load More Button */
@@ -613,21 +471,20 @@
         text-align: center;
         padding: 20px 16px;
         background: var(--chat-bg);
-        grid-column: 1 / -1;
     }
     
     .load-more-btn {
-        padding: 14px 28px;
+        padding: 12px 24px;
         border: 1px solid var(--primary);
-        border-radius: 25px;
-        font-size: 15px;
+        border-radius: 20px;
+        font-size: 14px;
         font-weight: 500;
         cursor: pointer;
         transition: all 0.2s ease;
         background: transparent;
         color: var(--primary);
         width: 100%;
-        max-width: 220px;
+        max-width: 200px;
     }
     
     .load-more-btn:active {
@@ -640,55 +497,34 @@
         cursor: not-allowed;
     }
 
-    /* Error State */
-    .error-state {
+    /* Empty State */
+    .empty-state {
         text-align: center;
-        padding: 60px 20px;
+        padding: 40px 20px;
         background: var(--nav-bg);
         margin: 16px;
         border-radius: var(--radius);
         border: 1px solid var(--gray-dark);
-        grid-column: 1 / -1;
     }
     
-    .error-state i {
-        font-size: 48px;
-        color: var(--accent);
-        margin-bottom: 20px;
-        opacity: 0.7;
+    .empty-state i {
+        font-size: 36px;
+        color: var(--gray-light);
+        margin-bottom: 15px;
+        opacity: 0.6;
     }
     
-    .error-state h3 {
-        font-size: 18px;
-        margin-bottom: 10px;
+    .empty-state h3 {
+        font-size: 16px;
+        margin-bottom: 8px;
         color: var(--white);
         font-weight: 500;
     }
     
-    .error-state p {
-        font-size: 14px;
+    .empty-state p {
+        font-size: 13px;
         line-height: 1.5;
-        margin-bottom: 20px;
         color: var(--gray-light);
-    }
-    
-    .retry-btn {
-        padding: 14px 24px;
-        border: 1px solid var(--primary);
-        border-radius: 25px;
-        font-size: 15px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        background: transparent;
-        color: var(--primary);
-        width: 100%;
-        max-width: 220px;
-    }
-    
-    .retry-btn:active {
-        transform: scale(0.97);
-        background: rgba(0, 136, 204, 0.1);
     }
 
     /* Bottom Navigation */
@@ -725,17 +561,12 @@
     }
     
     .nav-btn i {
-        font-size: 20px;
+        font-size: 18px;
         margin-bottom: 2px;
-        transition: all 0.2s ease;
     }
     
     .nav-btn.active {
         color: var(--primary);
-    }
-    
-    .nav-btn.active i {
-        transform: translateY(-1px);
     }
     
     .nav-btn.active::after {
@@ -744,14 +575,10 @@
         top: 0;
         left: 50%;
         transform: translateX(-50%);
-        width: 30px;
+        width: 24px;
         height: 3px;
         background: var(--primary);
         border-radius: 2px;
-    }
-    
-    .nav-btn:active {
-        transform: scale(0.95);
     }
 
     /* Quick Notification */
@@ -764,17 +591,11 @@
         color: white;
         padding: 10px 20px;
         border-radius: 25px;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 500;
         z-index: 10000;
         animation: slideDown 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    }
-
-    /* Animations */
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
 
     @keyframes slideDown {
@@ -789,73 +610,21 @@
 
     /* Адаптация */
     @media (max-width: 480px) {
-        .ad-image {
-            height: 140px;
+        .content-wrapper {
+            padding-top: 148px;
+        }
+        
+        .ad-image-container {
+            width: 100px;
+            height: 120px;
         }
         
         .ad-title {
-            font-size: 14px;
-        }
-        
-        .categories-scroll {
-            padding: 8px 16px;
-        }
-        
-        .category {
-            padding: 5px 12px;
-            font-size: 12px;
-        }
-        
-        .content-wrapper {
-            padding-top: 104px;
-        }
-        
-        .search-box {
-            height: 40px;
-        }
-        
-        .search-box input {
-            padding: 8px 16px 8px 40px;
-            font-size: 13px;
-        }
-        
-        .search-icon {
-            left: 12px;
             font-size: 15px;
         }
-    }
-    
-    @media (min-width: 481px) and (max-width: 768px) {
-        .ads-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
         
-        .ad-image {
-            height: 180px;
-        }
-    }
-
-    /* Ховер-эффекты для ПК */
-    @media (hover: hover) {
-        .category:hover {
-            background: var(--gray-medium);
-        }
-        
-        .category.active:hover {
-            background: var(--primary-dark);
-        }
-        
-        .ad-favorite:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-        
-        .ad-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-        
-        .load-more-btn:hover {
-            background: rgba(0, 136, 204, 0.1);
+        .ad-price {
+            font-size: 16px;
         }
     }
 </style>
@@ -875,8 +644,8 @@
             </div>
         </div>
         
-        <!-- ПОИСК - СВЕРХУ (компактный) -->
-        <div class="search-section" id="search-section">
+        <!-- ПОИСК -->
+        <div class="search-section">
             <div class="search-container">
                 <div class="search-box">
                     <div class="search-icon">
@@ -890,8 +659,8 @@
             </div>
         </div>
         
-        <!-- КАТЕГОРИИ - ПОД ПОИСКОМ (компактный) -->
-        <div class="categories-section" id="categories-section">
+        <!-- КАТЕГОРИИ -->
+        <div class="categories-section">
             <div class="categories-scroll" id="categories-container">
                 <!-- Категории будут загружены -->
             </div>
@@ -905,24 +674,10 @@
                 </div>
                 
                 <div class="ads-grid" id="ads-container">
-                    <!-- Скелетоны при первой загрузке -->
-                    <div class="skeleton-card">
-                        <div class="skeleton-image"></div>
-                        <div class="skeleton-content">
-                            <div class="skeleton-line short"></div>
-                            <div class="skeleton-line medium"></div>
-                            <div class="skeleton-line long"></div>
-                            <div class="skeleton-line short" style="margin-top: auto;"></div>
-                        </div>
-                    </div>
-                    <div class="skeleton-card">
-                        <div class="skeleton-image"></div>
-                        <div class="skeleton-content">
-                            <div class="skeleton-line short"></div>
-                            <div class="skeleton-line medium"></div>
-                            <div class="skeleton-line long"></div>
-                            <div class="skeleton-line short" style="margin-top: auto;"></div>
-                        </div>
+                    <!-- ИНДИКАТОР ЗАГРУЗКИ -->
+                    <div class="initial-loading">
+                        <div class="loading-spinner"></div>
+                        <div>Загрузка объявлений...</div>
                     </div>
                 </div>
                 
@@ -958,62 +713,25 @@
     </div>
 
     <script>
-    // Оптимизированные переменные
+    // КОНФИГУРАЦИЯ
+    const CONFIG = {
+        API_BASE: window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api',
+        LIMIT_PER_PAGE: 4, // УМЕНЬШИЛИ ДО 4 для быстрой загрузки
+        IMAGE_WIDTH: 400, // Оптимальное разрешение для телефона
+        IMAGE_HEIGHT: 300,
+        CACHE_TTL: 300000 // 5 минут
+    };
+    
+    // ПЕРЕМЕННЫЕ
     let currentPage = 1;
     let totalPages = 1;
     let currentCategory = 'all';
     let currentSearch = '';
     let isLoading = false;
-    let lastScrollTop = 0;
-    let scrollTimeout;
-    let scrollAnimationFrame;
-    let isCategoriesHidden = false;
-    let lastScrollDirection = 'up';
     let token = localStorage.getItem('token');
-    let imageLoadQueue = [];
     
-    // Кеш для данных
-    const DATA_CACHE = {
-        set: function(key, data, category = 'all') {
-            const cacheKey = `${category}_${key}`;
-            const cacheData = {
-                data: data,
-                timestamp: Date.now(),
-                category: category
-            };
-            localStorage.setItem(`cache_${cacheKey}`, JSON.stringify(cacheData));
-        },
-        
-        get: function(key, category = 'all', maxAge = 300000) { // 5 минут по умолчанию
-            const cacheKey = `${category}_${key}`;
-            const cached = localStorage.getItem(`cache_${cacheKey}`);
-            if (!cached) return null;
-            
-            const cacheData = JSON.parse(cached);
-            const age = Date.now() - cacheData.timestamp;
-            
-            if (age > maxAge || cacheData.category !== category) {
-                localStorage.removeItem(`cache_${cacheKey}`);
-                return null;
-            }
-            
-            return cacheData.data;
-        },
-        
-        clearCategory: function(category) {
-            Object.keys(localStorage).forEach(key => {
-                if (key.startsWith('cache_') && key.includes(category)) {
-                    localStorage.removeItem(key);
-                }
-            });
-        }
-    };
-    
-    // Базовый URL API
-    const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
-    
-    // Игровые категории
-    const gameCategories = [
+    // КАТЕГОРИИ ИГР
+    const GAME_CATEGORIES = [
         { name: 'Все', data: 'all' },
         { name: 'PUBG Mobile', data: 'pubg' },
         { name: 'Free Fire', data: 'freefire' },
@@ -1024,46 +742,45 @@
         { name: 'Brawl Stars', data: 'brawl' },
         { name: 'Roblox', data: 'roblox' }
     ];
-
-    // Быстрая загрузка категорий
+    
+    // КАРТИНКИ ПО УМОЛЧАНИЮ
+    const DEFAULT_IMAGES = {
+        pubg: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop',
+        freefire: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop',
+        cod: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop',
+        default: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop'
+    };
+    
+    // ==================== ОСНОВНЫЕ ФУНКЦИИ ====================
+    
+    // 1. БЫСТРАЯ ЗАГРУЗКА КАТЕГОРИЙ
     function loadCategories() {
         const container = document.getElementById('categories-container');
-        container.innerHTML = '';
         
-        gameCategories.forEach(cat => {
+        GAME_CATEGORIES.forEach(cat => {
             const categoryElement = document.createElement('div');
             categoryElement.className = cat.data === 'all' ? 'category active' : 'category';
             categoryElement.textContent = cat.name;
             categoryElement.setAttribute('data-category', cat.data);
             container.appendChild(categoryElement);
+            
+            categoryElement.addEventListener('click', function() {
+                document.querySelectorAll('.category').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                
+                currentCategory = this.getAttribute('data-category');
+                currentPage = 1;
+                currentSearch = '';
+                document.getElementById('search-input').value = '';
+                document.getElementById('search-clear-btn').style.display = 'none';
+                
+                fetchAds();
+            });
         });
-        
-        setupCategories();
     }
-
-    // Показать скелетоны
-    function showSkeletons(count = 6) {
-        const adsContainer = document.getElementById('ads-container');
-        adsContainer.innerHTML = '';
-        
-        for (let i = 0; i < count; i++) {
-            const skeleton = document.createElement('div');
-            skeleton.className = 'skeleton-card';
-            skeleton.innerHTML = `
-                <div class="skeleton-image"></div>
-                <div class="skeleton-content">
-                    <div class="skeleton-line short"></div>
-                    <div class="skeleton-line medium"></div>
-                    <div class="skeleton-line long"></div>
-                    <div class="skeleton-line short" style="margin-top: auto;"></div>
-                </div>
-            `;
-            adsContainer.appendChild(skeleton);
-        }
-    }
-
-    // Оптимизированная загрузка объявлений с кешированием
-    async function fetchAds(page = 1, category = 'all', search = '') {
+    
+    // 2. ОПТИМИЗИРОВАННАЯ ЗАГРУЗКА ОБЪЯВЛЕНИЙ (с разделением данных и изображений)
+    async function fetchAds() {
         if (isLoading) return;
         
         isLoading = true;
@@ -1071,135 +788,92 @@
         const loadMoreBtn = document.getElementById('load-more-btn');
         
         try {
-            // Проверяем кеш для первой страницы
-            if (page === 1 && !search) {
-                const cachedData = DATA_CACHE.get(`page_${page}`, category);
-                if (cachedData) {
-                    displayAdsCards(cachedData.ads || [], true);
-                    currentPage = cachedData.page || page;
-                    totalPages = cachedData.totalPages || 1;
-                    
-                    // Загружаем изображения для кешированных данных
-                    setTimeout(() => {
-                        loadImagesForAds(cachedData.ads || []);
-                    }, 100);
-                    
-                    setTimeout(() => {
-                        if (currentPage < totalPages) {
-                            loadMoreBtn.style.display = 'block';
-                        }
-                    }, 0);
-                    
-                    // Параллельно загружаем свежие данные
-                    setTimeout(() => fetchFreshAds(page, category, search), 100);
-                    return;
-                }
-            }
-            
-            // Показываем скелетоны только для первой страницы
-            if (page === 1) {
-                showSkeletons();
+            // Показываем индикатор загрузки только для первой страницы
+            if (currentPage === 1) {
+                adsContainer.innerHTML = `
+                    <div class="initial-loading">
+                        <div class="loading-spinner"></div>
+                        <div>Загрузка объявлений...</div>
+                    </div>
+                `;
                 loadMoreBtn.style.display = 'none';
             } else {
                 loadMoreBtn.disabled = true;
                 loadMoreBtn.textContent = 'Загрузка...';
             }
-
-            // Загрузка свежих данных
-            await fetchFreshAds(page, category, search);
+            
+            // ПОДГОТОВКА URL С ОГРАНИЧЕНИЕМ В 4 ЭЛЕМЕНТА
+            let url;
+            try {
+                url = new URL(`${CONFIG.API_BASE}/ads`);
+            } catch (e) {
+                url = new URL('/api/ads', window.location.origin);
+            }
+            
+            url.searchParams.append('page', currentPage);
+            url.searchParams.append('limit', CONFIG.LIMIT_PER_PAGE); // ТОЛЬКО 4 ОБЪЯВЛЕНИЯ!
+            
+            if (currentCategory !== 'all') {
+                url.searchParams.append('category', currentCategory);
+            }
+            if (currentSearch) {
+                url.searchParams.append('search', currentSearch);
+            }
+            
+            // ЗАГРУЗКА ДАННЫХ С ТАЙМАУТОМ
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000); // Уменьшенный таймаут
+            
+            const options = {
+                method: 'GET',
+                headers: {},
+                signal: controller.signal
+            };
+            
+            if (token) {
+                options.headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            const response = await fetch(url.toString(), options);
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`Ошибка ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            // ОБНОВЛЕНИЕ СОСТОЯНИЯ
+            currentPage = data.page || currentPage;
+            totalPages = data.totalPages || 1;
+            
+            // ШАГ 1: НЕМЕДЛЕННО ПОКАЗЫВАЕМ ТЕКСТОВУЮ ИНФОРМАЦИЮ
+            displayAdsText(data.ads || [], currentPage === 1);
+            
+            // ШАГ 2: ОТДЕЛЬНО ЗАГРУЖАЕМ ИЗОБРАЖЕНИЯ (после показа текста)
+            setTimeout(() => {
+                loadAdsImages(data.ads || []);
+            }, 100);
+            
+            // УПРАВЛЕНИЕ КНОПКОЙ "ЗАГРУЗИТЬ ЕЩЕ"
+            if (currentPage < totalPages) {
+                loadMoreBtn.style.display = 'block';
+                loadMoreBtn.disabled = false;
+                loadMoreBtn.textContent = 'Показать ещё';
+            } else {
+                loadMoreBtn.style.display = 'none';
+            }
             
         } catch (error) {
             console.error('Ошибка загрузки:', error);
-            
-            // Если сервер недоступен, показываем кешированные данные
-            if (page === 1) {
-                const cachedData = DATA_CACHE.get(`page_${page}`, category, 86400000); // 24 часа
-                if (cachedData) {
-                    displayAdsCards(cachedData.ads || [], true);
-                    setTimeout(() => {
-                        loadImagesForAds(cachedData.ads || []);
-                    }, 100);
-                } else {
-                    showDemoAds();
-                }
-            }
+            showErrorState();
         } finally {
             isLoading = false;
         }
     }
-
-    // Загрузка свежих данных
-    async function fetchFreshAds(page, category, search) {
-        const adsContainer = document.getElementById('ads-container');
-        const loadMoreBtn = document.getElementById('load-more-btn');
-        
-        let url;
-        try {
-            url = new URL(`${API_BASE}/ads`);
-        } catch (e) {
-            url = new URL('/api/ads', window.location.origin);
-        }
-        
-        url.searchParams.append('page', page);
-        url.searchParams.append('limit', 12);
-        
-        if (category !== 'all') {
-            url.searchParams.append('category', category);
-        }
-        if (search) {
-            url.searchParams.append('search', search);
-            DATA_CACHE.clearCategory(category); // Очищаем кеш при поиске
-        }
-
-        const options = {
-            method: 'GET',
-            headers: {}
-        };
-
-        if (token) {
-            options.headers['Authorization'] = `Bearer ${token}`;
-        }
-
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // Уменьшен таймаут
-        options.signal = controller.signal;
-
-        const response = await fetch(url.toString(), options);
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-            throw new Error(`Ошибка ${response.status}`);
-        }
-
-        const data = await response.json();
-        
-        // Кешируем данные
-        if (page === 1 && !search) {
-            DATA_CACHE.set(`page_${page}`, data, category);
-        }
-        
-        currentPage = data.page || page;
-        totalPages = data.totalPages || 1;
-        
-        // ОТОБРАЖАЕМ КАРТОЧКИ БЕЗ ИЗОБРАЖЕНИЙ
-        displayAdsCards(data.ads || [], page === 1);
-        
-        // ЗАТЕМ ЗАГРУЖАЕМ ИЗОБРАЖЕНИЯ
-        setTimeout(() => {
-            loadImagesForAds(data.ads || []);
-        }, 100);
-        
-        if (currentPage < totalPages) {
-            loadMoreBtn.style.display = 'block';
-            loadMoreBtn.disabled = false;
-            loadMoreBtn.textContent = 'Показать ещё';
-        } else {
-            loadMoreBtn.style.display = 'none';
-        }
-    }
-
-    // Функция для ОТОБРАЖЕНИЯ КАРТОЧЕК БЕЗ ИЗОБРАЖЕНИЙ
-    function displayAdsCards(adsArray, clearContainer = true) {
+    
+    // 3. ФУНКЦИЯ ДЛЯ БЫСТРОГО ОТОБРАЖЕНИЯ ТЕКСТОВОЙ ИНФОРМАЦИИ
+    function displayAdsText(adsArray, clearContainer = true) {
         const adsContainer = document.getElementById('ads-container');
         
         if (clearContainer) {
@@ -1217,49 +891,43 @@
             return;
         }
         
-        // Создаем карточки с заглушками для изображений
+        // СОЗДАЕМ КАРТОЧКИ С ТЕКСТОМ (БЕЗ ИЗОБРАЖЕНИЙ)
         adsArray.forEach((ad, index) => {
-            const adElement = createAdCardWithoutImages(ad, index);
+            const adElement = createTextOnlyAdCard(ad, index);
             adsContainer.appendChild(adElement);
             
-            // Анимация появления карточки
+            // Анимация появления
             setTimeout(() => {
                 adElement.style.opacity = '1';
                 adElement.style.transform = 'translateY(0)';
-            }, index * 30);
+            }, index * 50);
         });
     }
-
-    // Функция для создания карточки БЕЗ ИЗОБРАЖЕНИЙ (только заглушка)
-    function createAdCardWithoutImages(ad, index) {
+    
+    // 4. СОЗДАНИЕ КАРТОЧКИ ТОЛЬКО С ТЕКСТОМ
+    function createTextOnlyAdCard(ad, index) {
         const adElement = document.createElement('div');
         adElement.className = 'ad-card';
         adElement.setAttribute('data-ad-id', ad.id || index);
-        adElement.setAttribute('data-ad-index', index);
-        adElement.style.animationDelay = `${index * 0.03}s`;
         adElement.style.opacity = '0';
         adElement.style.transform = 'translateY(5px)';
         adElement.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
         
+        // ФОРМАТИРОВАНИЕ ДАННЫХ
         const priceFormatted = ad.price ? 
             new Intl.NumberFormat('ru-RU').format(ad.price) + ' ₽' : 
             'Договорная';
         
         const timeAgo = formatTimeAgo(ad.created_at);
-        const gameName = getGameNameFromCategory(ad.category);
+        const gameName = getGameName(ad.category);
         
+        // ПРОВЕРКА ИЗБРАННОГО
         const favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
         const isFavorite = favorites.some(fav => fav.id === ad.id);
         
-        // HTML с заглушкой для изображения
+        // HTML С ТЕКСТОМ И ЗАГОЛОВКОМ ИЗОБРАЖЕНИЯ
         adElement.innerHTML = `
-            <div class="ad-image" data-ad-id="${ad.id || index}">
-                <div class="ad-image-placeholder">
-                    <i class="fa fa-gamepad"></i>
-                    <span>Загрузка...</span>
-                </div>
-            </div>
-            <div class="ad-content">
+            <div class="ad-text-content">
                 <div class="ad-header">
                     <div class="ad-category">${gameName}</div>
                     <button class="ad-favorite ${isFavorite ? 'active' : ''}" data-ad-id="${ad.id || index}">
@@ -1270,13 +938,19 @@
                 <div class="ad-description">${ad.description || 'Аккаунт с хорошими характеристиками'}</div>
                 <div class="ad-footer">
                     <div class="ad-price">${priceFormatted}</div>
-                    <div class="ad-meta">
-                        <span>${timeAgo}</span>
-                    </div>
+                    <div class="ad-meta">${timeAgo}</div>
                 </div>
+            </div>
+            <div class="ad-image-container" data-ad-id="${ad.id || index}">
+                <div class="image-placeholder">
+                    <i class="fa fa-spinner fa-spin"></i>
+                    <span>Загрузка...</span>
+                </div>
+                <img class="ad-image" data-ad-id="${ad.id || index}" alt="${ad.title || 'Игровой аккаунт'}">
             </div>
         `;
         
+        // ОБРАБОТЧИКИ
         const favoriteBtn = adElement.querySelector('.ad-favorite');
         favoriteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1289,157 +963,109 @@
         
         return adElement;
     }
-
-    // Функция для ПОСТЕПЕННОЙ ЗАГРУЗКИ ИЗОБРАЖЕНИЙ
-    function loadImagesForAds(adsToLoad) {
-        // Очищаем очередь
-        imageLoadQueue = [];
-        
-        // Добавляем все объявления в очередь загрузки
-        adsToLoad.forEach((ad, index) => {
-            const imageContainer = document.querySelector(`.ad-image[data-ad-id="${ad.id || index}"]`);
-            if (imageContainer) {
-                imageLoadQueue.push({
-                    adId: ad.id || index,
-                    ad: ad,
-                    container: imageContainer,
-                    index: index
-                });
-            }
-        });
-        
-        // Запускаем загрузку с задержками
-        processImageQueue();
-    }
-
-    // Функция для обработки очереди загрузки изображений
-    function processImageQueue() {
-        if (imageLoadQueue.length === 0) return;
-        
-        // Берем первые 2-3 изображения для параллельной загрузки
-        const batchSize = Math.min(3, imageLoadQueue.length);
-        
-        for (let i = 0; i < batchSize; i++) {
-            const item = imageLoadQueue.shift();
-            if (item) {
-                loadSingleImage(item);
+    
+    // 5. ОТДЕЛЬНАЯ ЗАГРУЗКА ИЗОБРАЖЕНИЙ (после текста)
+    async function loadAdsImages(adsArray) {
+        // Загружаем изображения по одному с задержкой
+        for (let i = 0; i < adsArray.length; i++) {
+            const ad = adsArray[i];
+            await loadSingleImage(ad);
+            
+            // Небольшая задержка между загрузкой изображений
+            if (i < adsArray.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
         }
-        
-        // Продолжаем загрузку через небольшую задержку
-        setTimeout(() => {
-            if (imageLoadQueue.length > 0) {
-                processImageQueue();
-            }
-        }, 300);
     }
-
-    // Функция для загрузки одного изображения
-    function loadSingleImage({ adId, ad, container, index }) {
-        const placeholder = container.querySelector('.ad-image-placeholder');
+    
+    // 6. ЗАГРУЗКА ОДНОГО ИЗОБРАЖЕНИЯ С ОПТИМИЗАЦИЕЙ
+    async function loadSingleImage(ad) {
+        const imageContainer = document.querySelector(`.ad-image-container[data-ad-id="${ad.id}"]`);
+        if (!imageContainer) return;
         
-        // Получаем URL изображения
-        let imageUrl = getImageUrlFromAd(ad);
+        const imgElement = imageContainer.querySelector('.ad-image');
+        const placeholder = imageContainer.querySelector('.image-placeholder');
         
-        if (!imageUrl) {
-            // Если нет изображения, оставляем заглушку
-            if (placeholder) {
-                placeholder.querySelector('span').textContent = 'Нет изображения';
+        try {
+            // ПЕРВЫЙ ВАРИАНТ: Изображение из данных объявления
+            let imageUrl = extractImageUrl(ad);
+            
+            // ВТОРОЙ ВАРИАНТ: Демо-изображение по категории
+            if (!imageUrl) {
+                imageUrl = DEFAULT_IMAGES[ad.category] || DEFAULT_IMAGES.default;
             }
-            return;
+            
+            // ОПТИМИЗАЦИЯ: Добавляем параметры размера для ускорения загрузки
+            if (imageUrl.includes('unsplash.com')) {
+                imageUrl = `${imageUrl.split('?')[0]}?w=${CONFIG.IMAGE_WIDTH}&h=${CONFIG.IMAGE_HEIGHT}&fit=crop&auto=format`;
+            }
+            
+            // Загрузка изображения
+            await new Promise((resolve, reject) => {
+                imgElement.onload = () => {
+                    if (placeholder) placeholder.style.display = 'none';
+                    imgElement.classList.add('loaded');
+                    resolve();
+                };
+                
+                imgElement.onerror = () => {
+                    // Если ошибка, показываем заглушку
+                    if (placeholder) {
+                        placeholder.querySelector('i').className = 'fa fa-picture-o';
+                        placeholder.querySelector('span').textContent = 'Нет фото';
+                    }
+                    reject();
+                };
+                
+                imgElement.src = imageUrl;
+            });
+            
+        } catch (error) {
+            console.log('Ошибка загрузки изображения:', error);
         }
-        
-        // Создаем объект Image для предзагрузки
-        const img = new Image();
-        
-        img.onload = function() {
-            // Создаем элемент img для вставки
-            const imgElement = document.createElement('img');
-            imgElement.className = 'ad-image-img loaded';
-            imgElement.src = imageUrl;
-            imgElement.alt = ad.title || 'Игровой аккаунт';
-            imgElement.loading = 'lazy';
-            imgElement.style.width = '100%';
-            imgElement.style.height = '100%';
-            imgElement.style.objectFit = 'cover';
-            imgElement.style.borderRadius = 'var(--radius) var(--radius) 0 0';
-            
-            // Заменяем содержимое контейнера
-            container.innerHTML = '';
-            container.appendChild(imgElement);
-            
-            // Анимация появления
-            imgElement.style.opacity = '0';
-            setTimeout(() => {
-                imgElement.style.transition = 'opacity 0.3s ease';
-                imgElement.style.opacity = '1';
-            }, 50);
-        };
-        
-        img.onerror = function() {
-            // Ошибка загрузки - оставляем заглушку
-            if (placeholder) {
-                placeholder.querySelector('span').textContent = 'Ошибка загрузки';
-            }
-        };
-        
-        // Начинаем загрузку
-        img.src = imageUrl;
     }
-
-    // Функция для получения URL изображения из объявления
-    function getImageUrlFromAd(ad) {
-        let imageUrl = '';
-        
-        // Если есть photos массив от сервера
+    
+    // 7. ИЗВЛЕЧЕНИЕ URL ИЗОБРАЖЕНИЯ ИЗ ДАННЫХ
+    function extractImageUrl(ad) {
+        // Вариант 1: Поле photos (массив)
         if (ad.photos && ad.photos.length > 0) {
             const firstPhoto = ad.photos[0];
             if (firstPhoto.image_data) {
-                // Если это base64 строка с префиксом
-                if (firstPhoto.image_data.startsWith('data:image')) {
-                    imageUrl = firstPhoto.image_data;
-                } 
-                // Если это URL
-                else if (firstPhoto.image_data.startsWith('http')) {
-                    imageUrl = firstPhoto.image_data;
-                }
-                // Если это просто строка base64 без префикса
-                else if (firstPhoto.image_data.length > 100) {
-                    imageUrl = `data:image/jpeg;base64,${firstPhoto.image_data}`;
+                if (firstPhoto.image_data.startsWith('data:image') || 
+                    firstPhoto.image_data.startsWith('http')) {
+                    return firstPhoto.image_data;
+                } else if (firstPhoto.image_data.length > 100) {
+                    return `data:image/jpeg;base64,${firstPhoto.image_data}`;
                 }
             }
         }
-        // Если есть image поле в самом объявлении
-        else if (ad.image) {
-            if (ad.image.startsWith('data:image') || ad.image.startsWith('http')) {
-                imageUrl = ad.image;
-            }
+        
+        // Вариант 2: Прямое поле image
+        if (ad.image && (ad.image.startsWith('data:image') || ad.image.startsWith('http'))) {
+            return ad.image;
         }
         
-        // Если нет изображения от сервера, используем демо-изображение
-        if (!imageUrl) {
-            imageUrl = getDemoImage(ad.category);
-        }
-        
-        return imageUrl;
+        return null;
     }
-
-    // Демо-изображения для игр
-    function getDemoImage(category) {
-        const gameImages = {
-            'pubg': 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop',
-            'freefire': 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop',
-            'cod': 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop',
-            'genshin': 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop',
-            'ml': 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop',
-            'default': 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop'
-        };
-        
-        return gameImages[category] || gameImages.default;
+    
+    // 8. ПОКАЗ ОШИБКИ
+    function showErrorState() {
+        const adsContainer = document.getElementById('ads-container');
+        adsContainer.innerHTML = `
+            <div class="empty-state">
+                <i class="fa fa-exclamation-triangle"></i>
+                <h3>Ошибка загрузки</h3>
+                <p>Проверьте подключение к интернету</p>
+                <button onclick="fetchAds()" style="margin-top: 15px; padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 20px; cursor: pointer;">
+                    Повторить
+                </button>
+            </div>
+        `;
     }
-
-    // Получение названия игры из категории
-    function getGameNameFromCategory(category) {
+    
+    // ==================== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ====================
+    
+    function getGameName(category) {
         const gameMap = {
             'pubg': 'PUBG Mobile',
             'freefire': 'Free Fire',
@@ -1450,68 +1076,9 @@
             'brawl': 'Brawl Stars',
             'roblox': 'Roblox'
         };
-        
         return gameMap[category] || category || 'Игры';
     }
-
-    // Демо-объявления при недоступности сервера
-    function showDemoAds() {
-        const demoAds = [
-            {
-                id: 1,
-                title: 'PUBG Mobile Аккаунт',
-                description: 'Аккаунт с редкими скинами и высоким уровнем',
-                price: 3700,
-                category: 'pubg',
-                created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-            },
-            {
-                id: 2,
-                title: 'Call of Duty Mobile',
-                description: 'Full account с оружием 50 уровня',
-                price: 3700,
-                category: 'cod',
-                created_at: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-            }
-        ];
-        
-        displayAdsCards(demoAds, true);
-        setTimeout(() => {
-            loadImagesForAds(demoAds);
-        }, 100);
-        document.getElementById('load-more-btn').style.display = 'none';
-    }
-
-    // Избранное
-    function toggleFavorite(adId, favoriteBtn, ad) {
-        let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
-        
-        if (favoriteBtn.classList.contains('active')) {
-            favorites = favorites.filter(fav => fav.id !== adId);
-            favoriteBtn.classList.remove('active');
-            showNotification('Удалено из избранного');
-        } else {
-            const favoriteAd = {
-                id: adId,
-                title: ad.title,
-                price: ad.price,
-                category: ad.category,
-                description: ad.description
-            };
-            favorites.push(favoriteAd);
-            favoriteBtn.classList.add('active');
-            showNotification('Добавлено в избранное');
-        }
-        
-        localStorage.setItem('favorites', JSON.stringify(favorites));
-    }
-
-    // Открытие деталей объявления
-    function openAdDetails(adId) {
-        window.location.href = `ad-details.html?id=${adId}`;
-    }
-
-    // Форматирование времени
+    
     function formatTimeAgo(dateString) {
         if (!dateString) return '> нед';
         
@@ -1530,8 +1097,32 @@
             return '> нед';
         }
     }
-
-    // Уведомление
+    
+    function toggleFavorite(adId, favoriteBtn, ad) {
+        let favorites = JSON.parse(localStorage.getItem('favorites') || '[]');
+        
+        if (favoriteBtn.classList.contains('active')) {
+            favorites = favorites.filter(fav => fav.id !== adId);
+            favoriteBtn.classList.remove('active');
+            showNotification('Удалено из избранного');
+        } else {
+            favorites.push({
+                id: adId,
+                title: ad.title,
+                price: ad.price,
+                category: ad.category
+            });
+            favoriteBtn.classList.add('active');
+            showNotification('Добавлено в избранное');
+        }
+        
+        localStorage.setItem('favorites', JSON.stringify(favorites));
+    }
+    
+    function openAdDetails(adId) {
+        window.location.href = `ad-details.html?id=${adId}`;
+    }
+    
     function showNotification(message) {
         const existing = document.querySelector('.quick-notification');
         if (existing) existing.remove();
@@ -1547,181 +1138,62 @@
             setTimeout(() => notification.remove(), 300);
         }, 2000);
     }
-
-    // Настройка поиска
-    function setupSearch() {
+    
+    // ==================== ИНИЦИАЛИЗАЦИЯ ====================
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Загружаем категории
+        loadCategories();
+        
+        // Настраиваем поиск
         const searchInput = document.getElementById('search-input');
         const searchClearBtn = document.getElementById('search-clear-btn');
         
-        const performSearch = () => {
-            currentSearch = searchInput.value.trim();
-            currentPage = 1;
-            DATA_CACHE.clearCategory(currentCategory); // Очищаем кеш
-            fetchAds(1, currentCategory, currentSearch);
-            
-            if (currentSearch) {
-                searchClearBtn.style.display = 'block';
-            } else {
-                searchClearBtn.style.display = 'none';
-            }
-        };
-        
-        // Поиск по кнопке
-        searchClearBtn.addEventListener('click', () => {
-            searchInput.value = '';
-            searchClearBtn.style.display = 'none';
-            performSearch();
-        });
-        
-        // Поиск по Enter
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') performSearch();
-        });
-        
-        // Поиск с задержкой
         let searchTimer;
         searchInput.addEventListener('input', () => {
             clearTimeout(searchTimer);
-            searchTimer = setTimeout(performSearch, 500);
             
             if (searchInput.value.trim()) {
                 searchClearBtn.style.display = 'block';
             } else {
                 searchClearBtn.style.display = 'none';
             }
-        });
-    }
-
-    // Настройка категорий
-    function setupCategories() {
-        const categories = document.querySelectorAll('.category');
-        categories.forEach(category => {
-            category.addEventListener('click', function() {
-                const categoryValue = this.getAttribute('data-category');
-                
-                categories.forEach(c => c.classList.remove('active'));
-                this.classList.add('active');
-                
-                currentCategory = categoryValue;
+            
+            searchTimer = setTimeout(() => {
+                currentSearch = searchInput.value.trim();
                 currentPage = 1;
-                currentSearch = '';
-                document.getElementById('search-input').value = '';
-                document.getElementById('search-clear-btn').style.display = 'none';
-                
-                fetchAds(1, currentCategory);
-            });
+                fetchAds();
+            }, 500);
         });
-    }
-
-    // Оптимизированная анимация скрытия/показа категорий
-    function setupScrollAnimation() {
-        const categoriesSection = document.getElementById('categories-section');
-        const searchSection = document.getElementById('search-section');
-        const header = document.querySelector('.header');
-        const contentWrapper = document.querySelector('.content-wrapper');
         
-        let isScrolling;
-        let scrollDirection = 'up';
-        let lastScrollPos = window.pageYOffset || document.documentElement.scrollTop;
-        
-        // Функция для управления видимостью категорий
-        function handleScroll() {
-            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-            
-            // Определяем направление скролла
-            if (scrollTop > lastScrollPos) {
-                scrollDirection = 'down';
-            } else {
-                scrollDirection = 'up';
-            }
-            
-            // Показываем/скрываем категории в зависимости от направления и позиции
-            if (scrollDirection === 'down' && scrollTop > 100 && !isCategoriesHidden) {
-                categoriesSection.style.transform = 'translateY(-100%)';
-                isCategoriesHidden = true;
-                contentWrapper.style.paddingTop = '60px'; // header + search
-            } else if ((scrollDirection === 'up' || scrollTop <= 50) && isCategoriesHidden) {
-                categoriesSection.style.transform = 'translateY(0)';
-                isCategoriesHidden = false;
-                contentWrapper.style.paddingTop = '108px'; // header + search + categories
-            }
-            
-            // Показываем/скрываем хедер при глубоком скролле
-            if (scrollTop > 200 && scrollDirection === 'down') {
-                header.style.transform = 'translateY(-100%)';
-                searchSection.style.transform = 'translateY(-56px)';
-            } else {
-                header.style.transform = 'translateY(0)';
-                searchSection.style.transform = 'translateY(0)';
-            }
-            
-            lastScrollPos = scrollTop <= 0 ? 0 : scrollTop;
-            
-            // Сбрасываем таймер для фиксации состояния
-            clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(() => {
-                if (scrollTop <= 100 && isCategoriesHidden) {
-                    categoriesSection.style.transform = 'translateY(0)';
-                    isCategoriesHidden = false;
-                    contentWrapper.style.paddingTop = '108px';
-                }
-            }, 200);
-        }
-        
-        // Оптимизация через requestAnimationFrame
-        function throttledScroll() {
-            if (!isScrolling) {
-                window.requestAnimationFrame(() => {
-                    handleScroll();
-                    isScrolling = false;
-                });
-            }
-            isScrolling = true;
-        }
-        
-        // Добавляем обработчик с пассивным слушателем для производительности
-        window.addEventListener('scroll', throttledScroll, { passive: true });
-        
-        // Обработчик для touch устройств
-        window.addEventListener('touchmove', throttledScroll, { passive: true });
-    }
-
-    // Инициализация
-    document.addEventListener('DOMContentLoaded', function() {
-        // Загружаем категории
-        loadCategories();
-        
-        // Настраиваем поиск
-        setupSearch();
-        
-        // Настраиваем скролл-анимацию
-        setupScrollAnimation();
-        
-        // Загружаем объявления
-        fetchAds();
+        searchClearBtn.addEventListener('click', () => {
+            searchInput.value = '';
+            searchClearBtn.style.display = 'none';
+            currentSearch = '';
+            currentPage = 1;
+            fetchAds();
+        });
         
         // Кнопка "Загрузить еще"
-        const loadMoreBtn = document.getElementById('load-more-btn');
-        loadMoreBtn.addEventListener('click', () => {
-            fetchAds(currentPage + 1, currentCategory, currentSearch);
+        document.getElementById('load-more-btn').addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                fetchAds();
+            }
         });
         
-        // Адаптация паддинга контента под мобильные устройства
-        function adjustContentPadding() {
+        // Первоначальная загрузка объявлений
+        fetchAds();
+        
+        // Адаптивный паддинг
+        function adjustPadding() {
             const contentWrapper = document.querySelector('.content-wrapper');
-            const isMobile = window.innerWidth <= 480;
-            
-            if (isCategoriesHidden) {
-                contentWrapper.style.paddingTop = isMobile ? '60px' : '60px';
-            } else {
-                contentWrapper.style.paddingTop = isMobile ? '104px' : '108px';
-            }
+            contentWrapper.style.paddingTop = '152px';
         }
         
-        // Слушатель изменения размера окна
-        window.addEventListener('resize', adjustContentPadding);
-        adjustContentPadding(); // Инициализация
+        window.addEventListener('resize', adjustPadding);
+        adjustPadding();
     });
-</script>
+    </script>
 </body>
 </html>
