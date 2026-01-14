@@ -6,7 +6,7 @@
     <title>Zeeptook - Игровые аккаунты</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css>
     <style>
-    /* ОПТИМИЗИРОВАННЫЕ СТИЛИ ДЛЯ БЫСТРОЙ ЗАГРУЗКИ */
+    /* Оптимизированные стили */
     * {
         margin: 0;
         padding: 0;
@@ -279,7 +279,7 @@
         margin-bottom: 60px;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        padding-top: 108px; /* header + search + categories */
+        padding-top: 108px;
     }
 
     /* Main Content */
@@ -294,9 +294,6 @@
     .section-header {
         padding: 16px 16px 12px;
         background: var(--chat-bg);
-        position: sticky;
-        top: 108px;
-        z-index: 990;
     }
     
     .section-title {
@@ -315,7 +312,7 @@
         min-height: 200px;
     }
 
-    /* Ad Card - УПРОЩЕННАЯ ВЕРСИЯ ДЛЯ БЫСТРОЙ ЗАГРУЗКИ */
+    /* Ad Card - УПРОЩЕННАЯ ВЕРСИЯ */
     .ad-card {
         background: var(--nav-bg);
         border-radius: var(--radius);
@@ -326,14 +323,9 @@
         flex-direction: column;
         min-height: 320px;
         position: relative;
-        transition: transform 0.2s ease;
     }
     
-    .ad-card:active {
-        transform: scale(0.98);
-    }
-    
-    /* Упрощенный скелетон */
+    /* Упрощенный скелетон для быстрой загрузки */
     .ad-card.skeleton {
         background: var(--nav-bg);
         border: 1px solid var(--gray-dark);
@@ -359,11 +351,11 @@
         100% { left: 100%; }
     }
     
-    /* Ad Image - ФИКСИРОВАННАЯ ВЫСОТА ДЛЯ МОБИЛЬНЫХ */
+    /* Ad Image - ОПТИМИЗИРОВАННЫЙ: фиксированная высота */
     .ad-image {
         position: relative;
         width: 100%;
-        height: 140px;
+        height: 140px; /* Фиксированная высота для телефона */
         background: linear-gradient(135deg, #1c2836 0%, #2a2f36 100%);
         overflow: hidden;
         border-radius: var(--radius) var(--radius) 0 0;
@@ -397,12 +389,7 @@
         font-size: 12px;
     }
     
-    .ad-image-placeholder i {
-        font-size: 24px;
-        opacity: 0.5;
-    }
-    
-    /* Ad Content - ВСЕ ТЕКСТОВЫЕ ДАННЫЕ СРАЗУ ВИДНЫ */
+    /* Ad Content - ВСЕ ТЕКСТОВЫЕ ДАННЫЕ СРАЗУ */
     .ad-content {
         padding: 12px;
         flex: 1;
@@ -450,10 +437,6 @@
         color: var(--accent);
     }
     
-    .ad-favorite:active {
-        transform: scale(0.9);
-    }
-    
     .ad-title {
         font-size: 15px;
         font-weight: 600;
@@ -484,8 +467,6 @@
         justify-content: space-between;
         align-items: center;
         margin-top: auto;
-        padding-top: 8px;
-        border-top: 1px solid rgba(255, 255, 255, 0.05);
     }
     
     .ad-price {
@@ -711,8 +692,6 @@
         z-index: 10000;
         animation: slideDown 0.3s ease;
         box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        max-width: 90%;
-        text-align: center;
     }
 
     /* Animations */
@@ -726,10 +705,10 @@
         to { transform: translateX(-50%) translateY(-20px); opacity: 0; }
     }
 
-    /* АДАПТАЦИЯ ДЛЯ РАЗНЫХ УСТРОЙСТВ */
+    /* Адаптация */
     @media (max-width: 480px) {
         .ad-image {
-            height: 130px;
+            height: 130px; /* Еще меньше на мобильных */
         }
         
         .ad-card {
@@ -745,10 +724,6 @@
             font-size: 15px;
         }
         
-        .ad-description {
-            font-size: 12px;
-        }
-        
         .categories-scroll {
             padding: 8px 16px;
         }
@@ -760,10 +735,6 @@
         
         .content-wrapper {
             padding-top: 104px;
-        }
-        
-        .section-header {
-            top: 104px;
         }
         
         .search-box {
@@ -778,152 +749,6 @@
         .search-icon {
             left: 12px;
             font-size: 15px;
-        }
-        
-        .header {
-            padding: 8px 12px;
-        }
-        
-        .logo {
-            font-size: 16px;
-        }
-    }
-    
-    @media (min-width: 481px) and (max-width: 768px) {
-        .ad-image {
-            height: 150px;
-        }
-        
-        .ad-card {
-            min-height: 330px;
-        }
-    }
-    
-    @media (max-width: 360px) {
-        .ads-grid {
-            grid-template-columns: 1fr;
-            gap: 10px;
-        }
-        
-        .ad-image {
-            height: 160px;
-        }
-        
-        .ad-card {
-            min-height: 320px;
-        }
-    }
-
-    /* Ховер-эффекты для ПК (если нужно) */
-    @media (hover: hover) and (pointer: fine) {
-        .ad-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        }
-        
-        .category:hover:not(.active) {
-            background: var(--gray-medium);
-        }
-        
-        .ad-favorite:hover {
-            background: rgba(255, 255, 255, 0.05);
-        }
-        
-        .load-more-btn:hover {
-            background: rgba(0, 136, 204, 0.1);
-        }
-    }
-
-    /* Стили для индикатора загрузки изображений */
-    .image-loading {
-        position: relative;
-    }
-    
-    .image-loading::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
-        animation: loadingShine 1.5s infinite;
-    }
-    
-    @keyframes loadingShine {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
-    }
-
-    /* Улучшенные скроллбары */
-    ::-webkit-scrollbar {
-        width: 6px;
-        height: 6px;
-    }
-    
-    ::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    
-    ::-webkit-scrollbar-thumb {
-        background: var(--gray-dark);
-        border-radius: 3px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-        background: var(--gray-medium);
-    }
-
-    /* Оптимизация для производительности */
-    .will-change-transform {
-        will-change: transform;
-    }
-    
-    .will-change-opacity {
-        will-change: opacity;
-    }
-
-    /* Стили для состояния "нет интернета" */
-    .offline-indicator {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        background: var(--accent);
-        color: white;
-        text-align: center;
-        padding: 8px;
-        font-size: 13px;
-        z-index: 10001;
-        animation: slideDown 0.3s ease;
-    }
-
-    /* Оптимизация для ретина-дисплеев */
-    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-        .ad-image {
-            image-rendering: -webkit-optimize-contrast;
-            image-rendering: crisp-edges;
-        }
-    }
-
-    /* Поддержка темной темы систем */
-    @media (prefers-color-scheme: dark) {
-        :root {
-            --gray-dark: #1a1f27;
-            --gray-medium: #2c3440;
-        }
-    }
-
-    /* Оптимизация для iOS */
-    @supports (-webkit-touch-callout: none) {
-        .content-wrapper {
-            /* iOS requires this for smooth scrolling */
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        .ad-card:active {
-            /* Уменьшаем эффект нажатия для iOS */
-            transform: scale(0.98);
         }
     }
 </style>
@@ -1742,4 +1567,3 @@
 </script>
 </body>
 </html>
-
