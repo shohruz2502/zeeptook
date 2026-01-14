@@ -508,80 +508,236 @@
     let googleClientId = null;
     let googleAuthInitialized = false;
     let googleOAuthState = null;
+    
+    // === НОВЫЕ ФУНКЦИИ ДЛЯ WEBVIEW ОБРАБОТКИ ===
+    
+    // Определяем, находимся ли мы в WebView мобильного приложения
+    function isInWebView() {
+        const userAgent = navigator.userAgent.toLowerCase();
+        const params = new URLSearchParams(window.location.search);
+        
+        // Проверяем User-Agent
+        const isWebView = (
+            userAgent.includes('wv') || 
+            (userAgent.includes('android') && userAgent.includes('webview')) ||
+            (userAgent.includes('iphone') && userAgent.includes('webview')) ||
+            userAgent.includes('zeeptook-app') || // Кастомный User-Agent
+            /Mobile.*Safari.*WebView/.test(navigator.userAgent)
+        );
+        
+        // Проверяем параметр в URL
+        const isAppParam = params.get('platform') === 'app' || params.get('source') === 'app';
+        
+        console.log('User-Agent:', navigator.userAgent);
+        console.log('Is WebView detected:', isWebView || isAppParam);
+        
+        return isWebView || isAppParam;
+    }
+    
+    // Создаем URL для глубокой ссылки (Deep Link)
+    function createDeepLinkUrl(token) {
+        // Используем кастомную схему для вашего приложения
+        return `zeeptook://auth?token=${encodeURIComponent(token)}&type=google`;
+    }
+    
+    // Обработка глубокой ссылки при возврате из браузера
+    function handleDeepLinkReturn() {
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('token');
+        const authType = params.get('type');
+        const fromDeepLink = params.get('deep_link_return');
+        
+        // Если это возврат из глубокой ссылки с токеном
+        if (fromDeepLink === 'true' && token) {
+            console.log('Получен токен из Deep Link:', token?.slice(0, 20) + '...');
+            
+            // Очищаем параметры из URL
+            history.replaceState(null, null, window.location.pathname);
+            
+            // Сохраняем токен
+            localStorage.setItem('token', token);
+            
+            // Получаем информацию о пользователе
+            fetchUserInfo(token);
+            return true;
+        }
+        
+        return false;
+    }
+    
+    // Получение информации о пользователе по токену
+    async function fetchUserInfo(token) {
+        try {
+            showSuccess('Загрузка данных пользователя...');
+            
+            const response = await fetch(`${API_BASE}/user/me`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error('Ошибка получения данных пользователя');
+            }
+            
+            const data = await response.json();
+            
+            if (data.success && data.user) {
+                localStorage.setItem('user', JSON.stringify(data.user));
+                showSuccess('Авторизация успешна! Перенаправляем...');
+                
+                setTimeout(() => {
+                    window.location.href = 'profile.html';
+                }, 1000);
+            } else {
+                throw new Error('Пользователь не найден');
+            }
+        } catch (error) {
+            console.error('Ошибка получения данных пользователя:', error);
+            showError('Ошибка загрузки данных пользователя');
+        }
+    }
+    
+    // Создание URL для Google OAuth в зависимости от окружения
+    function createGoogleAuthUrl() {
+        if (!googleAuthInitialized || !googleClientId) {
+            throw new Error('Google авторизация не настроена');
+        }
+        
+        // Создаем уникальный state
+        const isApp = isInWebView();
+        const clientType = isApp ? 'app' : 'web';
+        googleOAuthState = 'google_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9) + '_' + clientType;
+        sessionStorage.setItem('google_oauth_state', googleOAuthState);
+        
+        // Определяем redirect_uri
+        let redirectUri;
+        
+        if (isApp) {
+            // Для приложения используем специальный endpoint для глубоких ссылок
+            redirectUri = encodeURIComponent(`${window.location.origin}/api/auth/google/callback/app`);
+        } else {
+            // Для веба используем текущий URL
+            const currentUrl = window.location.href.split('?')[0];
+            redirectUri = encodeURIComponent(currentUrl);
+        }
+        
+        // Создаем URL для авторизации
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+            `client_id=${googleClientId}` +
+            `&redirect_uri=${redirectUri}` +
+            `&response_type=code` +
+            `&scope=email%20profile` +
+            `&state=${googleOAuthState}` +
+            `&prompt=select_account` +
+            `&access_type=online`;
+        
+        console.log('Создан Google Auth URL:', {
+            isApp,
+            clientType,
+            redirectUri: decodeURIComponent(redirectUri)
+        });
+        
+        return authUrl;
+    }
 
     // Проверка OAuth callback в URL
-function checkForOAuthCallback() {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    const state = params.get('state');
-    const error = params.get('error');
-    
-    // Убираем параметры из URL
-    if (code || error) {
-        history.replaceState(null, null, window.location.pathname);
-    }
-    
-    if (error) {
-        showError('Ошибка Google авторизации: ' + error);
-        return;
-    }
-    
-    if (code && state) {
-        const savedState = sessionStorage.getItem('google_oauth_state');
-        if (!savedState || !state.startsWith(savedState.split('_')[0])) {
-            showError('Ошибка безопасности. Попробуйте снова.');
+    function checkForOAuthCallback() {
+        // Сначала проверяем Deep Link возврат
+        if (handleDeepLinkReturn()) {
             return;
         }
         
-        sessionStorage.removeItem('google_oauth_state');
+        const params = new URLSearchParams(window.location.search);
+        const code = params.get('code');
+        const state = params.get('state');
+        const error = params.get('error');
         
-        // Отправляем code на сервер для обмена на токен
-        handleGoogleAuthorizationCode(code, state);
+        // Убираем параметры из URL
+        if (code || error) {
+            history.replaceState(null, null, window.location.pathname);
+        }
+        
+        if (error) {
+            showError('Ошибка Google авторизации: ' + error);
+            return;
+        }
+        
+        if (code && state) {
+            const savedState = sessionStorage.getItem('google_oauth_state');
+            if (!savedState || !state.startsWith(savedState.split('_')[0])) {
+                showError('Ошибка безопасности. Попробуйте снова.');
+                return;
+            }
+            
+            sessionStorage.removeItem('google_oauth_state');
+            
+            // Отправляем code на сервер для обмена на токен
+            handleGoogleAuthorizationCode(code, state);
+        }
     }
-}
 
     // Функция для обработки кода авторизации
-async function handleGoogleAuthorizationCode(code, state) {
-    try {
-        // Извлекаем тип клиента из state
-        const stateParts = state.split('_');
-        const clientType = stateParts[stateParts.length - 1] || 'web';
-        
-        console.log(`🔐 Обработка Google кода для ${clientType} клиента`);
-        
-        showSuccess('Авторизация Google...');
-        
-        const response = await fetch(`${API_BASE}/auth/google`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                code: code,
-                clientType: clientType
-            })
-        });
+    async function handleGoogleAuthorizationCode(code, state) {
+        try {
+            // Извлекаем тип клиента из state
+            const stateParts = state.split('_');
+            const clientType = stateParts[stateParts.length - 1] || 'web';
+            
+            console.log(`🔐 Обработка Google кода для ${clientType} клиента`);
+            
+            showSuccess('Авторизация Google...');
+            
+            const response = await fetch(`${API_BASE}/auth/google`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    code: code,
+                    clientType: clientType,
+                    isWebView: isInWebView()
+                })
+            });
 
-        const data = await response.json();
-        
-        if (!response.ok) {
-            throw new Error(data.error || 'Ошибка авторизации через Google');
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.error || 'Ошибка авторизации через Google');
+            }
+            
+            // Если мы в WebView и получили токен, используем Deep Link
+            if (isInWebView() && data.token) {
+                const deepLinkUrl = createDeepLinkUrl(data.token);
+                console.log('Перенаправляем по Deep Link:', deepLinkUrl);
+                
+                // Показываем сообщение пользователю
+                showSuccess('Авторизация успешна! Возвращаемся в приложение...');
+                
+                // Открываем Deep Link
+                setTimeout(() => {
+                    window.location.href = deepLinkUrl;
+                }, 2000);
+                
+                return;
+            }
+            
+            // Для обычного веба продолжаем стандартную обработку
+            if (data.success && data.exists) {
+                saveUserAndRedirect(data);
+            } else if (data.success && !data.exists) {
+                googleUserData = data.user;
+                showGoogleCompleteModal();
+            } else {
+                throw new Error('Неожиданный ответ от сервера');
+            }
+            
+        } catch (error) {
+            console.error('Ошибка обработки Google кода:', error);
+            showError(error.message || 'Ошибка обработки данных Google');
         }
-        
-        if (data.success && data.exists) {
-            saveUserAndRedirect(data);
-        } else if (data.success && !data.exists) {
-            googleUserData = data.user;
-            showGoogleCompleteModal();
-        } else {
-            throw new Error('Неожиданный ответ от сервера');
-        }
-        
-    } catch (error) {
-        console.error('Ошибка обработки Google кода:', error);
-        showError(error.message || 'Ошибка обработки данных Google');
     }
-}
 
     // Проверяем, если пользователь уже авторизован
     function checkExistingAuth() {
@@ -681,7 +837,7 @@ async function handleGoogleAuthorizationCode(code, state) {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    email: email, // Используем email вместо username
+                    email: email,
                     password: password
                 })
             });
@@ -799,7 +955,7 @@ async function handleGoogleAuthorizationCode(code, state) {
                     email: email,
                     password: password,
                     full_name: fullName,
-                    birth_year: birthYear, // Добавляем год рождения
+                    birth_year: birthYear,
                     auth_method: 'email'
                 })
             });
@@ -863,43 +1019,40 @@ async function handleGoogleAuthorizationCode(code, state) {
     }
 
     // Загрузка конфигурации Google с определением типа клиента
-async function loadGoogleConfig() {
-    try {
-        console.log('Загрузка конфигурации Google...');
-        
-        // Определяем тип клиента (веб-сайт или вебвью приложения)
-        const isApp = /(Android|iPhone|iPad|iPod|Mobile)/i.test(navigator.userAgent) && 
-                     /WebView|wv|CriOS|FxiOS/.test(navigator.userAgent);
-        
-        const clientType = isApp ? 'app' : 'web';
-        console.log(`📱 Определен тип клиента: ${clientType} (User-Agent: ${navigator.userAgent})`);
-        
-        const response = await fetch(`${API_BASE}/config/google?clientType=${clientType}`);
-        
-        if (!response.ok) {
-            throw new Error('Ошибка получения конфигурации');
-        }
-        
-        const config = await response.json();
-        
-        if (config.success && config.googleClientId && config.googleClientId !== 'not-configured') {
-            googleClientId = config.googleClientId;
-            console.log(`✅ ${clientType.toUpperCase()} Google Client ID получен:`, googleClientId?.slice(-8));
+    async function loadGoogleConfig() {
+        try {
+            console.log('Загрузка конфигурации Google...');
             
-            // Включаем кнопку Google
-            const googleBtn = document.getElementById('google-auth-btn');
-            googleBtn.disabled = false;
-            googleAuthInitialized = true;
+            const isApp = isInWebView();
+            const clientType = isApp ? 'app' : 'web';
+            console.log(`📱 Определен тип клиента: ${clientType} (User-Agent: ${navigator.userAgent})`);
             
-        } else {
-            console.warn(`Google OAuth не настроен для ${clientType} на сервере`);
+            const response = await fetch(`${API_BASE}/config/google?clientType=${clientType}`);
+            
+            if (!response.ok) {
+                throw new Error('Ошибка получения конфигурации');
+            }
+            
+            const config = await response.json();
+            
+            if (config.success && config.googleClientId && config.googleClientId !== 'not-configured') {
+                googleClientId = config.googleClientId;
+                console.log(`✅ ${clientType.toUpperCase()} Google Client ID получен:`, googleClientId?.slice(-8));
+                
+                // Включаем кнопку Google
+                const googleBtn = document.getElementById('google-auth-btn');
+                googleBtn.disabled = false;
+                googleAuthInitialized = true;
+                
+            } else {
+                console.warn(`Google OAuth не настроен для ${clientType} на сервере`);
+                disableGoogleButton();
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки конфигурации Google:', error);
             disableGoogleButton();
         }
-    } catch (error) {
-        console.error('Ошибка загрузки конфигурации Google:', error);
-        disableGoogleButton();
     }
-}
 
     // Отключение кнопки Google
     function disableGoogleButton() {
@@ -909,55 +1062,38 @@ async function loadGoogleConfig() {
         googleBtn.style.opacity = '0.6';
     }
 
-   // Google OAuth через redirect
-function handleGoogleRedirectAuth() {
-    if (!googleAuthInitialized || !googleClientId) {
-        showError('Google авторизация временно недоступна. Используйте email.');
-        return;
-    }
+    // ОБНОВЛЕННАЯ ФУНКЦИЯ ДЛЯ GOOGLE AUTH
+    function handleGoogleAuth() {
+        if (!googleAuthInitialized || !googleClientId) {
+            showError('Google авторизация временно недоступна. Используйте email.');
+            return;
+        }
 
-    try {
-        // Определяем тип клиента
-        const isApp = /(Android|iPhone|iPad|iPod|Mobile)/i.test(navigator.userAgent) && 
-                     /WebView|wv|CriOS|FxiOS/.test(navigator.userAgent);
-        const clientType = isApp ? 'app' : 'web';
-        
-        console.log(`🔐 Запуск Google OAuth для ${clientType} клиента`);
-        
-        // Создаем уникальный state
-        googleOAuthState = 'google_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9) + '_' + clientType;
-        sessionStorage.setItem('google_oauth_state', googleOAuthState);
-        
-        // ВАЖНО: Используем текущий URL как redirect_uri
-        const currentUrl = window.location.href.split('?')[0]; // Убираем параметры
-        const redirectUri = encodeURIComponent(currentUrl);
-        
-        const scope = encodeURIComponent('email profile openid');
-        const responseType = 'code';
-        
-        // Для веб-приложений используем только email scope
-        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-            `client_id=${googleClientId}` +
-            `&redirect_uri=${redirectUri}` +
-            `&response_type=${responseType}` +
-            `&scope=email%20profile` +
-            `&state=${googleOAuthState}` +
-            `&prompt=select_account` +
-            `&access_type=online`;
-        
-        console.log(`Перенаправляем на Google OAuth:`, {
-            clientType,
-            redirectUri: decodeURIComponent(redirectUri),
-            clientId: googleClientId?.slice(-8)
-        });
-        
-        window.location.href = authUrl;
-        
-    } catch (error) {
-        console.error('Ошибка Google авторизации:', error);
-        showError('Ошибка при запуске Google авторизации: ' + error.message);
+        try {
+            // Определяем, находимся ли мы в WebView
+            const inWebView = isInWebView();
+            
+            // Создаем URL для авторизации
+            const authUrl = createGoogleAuthUrl();
+            
+            console.log(`🔐 Запуск Google OAuth для ${inWebView ? 'WebView (внешний браузер)' : 'веб-сайта'}`);
+            
+            if (inWebView) {
+                // В WebView: просто переходим по URL, WebViewClient в приложении должен перехватить это
+                // и открыть во внешнем браузере
+                console.log('Открываем Google Auth во внешнем браузере через direct navigation');
+                window.location.href = authUrl;
+            } else {
+                // В обычном браузере: стандартный редирект
+                console.log('Открываем Google Auth в текущем окне');
+                window.location.href = authUrl;
+            }
+            
+        } catch (error) {
+            console.error('Ошибка Google авторизации:', error);
+            showError('Ошибка при запуске Google авторизации: ' + error.message);
+        }
     }
-}
 
     // Сохранить пользователя и перенаправить
     async function saveUserAndRedirect(data) {
@@ -1048,7 +1184,7 @@ function handleGoogleRedirectAuth() {
                     email: googleUserData.email,
                     full_name: googleUserData.full_name,
                     username: username,
-                    birth_year: birthYear, // Добавляем год рождения
+                    birth_year: birthYear,
                     avatar_url: googleUserData.avatar_url || '',
                     auth_method: 'google'
                 })
@@ -1140,6 +1276,10 @@ function handleGoogleRedirectAuth() {
 
     // Инициализация
     document.addEventListener('DOMContentLoaded', function() {
+        console.log('Инициализация страницы...');
+        console.log('User-Agent:', navigator.userAgent);
+        console.log('В WebView?', isInWebView());
+        
         // Проверяем OAuth callback (это должно быть ПЕРВОЙ операцией)
         checkForOAuthCallback();
         
@@ -1154,8 +1294,8 @@ function handleGoogleRedirectAuth() {
         document.getElementById('register-form').addEventListener('submit', handleRegister);
         document.getElementById('google-complete-form').addEventListener('submit', handleGoogleComplete);
         
-        // Обработчик кнопки Google
-        document.getElementById('google-auth-btn').addEventListener('click', handleGoogleRedirectAuth);
+        // Обработчик кнопки Google - ИСПРАВЛЕНО: используем новую функцию
+        document.getElementById('google-auth-btn').addEventListener('click', handleGoogleAuth);
         
         // Автозаполнение года рождения
         const currentYear = new Date().getFullYear();
