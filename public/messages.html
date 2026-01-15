@@ -1149,10 +1149,9 @@ async function setupAutoReplyForChat() {
         const hasAutoReply = await checkForExistingAutoReply();
         
         if (!hasAutoReply) {
-            // Устанавливаем таймер на 5 минут для отправки автоответа
             const timerId = setTimeout(async () => {
                 await sendAutoReply();
-            }, 300000); // 5 минут = 300000 мс
+            }, 60000); 
             
             autoReplyTimers.set(currentChatId, timerId);
             console.log(`Автоответ установлен для чата ${currentChatId} через 5 минут`);
