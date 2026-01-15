@@ -869,6 +869,7 @@ let currentReceiverId = null;
 let currentUserId = null;
 let pendingMessages = new Map(); // Map for tracking pending messages
 let messageCount = 0; // Counter for unique message IDs
+let autoReplyTimers = new Map(); // Для управления таймерами автоответов
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
@@ -951,6 +952,12 @@ function setupEventListeners() {
     
     // New messages indicator
     document.getElementById('new-messages-indicator').addEventListener('click', scrollToBottom);
+    
+    // Setup scroll listener for messages
+    const messagesContainer = document.getElementById('messages-container');
+    if (messagesContainer) {
+        messagesContainer.addEventListener('scroll', checkScrollPosition);
+    }
 }
 
 // Load chats
@@ -1121,6 +1128,60 @@ async function openChat(chat) {
     // Clear URL parameters
     if (window.history.replaceState) {
         window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    // Проверяем и устанавливаем автоответчик для чатов с продавцами
+    if (currentChatId && currentChatId !== 'support') {
+        setupAutoReplyForChat();
+    }
+}
+
+// Setup auto-reply for current chat
+async function setupAutoReplyForChat() {
+    // Очищаем старый таймер, если есть
+    if (autoReplyTimers.has(currentChatId)) {
+        clearTimeout(autoReplyTimers.get(currentChatId));
+        autoReplyTimers.delete(currentChatId);
+    }
+    
+    try {
+        // Проверяем, есть ли уже автоответ в истории сообщений
+        const hasAutoReply = await checkForExistingAutoReply();
+        
+        if (!hasAutoReply) {
+            // Устанавливаем таймер на 5 минут для отправки автоответа
+            const timerId = setTimeout(async () => {
+                await sendAutoReply();
+            }, 300000); // 5 минут = 300000 мс
+            
+            autoReplyTimers.set(currentChatId, timerId);
+            console.log(`Автоответ установлен для чата ${currentChatId} через 5 минут`);
+        }
+    } catch (error) {
+        console.error('Error setting up auto-reply:', error);
+    }
+}
+
+// Check if auto-reply already exists in chat history
+async function checkForExistingAutoReply() {
+    try {
+        const container = document.getElementById('messages-container');
+        const messages = container.querySelectorAll('.message.incoming .message-content');
+        
+        for (let msg of messages) {
+            const content = msg.textContent || '';
+            // Проверяем содержание на наличие ключевых фраз автоответа
+            if (content.includes('ZEEPTOOK') || 
+                content.includes('верификаци') || 
+                content.includes('регламент') ||
+                content.includes('Приветствуем игрок')) {
+                return true;
+            }
+        }
+        return false;
+    } catch (error) {
+        console.error('Error checking for auto-reply:', error);
+        return false;
     }
 }
 
@@ -1335,11 +1396,14 @@ async function sendMessage() {
         // Update chat list
         loadChats(false);
         
-        // Auto-reply for non-support chats after 3 minutes
+        // Если это чат с продавцом (не поддержка), проверяем автоответ
         if (currentChatId !== 'support') {
-            setTimeout(async () => {
-                await sendAutoReply();
-            }, 180000);
+            // Проверяем, есть ли уже автоответ
+            const hasAutoReply = await checkForExistingAutoReply();
+            if (!hasAutoReply) {
+                // Если автоответа еще нет, устанавливаем таймер
+                setupAutoReplyForChat();
+            }
         }
         
     } catch (error) {
@@ -1357,6 +1421,72 @@ async function sendMessage() {
         }
         
         showNotification('Ошибка отправки сообщения', 'error');
+    }
+}
+
+// Auto-reply function - ТОЛЬКО для чатов с продавцами, НЕ для поддержки
+async function sendAutoReply() {
+    // Проверяем условия для отправки автоответа
+    if (!currentChatId || currentChatId === 'support') {
+        console.log('Автоответ не отправлен: чат поддержки или нет активного чата');
+        return;
+    }
+    
+    try {
+        // Проверяем еще раз, нет ли уже автоответа в истории
+        const hasAutoReply = await checkForExistingAutoReply();
+        if (hasAutoReply) {
+            console.log('Автоответ уже существует в этом чате');
+            return;
+        }
+        
+        const autoReplyMessage = "Приветствуем игрок! Сообщаем, что ваше обращение в ZEEPTOOK успешно прошло первичную верификацию и интегрировано в систему обработки запросов. В данный момент мы проводим детальный анализ предоставленных вами данных. Благодарим за ваше терпение и понимание внутренних регламентов.";
+        
+        console.log('Отправка автоответа в чат:', currentChatId);
+        
+        // Показываем индикатор набора сообщения
+        showTypingIndicator();
+        
+        // Задержка для имитации набора текста (2 секунды для демо)
+        setTimeout(async () => {
+            hideTypingIndicator();
+            
+            // Отправляем автоответ
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${API_BASE}/messages`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    chat_id: currentChatId,
+                    content: autoReplyMessage,
+                    receiver_id: currentReceiverId
+                })
+            });
+            
+            if (response.ok) {
+                console.log('Автоответ успешно отправлен');
+                // Перезагружаем сообщения
+                await loadMessages(currentChatId);
+                scrollToBottom();
+                // Обновляем список чатов
+                loadChats(false);
+                
+                // Удаляем таймер из мапы
+                autoReplyTimers.delete(currentChatId);
+            } else {
+                console.error('Ошибка при отправке автоответа:', response.status);
+            }
+        }, 2000); // 2 секунды для демо (вместо 5 минут)
+        
+    } catch (error) {
+        console.error('Auto-reply error:', error);
+        hideTypingIndicator();
+        
+        // Удаляем таймер при ошибке
+        autoReplyTimers.delete(currentChatId);
     }
 }
 
@@ -1397,49 +1527,6 @@ function updateMessageStatus(tempId, status, newId = null) {
     // Update data attribute if new ID provided
     if (newId) {
         messageElement.dataset.messageId = newId;
-    }
-}
-
-// Auto-reply function
-async function sendAutoReply() {
-    if (!currentChatId || currentChatId === 'support') return;
-    
-    try {
-        const autoReplyMessage = "Приветствуем игрок! Сообщаем, что ваше обращение в ZEEPTOOK успешно прошло первичную верификацию и интегрировано в систему обработки запросов. В данный момент мы проводим детальный анализ предоставленных вами данных. Благодарим за ваше терпение и понимание внутренних регламентов.";
-        
-        // Show typing indicator
-        showTypingIndicator();
-        
-        // Simulate typing delay
-        setTimeout(async () => {
-            hideTypingIndicator();
-            
-            // Send auto-reply
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${API_BASE}/messages`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    chat_id: currentChatId,
-                    content: autoReplyMessage,
-                    receiver_id: currentReceiverId
-                })
-            });
-            
-            if (response.ok) {
-                // Reload messages
-                await loadMessages(currentChatId);
-                scrollToBottom();
-                loadChats(false);
-            }
-        }, 2000);
-        
-    } catch (error) {
-        console.error('Auto-reply error:', error);
-        hideTypingIndicator();
     }
 }
 
@@ -1607,12 +1694,6 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
-
-// Setup scroll listener for messages
-const messagesContainer = document.getElementById('messages-container');
-if (messagesContainer) {
-    messagesContainer.addEventListener('scroll', checkScrollPosition);
-}
-    </script>
+</script>
 </body>
 </html>
