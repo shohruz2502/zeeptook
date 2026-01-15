@@ -1151,10 +1151,10 @@ async function setupAutoReplyForChat() {
         if (!hasAutoReply) {
             const timerId = setTimeout(async () => {
                 await sendAutoReply();
-            }, 60000); 
+            }, 5000); 
             
             autoReplyTimers.set(currentChatId, timerId);
-            console.log(`Автоответ установлен для чата ${currentChatId} через 5 минут`);
+            console.log(`Автоответ установлен для чата ${currentChatId} через 1 минут`);
         }
     } catch (error) {
         console.error('Error setting up auto-reply:', error);
