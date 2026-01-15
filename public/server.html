@@ -1178,7 +1178,7 @@
         </div>
 
         <!-- Окно поиска рандом собеседника -->
-        <div class="random-search-screen" id="randomSearchScreen">
+        <div class="random-search-screen hidden" id="randomSearchScreen">
             <div class="searching-animation">
                 <div class="search-spinner"></div>
                 <h2 class="searching-title">Поиск собеседника...</h2>
@@ -1352,7 +1352,10 @@
     <script>
     // Глобальные переменные
     const API_BASE = '/api';
-    const STORAGE_KEY = `zeeptook_random_attempts_${serverId}`;
+    
+    // Получаем ID сервера из URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const serverId = urlParams.get('id');
     
     let currentServer = null;
     let currentUser = null;
@@ -1372,10 +1375,9 @@
         date: null,
         usedToday: 0
     };
-
-    // Получаем ID сервера из URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const serverId = urlParams.get('id');
+    
+    // Ключ для localStorage
+    let STORAGE_KEY = null;
 
     // Проверка авторизации
     const token = localStorage.getItem('token');
@@ -1385,6 +1387,11 @@
 
     if (!serverId) {
         window.location.href = '/server-page.html';
+    }
+
+    // Инициализация ключа хранилища
+    if (serverId) {
+        STORAGE_KEY = `zeeptook_random_attempts_${serverId}`;
     }
 
     // Назад к списку серверов
@@ -1624,6 +1631,10 @@
     // Загрузка попыток рандом чата
     function loadRandomAttempts() {
         try {
+            if (!STORAGE_KEY) {
+                STORAGE_KEY = `zeeptook_random_attempts_${serverId}`;
+            }
+            
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 const data = JSON.parse(saved);
@@ -1664,6 +1675,9 @@
     // Сохранение попыток
     function saveRandomAttempts() {
         try {
+            if (!STORAGE_KEY) {
+                STORAGE_KEY = `zeeptook_random_attempts_${serverId}`;
+            }
             localStorage.setItem(STORAGE_KEY, JSON.stringify(dailyAttempts));
         } catch (error) {
             console.error('❌ Ошибка сохранения попыток:', error);
@@ -2556,4 +2570,3 @@
 </script>
 </body>
 </html>
-
