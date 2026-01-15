@@ -700,7 +700,7 @@ app.post('/api/auth/google/token', async (req, res) => {
     }
 });
 
-// Завершение регистрации через Google
+// Завершение регистрации через Google с паролем
 app.post('/api/auth/google/complete', async (req, res) => {
     try {
         console.log('🔐 Google complete registration REQUEST BODY:', JSON.stringify(req.body, null, 2));
@@ -716,50 +716,98 @@ app.post('/api/auth/google/complete', async (req, res) => {
             auth_method = 'google' 
         } = req.body;
 
-        console.log('🔐 Parsed data:', { 
+        console.log('🔐 Parsed Google complete data:', { 
             google_id, email, full_name, username, 
             password_len: password ? password.length : 0, 
             birth_year, 
             auth_method 
         });
 
-        // Валидация
+        // Валидация обязательных полей
         if (!google_id || !email || !full_name || !username || !password || !birth_year) {
             console.error('❌ Missing fields:', { google_id, email, full_name, username, password: !!password, birth_year });
-            return res.status(400).json({ error: 'Все обязательные поля должны быть заполнены' });
+            return res.status(400).json({ 
+                success: false,
+                error: 'Все обязательные поля должны быть заполнены' 
+            });
         }
 
+        // Валидация username
+        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Имя пользователя может содержать только буквы, цифры и подчеркивания' 
+            });
+        }
+
+        // Валидация пароля
         if (password.length < 6) {
-            return res.status(400).json({ error: 'Пароль должен быть не менее 6 символов' });
+            return res.status(400).json({ 
+                success: false,
+                error: 'Пароль должен быть не менее 6 символов' 
+            });
         }
 
+        // Валидация года рождения
         const currentYear = new Date().getFullYear();
         if (birth_year < 1900 || birth_year > currentYear) {
-            return res.status(400).json({ error: 'Укажите корректный год рождения (1900-' + currentYear + ')' });
+            return res.status(400).json({ 
+                success: false,
+                error: 'Укажите корректный год рождения (1900-' + currentYear + ')' 
+            });
         }
 
         // Проверка существования пользователя
         const userExists = await pool.query(
-            'SELECT id FROM users WHERE google_id = $1 OR email = $2 OR username = $3',
+            'SELECT id, email, username, auth_method FROM users WHERE google_id = $1 OR email = $2 OR username = $3',
             [google_id, email, username]
         );
 
         if (userExists.rows.length > 0) {
-            return res.status(400).json({ error: 'Пользователь уже существует' });
+            const existing = userExists.rows[0];
+            
+            if (existing.google_id === google_id) {
+                return res.status(400).json({ 
+                    success: false,
+                    error: 'Google аккаунт уже зарегистрирован' 
+                });
+            }
+            
+            if (existing.email === email) {
+                if (existing.auth_method === 'email') {
+                    return res.status(400).json({ 
+                        success: false,
+                        error: 'Email уже используется для обычной регистрации. Войдите через email или используйте другой email' 
+                    });
+                } else if (existing.auth_method === 'google') {
+                    return res.status(400).json({ 
+                        success: false,
+                        error: 'Email уже используется для другого Google аккаунта' 
+                    });
+                }
+            }
+            
+            if (existing.username === username) {
+                return res.status(400).json({ 
+                    success: false,
+                    error: 'Имя пользователя уже занято' 
+                });
+            }
         }
 
         // Хеширование пароля
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Создание пользователя
-        console.log('🔐 Creating user with birth_year:', birth_year);
+        // Создание пользователя Google с паролем
+        console.log('🔐 Creating Google user with birth_year:', birth_year);
         const result = await pool.query(
             `INSERT INTO users (
                 username, email, password, full_name, 
                 avatar_url, google_id, auth_method, birth_year
             ) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-             RETURNING id, username, email, full_name, avatar_url, rating, created_at, birth_year`,
+             RETURNING id, username, email, full_name, avatar_url, 
+                      rating, birth_year, auth_method, created_at`,
             [username, email, hashedPassword, full_name, 
              avatar_url || null, google_id, auth_method, birth_year]
         );
@@ -767,13 +815,17 @@ app.post('/api/auth/google/complete', async (req, res) => {
         const user = result.rows[0];
         
         // Генерация токена
-        const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET);
+        const token = jwt.sign({ 
+            userId: user.id, 
+            email: user.email,
+            username: user.username 
+        }, JWT_SECRET, { expiresIn: '7d' });
 
-        console.log('✅ Google user registered successfully:', user.email);
+        console.log('✅ Google user registered successfully with password:', user.email);
 
         res.json({
             success: true,
-            message: 'Регистрация завершена успешно',
+            message: 'Регистрация через Google завершена успешно',
             token,
             user: {
                 id: user.id,
@@ -783,6 +835,7 @@ app.post('/api/auth/google/complete', async (req, res) => {
                 avatar_url: user.avatar_url,
                 rating: user.rating,
                 birth_year: user.birth_year,
+                auth_method: user.auth_method,
                 created_at: user.created_at
             }
         });
@@ -790,92 +843,131 @@ app.post('/api/auth/google/complete', async (req, res) => {
     } catch (error) {
         console.error('❌ Google complete registration error DETAILS:', error);
         console.error('❌ Error stack:', error.stack);
-        res.status(500).json({ error: 'Internal server error: ' + error.message });
+        
+        // Обработка ошибок уникальности
+        if (error.code === '23505') { // unique_violation
+            if (error.constraint === 'users_google_id_key') {
+                return res.status(400).json({ 
+                    success: false,
+                    error: 'Google аккаунт уже зарегистрирован' 
+                });
+            }
+            if (error.constraint === 'users_email_key') {
+                return res.status(400).json({ 
+                    success: false,
+                    error: 'Email уже зарегистрирован' 
+                });
+            }
+            if (error.constraint === 'users_username_key') {
+                return res.status(400).json({ 
+                    success: false,
+                    error: 'Имя пользователя уже занято' 
+                });
+            }
+        }
+        
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка сервера при завершении регистрации через Google' 
+        });
     }
 });
 
 
-// Auth routes
+// Auth routes - Email регистрация
 app.post('/api/register', async (req, res) => {
     try {
         const { 
             username, email, password, full_name, 
-            birth_year,  // ← ДОБАВЛЕНО
-            avatar_url, google_id, auth_method = 'email',
+            birth_year, avatar_url, auth_method = 'email'
         } = req.body;
 
-        console.log('🔐 Registration attempt:', { username, email, auth_method });
+        console.log('🔐 Email Registration attempt:', { username, email, auth_method });
 
-        // For Google auth, username is optional
-        if (auth_method === 'email' && (!username || !password)) {
-            return res.status(400).json({ error: 'Username and password are required for email registration' });
-        }
-
-        if (!email || !full_name) {
-            return res.status(400).json({ error: 'Email and full name are required' });
-        }
-
-        // Валидация года рождения для email регистрации
-        if (auth_method === 'email' && !birth_year) {
-            return res.status(400).json({ error: 'Year of birth is required for email registration' });
-        }
-
-        if (birth_year) {
-            const currentYear = new Date().getFullYear();
-            if (birth_year < 1900 || birth_year > currentYear) {
-                return res.status(400).json({ error: 'Укажите корректный год рождения' });
+        // Валидация для email регистрации
+        if (auth_method === 'email') {
+            if (!username || !password) {
+                return res.status(400).json({ error: 'Имя пользователя и пароль обязательны' });
+            }
+            
+            if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+                return res.status(400).json({ error: 'Имя пользователя может содержать только буквы, цифры и подчеркивания' });
+            }
+            
+            if (password.length < 6) {
+                return res.status(400).json({ error: 'Пароль должен быть не менее 6 символов' });
             }
         }
 
-        // Check if user exists
-        let userExists;
-        if (google_id) {
-            userExists = await pool.query(
-                'SELECT id FROM users WHERE google_id = $1 OR email = $2 OR username = $3',
-                [google_id, email, username]
-            );
-        } else {
-            userExists = await pool.query(
-                'SELECT id FROM users WHERE username = $1 OR email = $2',
-                [username, email]
-            );
+        if (!email || !full_name || !birth_year) {
+            return res.status(400).json({ error: 'Email, полное имя и год рождения обязательны' });
         }
+
+        // Валидация email
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ error: 'Введите корректный email' });
+        }
+
+        // Валидация года рождения
+        const currentYear = new Date().getFullYear();
+        if (birth_year < 1900 || birth_year > currentYear) {
+            return res.status(400).json({ error: 'Укажите корректный год рождения (1900-' + currentYear + ')' });
+        }
+
+        // Проверка существования пользователя
+        let userExists;
+        userExists = await pool.query(
+            'SELECT id, email, username FROM users WHERE email = $1 OR username = $2',
+            [email, username]
+        );
 
         if (userExists.rows.length > 0) {
-            return res.status(400).json({ error: 'User already exists' });
+            const existing = userExists.rows[0];
+            if (existing.email === email) {
+                return res.status(400).json({ 
+                    error: existing.auth_method === 'google' 
+                        ? 'Email уже используется для Google аккаунта. Войдите через Google или используйте другой email' 
+                        : 'Email уже зарегистрирован' 
+                });
+            }
+            if (existing.username === username) {
+                return res.status(400).json({ error: 'Имя пользователя уже занято' });
+            }
         }
 
-        // For Google auth, generate random username if not provided
-        let actualUsername = username;
-        if (auth_method === 'google' && !username) {
-            actualUsername = 'user_' + Math.random().toString(36).substr(2, 9);
-        }
-
-        // Hash password for email registration
+        // Хешируем пароль для email регистрации
         let hashedPassword = null;
         if (auth_method === 'email') {
             hashedPassword = await bcrypt.hash(password, 10);
         }
 
-        // Create user
+        // Создаем пользователя
+        console.log('🔐 Creating email user with birth_year:', birth_year);
         const result = await pool.query(
             `INSERT INTO users (
                 username, email, password, full_name, 
-                avatar_url, google_id, auth_method, birth_year  // ← ДОБАВЛЕНО В SQL
+                avatar_url, auth_method, birth_year
             ) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)  // ← ДОБАВЛЕН $8
-             RETURNING id, username, email, full_name, avatar_url, rating, created_at, birth_year`,
-            [actualUsername, email, hashedPassword, full_name, 
-             avatar_url, google_id, auth_method, birth_year]  // ← ДОБАВЛЕНО В ПАРАМЕТРЫ
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             RETURNING id, username, email, full_name, avatar_url, rating, 
+                      birth_year, auth_method, created_at`,
+            [username, email, hashedPassword, full_name, 
+             avatar_url || null, auth_method, birth_year]
         );
 
         const user = result.rows[0];
-        const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET);
+        const token = jwt.sign({ 
+            userId: user.id, 
+            email: user.email,
+            username: user.username 
+        }, JWT_SECRET, { expiresIn: '7d' });
 
-        console.log('✅ User registered successfully:', user.email);
+        console.log('✅ Email user registered successfully:', user.email);
 
         res.json({
-            message: 'User registered successfully',
+            success: true,
+            message: 'Регистрация успешна',
             token,
             user: {
                 id: user.id,
@@ -884,56 +976,110 @@ app.post('/api/register', async (req, res) => {
                 full_name: user.full_name,
                 avatar_url: user.avatar_url,
                 rating: user.rating,
-                birth_year: user.birth_year,  // ← ДОБАВЛЕНО
+                birth_year: user.birth_year,
+                auth_method: user.auth_method,
                 created_at: user.created_at
             }
         });
 
     } catch (error) {
         console.error('❌ Registration error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('❌ Error stack:', error.stack);
+        
+        // Обработка ошибок уникальности от PostgreSQL
+        if (error.code === '23505') { // unique_violation
+            if (error.constraint === 'users_username_key') {
+                return res.status(400).json({ error: 'Имя пользователя уже занято' });
+            }
+            if (error.constraint === 'users_email_key') {
+                return res.status(400).json({ error: 'Email уже зарегистрирован' });
+            }
+        }
+        
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка сервера при регистрации' 
+        });
     }
 });
 
+// Вход через email/пароль (работает для email и Google пользователей с паролем)
 app.post('/api/login', async (req, res) => {
     try {
-        const { username, password } = req.body;
+        const { email, password } = req.body;
 
-        // Validation
-        if (!username || !password) {
-            return res.status(400).json({ error: 'Username and password are required' });
+        console.log('🔐 Login attempt for email:', email);
+
+        // Валидация
+        if (!email || !password) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Email и пароль обязательны' 
+            });
         }
 
-        // Find user
+        // Найти пользователя по email
         const result = await pool.query(
-            'SELECT * FROM users WHERE username = $1 OR email = $1',
-            [username]
+            'SELECT * FROM users WHERE email = $1 AND is_active = true',
+            [email]
         );
 
         if (result.rows.length === 0) {
-            return res.status(400).json({ error: 'Invalid credentials' });
+            console.log('❌ User not found:', email);
+            return res.status(401).json({ 
+                success: false,
+                error: 'Неверный email или пароль' 
+            });
         }
 
         const user = result.rows[0];
+        
+        console.log('🔐 Found user:', { 
+            email: user.email, 
+            auth_method: user.auth_method, 
+            has_password: !!user.password 
+        });
 
-        // Check if user has password (Google users might not have password)
+        // Проверяем, есть ли у пользователя пароль
         if (!user.password) {
-            return res.status(400).json({ error: 'Please use Google sign-in for this account' });
+            if (user.auth_method === 'google') {
+                return res.status(401).json({ 
+                    success: false,
+                    error: 'Этот аккаунт зарегистрирован через Google. Для входа через email установите пароль в настройках профиля' 
+                });
+            } else {
+                return res.status(401).json({ 
+                    success: false,
+                    error: 'У этого аккаунта нет пароля. Обратитесь в поддержку' 
+                });
+            }
         }
 
-        // Check password
+        // Проверяем пароль
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
-            return res.status(400).json({ error: 'Invalid credentials' });
+            console.log('❌ Invalid password for user:', email);
+            return res.status(401).json({ 
+                success: false,
+                error: 'Неверный email или пароль' 
+            });
         }
 
-        // Generate token
-        const token = jwt.sign({ userId: user.id, username: user.username }, JWT_SECRET);
+        // Генерируем токен
+        const token = jwt.sign({ 
+            userId: user.id, 
+            email: user.email,
+            username: user.username 
+        }, JWT_SECRET, { expiresIn: '7d' });
 
-        console.log('✅ User logged in:', user.email);
+        console.log('✅ User logged in successfully:', user.email);
+
+        // Убираем пароль из ответа
+        const { password: _, ...userWithoutPassword } = user;
 
         res.json({
-            message: 'Login successful',
+            success: true,
+            message: 'Вход выполнен успешно',
             token,
             user: {
                 id: user.id,
@@ -942,12 +1088,18 @@ app.post('/api/login', async (req, res) => {
                 full_name: user.full_name,
                 avatar_url: user.avatar_url,
                 rating: user.rating,
-                birth_year: user.birth_year
+                birth_year: user.birth_year,
+                auth_method: user.auth_method,
+                created_at: user.created_at
             }
         });
     } catch (error) {
         console.error('❌ Login error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        console.error('❌ Error stack:', error.stack);
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка сервера при входе в систему' 
+        });
     }
 });
 
