@@ -3248,110 +3248,210 @@ if (wss) {
 
 
 
-// ====================== АДМИН ENDPOINTS ======================
+// ====================== УПРОЩЕННЫЕ АДМИН ENDPOINTS ======================
 
-// Middleware для проверки админ прав
-const isAdmin = (req, res, next) => {
+// Middleware для упрощенной проверки админ прав
+const checkAdminSimple = (req, res, next) => {
     try {
-        const token = req.headers.authorization?.split(' ')[1];
-        if (!token) {
-            return res.status(401).json({ error: 'Требуется авторизация' });
+        const adminToken = req.headers.authorization?.split(' ')[1];
+        
+        // Простая проверка - если есть токен и он валидный
+        if (!adminToken) {
+            return res.status(401).json({ 
+                success: false, 
+                error: 'Требуется токен администратора' 
+            });
         }
 
-        const decoded = jwt.verify(token, JWT_SECRET);
-        req.userId = decoded.userId;
-
-        // Проверяем, является ли пользователь админом
-        pool.query('SELECT role FROM users WHERE id = $1', [decoded.userId])
-            .then(result => {
-                if (result.rows[0]?.role === 'admin') {
-                    next();
-                } else {
-                    res.status(403).json({ error: 'Требуются права администратора' });
-                }
-            })
-            .catch(err => {
-                console.error('Admin check error:', err);
-                res.status(500).json({ error: 'Ошибка проверки прав' });
+        try {
+            const decoded = jwt.verify(adminToken, JWT_SECRET);
+            req.userId = decoded.userId;
+            
+            // Просто проверяем, что пользователь есть в БД и он активен
+            pool.query(
+                'SELECT id, role, is_active FROM users WHERE id = $1 AND is_active = true',
+                [decoded.userId]
+            )
+                .then(result => {
+                    if (result.rows.length > 0) {
+                        // Для упрощения - разрешаем доступ любому активному пользователю
+                        // ИЛИ можно проверять по email (только ваш email)
+                        const user = result.rows[0];
+                        const adminEmails = ['ваш_email@gmail.com']; // Добавьте ваш email
+                        
+                        // Проверка по email или по роли
+                        if (user.role === 'admin' || adminEmails.includes(decoded.email)) {
+                            next();
+                        } else {
+                            res.status(403).json({ 
+                                success: false,
+                                error: 'Доступ запрещен' 
+                            });
+                        }
+                    } else {
+                        res.status(401).json({ 
+                            success: false,
+                            error: 'Пользователь не найден или неактивен' 
+                        });
+                    }
+                })
+                .catch(err => {
+                    console.error('Admin check error:', err);
+                    res.status(500).json({ 
+                        success: false,
+                        error: 'Ошибка проверки доступа' 
+                    });
+                });
+        } catch (jwtError) {
+            res.status(401).json({ 
+                success: false,
+                error: 'Недействительный токен' 
             });
+        }
     } catch (error) {
-        res.status(401).json({ error: 'Недействительный токен' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка сервера' 
+        });
     }
 };
 
-// Получить всех пользователей (только для админа)
-app.get('/api/admin/users', isAdmin, async (req, res) => {
+// Альтернативный endpoint для быстрого получения админ-статуса
+app.get('/api/admin/check-access', async (req, res) => {
     try {
+        const token = req.headers.authorization?.split(' ')[1];
+        
+        if (!token) {
+            return res.json({ 
+                success: false,
+                isAdmin: false,
+                message: 'Токен не предоставлен' 
+            });
+        }
+
+        const decoded = jwt.verify(token, JWT_SECRET);
+        
         const result = await pool.query(
-            `SELECT 
-                id, username, email, full_name, avatar_url, 
-                google_id, rating, created_at, updated_at,
-                role, is_active, birth_year, auth_method
-             FROM users 
-             ORDER BY created_at DESC`
+            'SELECT id, email, role, full_name FROM users WHERE id = $1',
+            [decoded.userId]
         );
 
-        // Маскируем пароли для безопасности
-        const users = result.rows.map(user => ({
-            ...user,
-            password: user.password ? '••••••••' : null,
-            has_password: !!user.password
-        }));
+        if (result.rows.length === 0) {
+            return res.json({ 
+                success: false,
+                isAdmin: false,
+                message: 'Пользователь не найден' 
+            });
+        }
+
+        const user = result.rows[0];
+        const isAdmin = user.role === 'admin' || user.email === 'ваш_email@gmail.com';
 
         res.json({
             success: true,
-            users,
-            count: users.length
+            isAdmin,
+            user: {
+                id: user.id,
+                email: user.email,
+                full_name: user.full_name,
+                role: user.role
+            }
         });
+
     } catch (error) {
-        console.error('❌ Get users error:', error);
-        res.status(500).json({ error: 'Ошибка получения пользователей' });
+        console.error('Admin check access error:', error);
+        res.json({ 
+            success: false,
+            isAdmin: false,
+            message: 'Ошибка проверки доступа' 
+        });
     }
 });
 
-// Получить конкретного пользователя по ID
-app.get('/api/admin/users/:id', isAdmin, async (req, res) => {
+// Получить всех пользователей
+app.get('/api/admin/users', checkAdminSimple, async (req, res) => {
     try {
-        const { id } = req.params;
+        console.log('🔐 Admin fetching all users');
         
         const result = await pool.query(
             `SELECT 
                 id, username, email, full_name, avatar_url, 
                 google_id, rating, created_at, updated_at,
-                role, is_active, birth_year, auth_method
+                role, is_active, birth_year, auth_method,
+                CASE WHEN password IS NOT NULL THEN '••••••••' ELSE NULL END as password_display,
+                password IS NOT NULL as has_password
+             FROM users 
+             ORDER BY created_at DESC`
+        );
+
+        res.json({
+            success: true,
+            users: result.rows,
+            count: result.rows.length,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('❌ Get users error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка получения пользователей' 
+        });
+    }
+});
+
+// Получить конкретного пользователя по ID
+app.get('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        console.log(`🔐 Admin fetching user ID: ${id}`);
+        
+        const result = await pool.query(
+            `SELECT 
+                id, username, email, full_name, avatar_url, 
+                google_id, rating, created_at, updated_at,
+                role, is_active, birth_year, auth_method,
+                CASE WHEN password IS NOT NULL THEN '••••••••' ELSE NULL END as password_display,
+                password IS NOT NULL as has_password
              FROM users 
              WHERE id = $1`,
             [id]
         );
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Пользователь не найден' });
+            return res.status(404).json({ 
+                success: false,
+                error: 'Пользователь не найден' 
+            });
         }
-
-        const user = result.rows[0];
-        user.password = user.password ? '••••••••' : null;
-        user.has_password = !!user.password;
 
         res.json({
             success: true,
-            user
+            user: result.rows[0]
         });
     } catch (error) {
         console.error('❌ Get user error:', error);
-        res.status(500).json({ error: 'Ошибка получения пользователя' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка получения пользователя' 
+        });
     }
 });
 
 // Обновить данные пользователя
-app.put('/api/admin/users/:id', isAdmin, async (req, res) => {
+app.put('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
     try {
         const { id } = req.params;
         const {
             username, email, full_name, birth_year,
-            role, is_active, password, reset_password
+            role, is_active, password
         } = req.body;
 
-        console.log('🔐 Admin update user:', { id, username, email, reset_password });
+        console.log('🔐 Admin update user:', { 
+            id, 
+            username: username?.substring(0, 20), 
+            email: email?.substring(0, 30) 
+        });
 
         // Проверяем существование пользователя
         const userExists = await pool.query(
@@ -3360,28 +3460,10 @@ app.put('/api/admin/users/:id', isAdmin, async (req, res) => {
         );
 
         if (userExists.rows.length === 0) {
-            return res.status(404).json({ error: 'Пользователь не найден' });
-        }
-
-        // Проверка уникальности email и username для других пользователей
-        if (email) {
-            const emailExists = await pool.query(
-                'SELECT id FROM users WHERE email = $1 AND id != $2',
-                [email, id]
-            );
-            if (emailExists.rows.length > 0) {
-                return res.status(400).json({ error: 'Email уже используется другим пользователем' });
-            }
-        }
-
-        if (username) {
-            const usernameExists = await pool.query(
-                'SELECT id FROM users WHERE username = $1 AND id != $2',
-                [username, id]
-            );
-            if (usernameExists.rows.length > 0) {
-                return res.status(400).json({ error: 'Имя пользователя уже занято' });
-            }
+            return res.status(404).json({ 
+                success: false,
+                error: 'Пользователь не найден' 
+            });
         }
 
         // Формируем запрос на обновление
@@ -3426,24 +3508,24 @@ app.put('/api/admin/users/:id', isAdmin, async (req, res) => {
         }
 
         // Обработка пароля
-        if (password && password.trim() !== '') {
+        if (password && password.trim() !== '' && password !== '••••••••') {
             const hashedPassword = await bcrypt.hash(password, 10);
             updateFields.push(`password = $${valueIndex}`);
             updateValues.push(hashedPassword);
             valueIndex++;
-        } else if (reset_password === true) {
-            // Сброс пароля (установка в NULL)
-            updateFields.push(`password = $${valueIndex}`);
-            updateValues.push(null);
-            valueIndex++;
+            console.log('🔐 Password will be updated');
+        }
+
+        // Если нет изменений
+        if (updateFields.length === 0) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Нет данных для обновления' 
+            });
         }
 
         // Добавляем updated_at
         updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
-
-        if (updateFields.length === 0) {
-            return res.status(400).json({ error: 'Нет данных для обновления' });
-        }
 
         // Добавляем ID в конец значений
         updateValues.push(id);
@@ -3472,37 +3554,51 @@ app.put('/api/admin/users/:id', isAdmin, async (req, res) => {
         
         if (error.code === '23505') { // unique_violation
             if (error.constraint === 'users_email_key') {
-                return res.status(400).json({ error: 'Email уже используется' });
+                return res.status(400).json({ 
+                    success: false,
+                    error: 'Email уже используется' 
+                });
             }
             if (error.constraint === 'users_username_key') {
-                return res.status(400).json({ error: 'Имя пользователя уже занято' });
+                return res.status(400).json({ 
+                    success: false,
+                    error: 'Имя пользователя уже занято' 
+                });
             }
         }
         
-        res.status(500).json({ error: 'Ошибка обновления пользователя' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка обновления пользователя' 
+        });
     }
 });
 
 // Удалить пользователя
-app.delete('/api/admin/users/:id', isAdmin, async (req, res) => {
+app.delete('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Проверяем, не пытаемся ли удалить себя
-        const token = req.headers.authorization?.split(' ')[1];
-        const decoded = jwt.verify(token, JWT_SECRET);
-        
-        if (parseInt(id) === decoded.userId) {
-            return res.status(400).json({ error: 'Нельзя удалить свой аккаунт' });
+        console.log(`🔐 Admin deleting user ID: ${id}`);
+
+        // Не даем удалить пользователя с ID 1 (главный админ)
+        if (parseInt(id) === 1) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Нельзя удалить главного администратора' 
+            });
         }
 
         const result = await pool.query(
-            'DELETE FROM users WHERE id = $1 RETURNING id, email',
+            'DELETE FROM users WHERE id = $1 RETURNING id, email, username',
             [id]
         );
 
         if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Пользователь не найден' });
+            return res.status(404).json({ 
+                success: false,
+                error: 'Пользователь не найден' 
+            });
         }
 
         console.log('✅ User deleted:', result.rows[0].email);
@@ -3514,41 +3610,63 @@ app.delete('/api/admin/users/:id', isAdmin, async (req, res) => {
         });
     } catch (error) {
         console.error('❌ Delete user error:', error);
-        res.status(500).json({ error: 'Ошибка удаления пользователя' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка удаления пользователя' 
+        });
     }
 });
 
-// Создать нового пользователя (админ)
-app.post('/api/admin/users', isAdmin, async (req, res) => {
+// Создать нового пользователя
+app.post('/api/admin/users', checkAdminSimple, async (req, res) => {
     try {
         const {
             username, email, password, full_name,
             birth_year, role = 'user', is_active = true
         } = req.body;
 
-        console.log('🔐 Admin create user:', { username, email, role });
+        console.log('🔐 Admin creating user:', { 
+            username: username?.substring(0, 20), 
+            email: email?.substring(0, 30) 
+        });
 
         // Валидация
-        if (!username || !email || !password || !full_name || !birth_year) {
-            return res.status(400).json({ error: 'Все обязательные поля должны быть заполнены' });
+        if (!username || !email || !full_name || !birth_year) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Все обязательные поля должны быть заполнены' 
+            });
         }
 
         if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-            return res.status(400).json({ error: 'Имя пользователя может содержать только буквы, цифры и подчеркивания' });
-        }
-
-        if (password.length < 6) {
-            return res.status(400).json({ error: 'Пароль должен быть не менее 6 символов' });
+            return res.status(400).json({ 
+                success: false,
+                error: 'Имя пользователя может содержать только буквы, цифры и подчеркивания' 
+            });
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            return res.status(400).json({ error: 'Введите корректный email' });
+            return res.status(400).json({ 
+                success: false,
+                error: 'Введите корректный email' 
+            });
         }
 
         const currentYear = new Date().getFullYear();
         if (birth_year < 1900 || birth_year > currentYear) {
-            return res.status(400).json({ error: 'Укажите корректный год рождения' });
+            return res.status(400).json({ 
+                success: false,
+                error: 'Укажите корректный год рождения (1900-' + currentYear + ')' 
+            });
+        }
+
+        // Если пароль предоставлен, проверяем длину
+        if (password && password.length < 6) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Пароль должен быть не менее 6 символов' 
+            });
         }
 
         // Проверка существования
@@ -3558,11 +3676,17 @@ app.post('/api/admin/users', isAdmin, async (req, res) => {
         );
 
         if (userExists.rows.length > 0) {
-            return res.status(400).json({ error: 'Пользователь с таким email или username уже существует' });
+            return res.status(400).json({ 
+                success: false,
+                error: 'Пользователь с таким email или username уже существует' 
+            });
         }
 
-        // Хешируем пароль
-        const hashedPassword = await bcrypt.hash(password, 10);
+        // Хешируем пароль, если он есть
+        let hashedPassword = null;
+        if (password) {
+            hashedPassword = await bcrypt.hash(password, 10);
+        }
 
         // Создаем пользователя
         const result = await pool.query(
@@ -3572,7 +3696,7 @@ app.post('/api/admin/users', isAdmin, async (req, res) => {
             ) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, 'email')
              RETURNING id, username, email, full_name, role, 
-                      is_active, birth_year, created_at`,
+                      is_active, birth_year, auth_method, created_at`,
             [username, email, hashedPassword, full_name, 
              birth_year, role, is_active]
         );
@@ -3591,17 +3715,47 @@ app.post('/api/admin/users', isAdmin, async (req, res) => {
         console.error('❌ Create user error:', error);
         
         if (error.code === '23505') {
-            return res.status(400).json({ error: 'Пользователь с таким email или username уже существует' });
+            return res.status(400).json({ 
+                success: false,
+                error: 'Пользователь с таким email или username уже существует' 
+            });
         }
         
-        res.status(500).json({ error: 'Ошибка создания пользователя' });
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка создания пользователя' 
+        });
     }
 });
 
+// Endpoint для получения статистики
+app.get('/api/admin/stats', checkAdminSimple, async (req, res) => {
+    try {
+        const totalUsers = await pool.query('SELECT COUNT(*) as count FROM users');
+        const activeUsers = await pool.query('SELECT COUNT(*) as count FROM users WHERE is_active = true');
+        const adminUsers = await pool.query('SELECT COUNT(*) as count FROM users WHERE role = \'admin\'');
+        const googleUsers = await pool.query('SELECT COUNT(*) as count FROM users WHERE auth_method = \'google\'');
+        const emailUsers = await pool.query('SELECT COUNT(*) as count FROM users WHERE auth_method = \'email\'');
 
-
-
-
+        res.json({
+            success: true,
+            stats: {
+                total: parseInt(totalUsers.rows[0].count),
+                active: parseInt(activeUsers.rows[0].count),
+                admins: parseInt(adminUsers.rows[0].count),
+                google: parseInt(googleUsers.rows[0].count),
+                email: parseInt(emailUsers.rows[0].count),
+                inactive: parseInt(totalUsers.rows[0].count) - parseInt(activeUsers.rows[0].count)
+            }
+        });
+    } catch (error) {
+        console.error('❌ Get stats error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка получения статистики' 
+        });
+    }
+});
 
 
 
