@@ -6,7 +6,7 @@
     <title>Профиль - Zeeptook</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
-        /* Telegram-подобные стили - более закругленные */
+        /* Telegram-подобные стили */
         * {
             margin: 0;
             padding: 0;
@@ -29,14 +29,14 @@
             --chat-bg: #0e1621;
             --input-bg: #242f3d;
             --nav-bg: #17212b;
+            --section-bg: #1b2635;
             --gradient: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             --shadow: 0 1px 3px rgba(0,0,0,0.3);
-            --radius: 16px;
-            --radius-md: 12px;
-            --radius-sm: 10px;
-            --radius-xs: 8px;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --radius-xs: 6px;
             --radius-full: 50%;
-            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         body {
@@ -54,7 +54,7 @@
             padding-bottom: 70px;
         }
 
-        /* Header с кнопками справа */
+        /* Header */
         .header {
             background: var(--nav-bg);
             color: var(--white);
@@ -138,7 +138,6 @@
             text-align: center;
             border-bottom: 1px solid var(--gray-dark);
             margin-bottom: 0;
-            border-radius: 0 0 var(--radius) var(--radius);
         }
         
         .profile-avatar {
@@ -202,10 +201,9 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 1px;
             background: var(--gray-dark);
-            margin: 0;
-            border-radius: var(--radius-md);
-            overflow: hidden;
             margin: 12px;
+            border-radius: var(--radius);
+            overflow: hidden;
             border: 1px solid var(--gray-dark);
         }
         
@@ -226,83 +224,12 @@
             font-weight: 700;
             color: var(--primary);
             margin-bottom: 6px;
-            letter-spacing: -0.5px;
         }
         
         .stat-label {
             font-size: 13px;
             color: var(--gray-light);
             font-weight: 500;
-        }
-
-        /* Profile Info */
-        .profile-info {
-            background: var(--nav-bg);
-            margin: 12px;
-            border-radius: var(--radius);
-            overflow: hidden;
-            border: 1px solid var(--gray-dark);
-        }
-        
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px;
-            border-bottom: 1px solid var(--gray-dark);
-            min-height: 52px;
-        }
-        
-        .info-item:last-child {
-            border-bottom: none;
-        }
-        
-        .info-item:active {
-            background: rgba(255, 255, 255, 0.03);
-        }
-        
-        .info-label {
-            font-size: 15px;
-            color: var(--gray-light);
-        }
-        
-        .info-value {
-            font-size: 15px;
-            font-weight: 500;
-            color: var(--white);
-            text-align: right;
-            max-width: 60%;
-            word-break: break-word;
-        }
-
-        /* Кнопка просмотра логина/пароля */
-        .view-credentials-btn {
-            background: var(--nav-bg);
-            border: none;
-            width: calc(100% - 24px);
-            margin: 0 12px 12px;
-            padding: 16px;
-            text-align: left;
-            color: var(--primary);
-            font-size: 15px;
-            font-weight: 500;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-radius: var(--radius);
-            transition: var(--transition);
-            border: 1px solid var(--gray-dark);
-        }
-        
-        .view-credentials-btn:active {
-            background: rgba(0, 136, 204, 0.1);
-            transform: scale(0.98);
-        }
-        
-        .view-credentials-btn i {
-            font-size: 13px;
-            opacity: 0.7;
         }
 
         /* Menu Items */
@@ -326,7 +253,6 @@
         
         .menu-item:active {
             background: rgba(255, 255, 255, 0.05);
-            transform: translateX(2px);
         }
         
         .menu-item:last-child {
@@ -433,7 +359,6 @@
         .btn-primary {
             background: var(--gradient);
             color: white;
-            box-shadow: 0 4px 15px rgba(0, 136, 204, 0.3);
         }
         
         .btn-outline {
@@ -448,7 +373,247 @@
             transform: none !important;
         }
 
-        /* Modal - Общий стиль */
+        /* Настройки - Полноэкранная страница */
+        .settings-page {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--chat-bg);
+            z-index: 2000;
+            overflow-y: auto;
+            display: none;
+            animation: slideInRight 0.3s ease-out;
+        }
+        
+        .settings-page.active {
+            display: block;
+        }
+        
+        .settings-container {
+            padding-bottom: 20px;
+        }
+        
+        .settings-section {
+            margin-bottom: 20px;
+        }
+        
+        .section-header {
+            padding: 14px 16px;
+            font-size: 14px;
+            color: var(--gray-light);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .settings-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            background: var(--nav-bg);
+            border-bottom: 1px solid var(--gray-dark);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        
+        .settings-item:active {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        
+        .settings-item.no-border {
+            border-bottom: none;
+        }
+        
+        .settings-item-content {
+            flex: 1;
+        }
+        
+        .settings-item-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--white);
+            margin-bottom: 3px;
+        }
+        
+        .settings-item-description {
+            font-size: 13px;
+            color: var(--gray-light);
+        }
+        
+        .settings-item-value {
+            font-size: 14px;
+            color: var(--gray-light);
+            text-align: right;
+            margin-right: 8px;
+        }
+        
+        .settings-input {
+            background: var(--input-bg);
+            border: 1px solid var(--gray-medium);
+            border-radius: var(--radius-sm);
+            padding: 12px 16px;
+            font-size: 16px;
+            color: var(--white);
+            width: 100%;
+            transition: var(--transition);
+        }
+        
+        .settings-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+        
+        .settings-divider {
+            height: 1px;
+            background: var(--gray-dark);
+            margin: 16px 0;
+        }
+        
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 28px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--gray-medium);
+            border-radius: 34px;
+            transition: var(--transition);
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: var(--primary);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
+        /* Checkbox */
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .checkbox-container input {
+            display: none;
+        }
+        
+        .checkmark {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--gray-medium);
+            border-radius: var(--radius-xs);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            flex-shrink: 0;
+        }
+        
+        .checkbox-container input:checked ~ .checkmark {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .checkmark:after {
+            content: "✓";
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            opacity: 0;
+            transition: var(--transition);
+        }
+        
+        .checkbox-container input:checked ~ .checkmark:after {
+            opacity: 1;
+        }
+        
+        /* Credentials Section */
+        .credentials-section {
+            background: var(--nav-bg);
+            padding: 16px;
+            margin: 12px;
+            border-radius: var(--radius);
+            border: 1px solid var(--gray-dark);
+        }
+        
+        .credentials-item {
+            margin-bottom: 20px;
+        }
+        
+        .credentials-label {
+            font-size: 13px;
+            color: var(--gray-light);
+            margin-bottom: 6px;
+        }
+        
+        .credentials-value {
+            background: var(--input-bg);
+            padding: 14px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--gray-medium);
+            font-family: monospace;
+            font-size: 15px;
+            word-break: break-all;
+            color: var(--white);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .password-placeholder {
+            color: var(--gray-light);
+            font-style: italic;
+        }
+        
+        .show-password-btn {
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 13px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: var(--radius-xs);
+            transition: var(--transition);
+        }
+        
+        .show-password-btn:active {
+            background: rgba(0, 136, 204, 0.1);
+        }
+
+        /* Модальные окна */
         .modal {
             display: none;
             position: fixed;
@@ -457,11 +622,10 @@
             right: 0;
             bottom: 0;
             background: rgba(0,0,0,0.8);
-            z-index: 2000;
+            z-index: 3000;
             align-items: center;
             justify-content: center;
             padding: 20px;
-            animation: fadeIn 0.3s ease-out;
         }
         
         .modal.active {
@@ -477,7 +641,6 @@
             overflow-y: auto;
             animation: slideUp 0.3s ease-out;
             border: 1px solid var(--gray-dark);
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
         }
         
         .modal-header {
@@ -543,7 +706,6 @@
         .form-input:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(0, 136, 204, 0.2);
         }
         
         .form-actions {
@@ -558,191 +720,68 @@
             border-radius: var(--radius-sm);
         }
 
-        /* Settings Modal - Специальные стили */
-        .settings-section {
-            margin-bottom: 24px;
-        }
-        
-        .section-title {
-            font-size: 14px;
-            color: var(--primary);
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 12px;
-            padding-left: 4px;
-        }
-        
-        .settings-item {
-            display: flex;
-            align-items: center;
-            padding: 14px 16px;
-            background: var(--input-bg);
-            border-radius: var(--radius-sm);
-            margin-bottom: 8px;
-            transition: var(--transition);
-        }
-        
-        .settings-item:active {
-            background: rgba(255, 255, 255, 0.05);
-        }
-        
-        .settings-item-content {
-            flex: 1;
-        }
-        
-        .settings-item-title {
-            font-size: 15px;
-            font-weight: 500;
-            color: var(--white);
-            margin-bottom: 3px;
-        }
-        
-        .settings-item-description {
-            font-size: 13px;
-            color: var(--gray-light);
-        }
-        
-        /* Toggle Switch */
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 52px;
-            height: 28px;
-        }
-        
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
+        /* Анимация загрузки - улучшенная */
+        .loading-overlay {
+            position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: var(--gray-medium);
-            border-radius: 34px;
-            transition: var(--transition);
-        }
-        
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 22px;
-            width: 22px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            border-radius: 50%;
-            transition: var(--transition);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-        
-        input:checked + .toggle-slider {
-            background-color: var(--primary);
-        }
-        
-        input:checked + .toggle-slider:before {
-            transform: translateX(24px);
-        }
-        
-        /* Checkbox */
-        .checkbox-container {
+            background: var(--chat-bg);
             display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: pointer;
-            user-select: none;
-        }
-        
-        .checkbox-container input {
-            display: none;
-        }
-        
-        .checkmark {
-            width: 24px;
-            height: 24px;
-            border: 2px solid var(--gray-medium);
-            border-radius: var(--radius-xs);
-            display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            transition: var(--transition);
-            flex-shrink: 0;
-        }
-        
-        .checkbox-container input:checked ~ .checkmark {
-            background-color: var(--primary);
-            border-color: var(--primary);
-        }
-        
-        .checkmark:after {
-            content: "✓";
-            color: white;
-            font-size: 14px;
-            font-weight: bold;
-            opacity: 0;
-            transition: var(--transition);
-        }
-        
-        .checkbox-container input:checked ~ .checkmark:after {
-            opacity: 1;
-        }
-
-        /* Credentials Modal */
-        .credentials-item {
-            margin-bottom: 20px;
-        }
-        
-        .credentials-label {
-            font-size: 13px;
-            color: var(--gray-light);
-            margin-bottom: 6px;
-        }
-        
-        .credentials-value {
-            background: var(--input-bg);
-            padding: 14px;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--gray-medium);
-            font-family: monospace;
-            font-size: 15px;
-            word-break: break-all;
-            color: var(--white);
-        }
-        
-        .partial-login {
-            letter-spacing: 1px;
-        }
-        
-        .password-placeholder {
-            color: var(--gray-light);
-            font-style: italic;
-        }
-
-        /* Change Password Form */
-        .change-password-form {
-            margin-top: 20px;
-        }
-        
-        .form-step {
-            display: none;
-        }
-        
-        .form-step.active {
-            display: block;
+            z-index: 9999;
             animation: fadeIn 0.3s ease-out;
         }
         
-        .form-description {
-            font-size: 14px;
-            color: var(--gray-light);
+        .telegram-loader {
+            width: 60px;
+            height: 60px;
+            position: relative;
             margin-bottom: 20px;
-            line-height: 1.5;
+        }
+        
+        .telegram-loader-circle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 4px solid transparent;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        .telegram-loader-circle:nth-child(2) {
+            border-top-color: var(--primary-dark);
+            animation-delay: 0.2s;
+            width: 80%;
+            height: 80%;
+            top: 10%;
+            left: 10%;
+        }
+        
+        .telegram-loader-circle:nth-child(3) {
+            border-top-color: var(--white);
+            animation-delay: 0.4s;
+            width: 60%;
+            height: 60%;
+            top: 20%;
+            left: 20%;
+        }
+        
+        .loading-text {
+            font-size: 16px;
+            color: var(--gray-light);
+            font-weight: 500;
+            text-align: center;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        /* Password Input Wrapper */
+        .password-input-wrapper {
+            position: relative;
         }
         
         .password-toggle {
@@ -767,10 +806,6 @@
             background: rgba(255, 255, 255, 0.05);
         }
         
-        .password-input-wrapper {
-            position: relative;
-        }
-        
         .error-message {
             color: var(--accent);
             font-size: 13px;
@@ -783,28 +818,6 @@
             display: block;
         }
 
-        /* Loading */
-        .loading {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--gray-light);
-        }
-        
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(0, 136, 204, 0.2);
-            border-top: 3px solid var(--primary);
-            border-radius: var(--radius-full);
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
         /* Bottom Navigation */
         .bottom-nav {
             position: fixed;
@@ -814,11 +827,10 @@
             background: var(--nav-bg);
             display: flex;
             justify-content: space-around;
-            padding: 8px 0 12px;
+            padding: 8px 0 10px;
             border-top: 1px solid var(--gray-dark);
             z-index: 1000;
-            height: 65px;
-            border-radius: var(--radius) var(--radius) 0 0;
+            height: 60px;
         }
         
         .nav-btn {
@@ -827,18 +839,16 @@
             align-items: center;
             text-decoration: none;
             color: var(--gray-light);
-            font-size: 11px;
+            font-size: 10px;
             padding: 6px 4px;
             transition: var(--transition);
             flex: 1;
             position: relative;
-            border-radius: var(--radius-xs);
-            margin: 0 4px;
         }
         
         .nav-btn i {
-            font-size: 22px;
-            margin-bottom: 3px;
+            font-size: 20px;
+            margin-bottom: 2px;
             transition: var(--transition);
         }
         
@@ -847,7 +857,7 @@
         }
         
         .nav-btn.active i {
-            transform: translateY(-2px);
+            transform: translateY(-1px);
         }
         
         .nav-btn.active::after {
@@ -856,18 +866,17 @@
             top: 0;
             left: 50%;
             transform: translateX(-50%);
-            width: 32px;
+            width: 30px;
             height: 3px;
             background: var(--primary);
             border-radius: 2px;
         }
         
         .nav-btn:active {
-            background: rgba(255, 255, 255, 0.05);
             transform: scale(0.95);
         }
 
-        /* Tooltip for avatar */
+        /* Tooltip */
         .avatar-tooltip {
             display: none;
             position: absolute;
@@ -876,17 +885,16 @@
             transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.9);
             color: white;
-            padding: 14px 18px;
+            padding: 12px 16px;
             border-radius: var(--radius-sm);
-            font-size: 14px;
+            font-size: 13px;
             max-width: 280px;
             width: max-content;
             text-align: center;
             z-index: 1000;
             margin-top: 10px;
             white-space: normal;
-            line-height: 1.5;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            line-height: 1.4;
         }
         
         .avatar-tooltip::before {
@@ -895,15 +903,37 @@
             bottom: 100%;
             left: 50%;
             transform: translateX(-50%);
-            border: 8px solid transparent;
+            border: 6px solid transparent;
             border-bottom-color: rgba(0, 0, 0, 0.9);
         }
 
         /* Animations */
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes slideOutRight {
+            from {
+                opacity: 1;
+                transform: translateX(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(100%);
+            }
+        }
+        
         @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateY(40px);
+                transform: translateY(30px);
             }
             to {
                 opacity: 1;
@@ -920,15 +950,14 @@
             }
         }
         
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         /* Responsive */
@@ -947,15 +976,7 @@
                 font-size: 36px;
             }
             
-            .info-item {
-                padding: 14px 16px;
-            }
-            
-            .stats-grid {
-                margin: 8px;
-            }
-            
-            .menu-list, .profile-info, .view-credentials-btn {
+            .stats-grid, .menu-list {
                 margin: 8px;
             }
         }
@@ -964,26 +985,36 @@
             .app-container {
                 max-width: 500px;
                 margin: 0 auto;
-                box-shadow: 0 0 40px rgba(0,0,0,0.4);
-                border-radius: 0;
+                box-shadow: 0 0 30px rgba(0,0,0,0.3);
             }
             
-            .modal-content {
-                max-width: 420px;
+            .settings-page {
+                max-width: 500px;
+                left: 50%;
+                transform: translateX(-50%);
             }
             
             .bottom-nav {
                 max-width: 500px;
                 left: 50%;
                 transform: translateX(-50%);
-                border-radius: var(--radius) var(--radius) 0 0;
             }
         }
     </style>
 </head>
 <body>
+    <!-- Анимация загрузки -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="telegram-loader">
+            <div class="telegram-loader-circle"></div>
+            <div class="telegram-loader-circle"></div>
+            <div class="telegram-loader-circle"></div>
+        </div>
+        <div class="loading-text">Загрузка...</div>
+    </div>
+    
     <div class="app-container">
-        <!-- Header с кнопками справа -->
+        <!-- Header -->
         <div class="header">
             <div class="header-left">
                 <a href="index.html" class="back-btn">
@@ -993,7 +1024,7 @@
             </div>
             
             <div class="header-right" id="header-right" style="display: none;">
-                <button class="header-btn" onclick="openSettingsModal()" title="Настройки">
+                <button class="header-btn" onclick="openSettingsPage()" title="Настройки">
                     <i class="fa fa-cog"></i>
                 </button>
                 <button class="header-btn logout-btn" onclick="logout()" title="Выйти">
@@ -1055,29 +1086,25 @@
                 </div>
             </div>
             
-            <!-- Кнопка просмотра учетных данных -->
-            <button class="view-credentials-btn" onclick="showCredentials()">
-                <span>Показать логин и пароль</span>
-                <i class="fa fa-eye"></i>
-            </button>
-            
-            <!-- Информация профиля -->
-            <div class="profile-info">
-                <div class="info-item">
-                    <div class="info-label">Email</div>
-                    <div class="info-value" id="info-email">loading...</div>
+            <!-- Учетные данные -->
+            <div class="credentials-section">
+                <div class="credentials-item">
+                    <div class="credentials-label">Логин (Email)</div>
+                    <div class="credentials-value" id="credentials-email">
+                        <span class="password-placeholder">faridun.exam@gmail.com</span>
+                        <button class="show-password-btn" onclick="copyToClipboard('faridun.exam@gmail.com')">
+                            <i class="fa fa-copy"></i> Копировать
+                        </button>
+                    </div>
                 </div>
-                <div class="info-item">
-                    <div class="info-label">Имя пользователя</div>
-                    <div class="info-value" id="info-username">loading...</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Полное имя</div>
-                    <div class="info-value" id="info-fullname">loading...</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Дата регистрации</div>
-                    <div class="info-value" id="info-joined">loading...</div>
+                <div class="credentials-item">
+                    <div class="credentials-label">Пароль</div>
+                    <div class="credentials-value">
+                        <span class="password-placeholder" id="password-placeholder">••••••••</span>
+                        <button class="show-password-btn" onclick="showPassword()">
+                            <i class="fa fa-eye"></i> Показать
+                        </button>
+                    </div>
                 </div>
             </div>
             
@@ -1099,56 +1126,101 @@
         </div>
     </div>
     
-    <!-- Модальное окно настроек -->
-    <div class="modal" id="settings-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">Настройки</div>
-                <button class="modal-close" onclick="closeSettingsModal()">
-                    <i class="fa fa-times"></i>
+    <!-- Страница настроек -->
+    <div class="settings-page" id="settings-page">
+        <div class="header">
+            <div class="header-left">
+                <button class="back-btn" onclick="closeSettingsPage()">
+                    <i class="fa fa-arrow-left"></i>
                 </button>
+                <div class="page-title">Настройки</div>
             </div>
-            <div class="modal-body">
-                <!-- Профиль -->
-                <div class="settings-section">
-                    <div class="section-title">Профиль</div>
-                    <div class="form-group">
-                        <label class="form-label">Полное имя</label>
-                        <input type="text" class="form-input" id="settings-fullname" placeholder="Введите ваше полное имя">
-                    </div>
-                    <button class="btn btn-primary" onclick="saveProfileSettings()" style="width: 100%;">
-                        <i class="fa fa-save"></i>
-                        Сохранить изменения
-                    </button>
-                </div>
+        </div>
+        
+        <div class="settings-container">
+            <!-- Профиль -->
+            <div class="settings-section">
+                <div class="section-header">Профиль</div>
                 
-                <!-- Интерфейс -->
-                <div class="settings-section">
-                    <div class="section-title">Интерфейс</div>
-                    <div class="settings-item">
-                        <div class="settings-item-content">
-                            <div class="settings-item-title">Ночной режим</div>
-                            <div class="settings-item-description">Темная тема для комфортного использования</div>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="night-mode-toggle">
-                            <span class="toggle-slider"></span>
-                        </label>
+                <div class="settings-item">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title">Полное имя</div>
+                        <input type="text" class="settings-input" id="settings-fullname" placeholder="Введите ваше полное имя">
                     </div>
                 </div>
                 
-                <!-- Приватность -->
-                <div class="settings-section">
-                    <div class="section-title">Приватность</div>
-                    <div class="settings-item">
-                        <div class="settings-item-content">
-                            <div class="settings-item-title">Показывать мой email в профиле</div>
-                            <div class="settings-item-description">Будет виден другим пользователям</div>
-                        </div>
-                        <label class="checkbox-container">
-                            <input type="checkbox" id="show-email-checkbox">
-                            <span class="checkmark"></span>
-                        </label>
+                <div class="settings-item">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title">Email</div>
+                        <div class="settings-item-description" id="settings-email">faridun.exam@gmail.com</div>
+                    </div>
+                </div>
+                
+                <div class="settings-item">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title">Имя пользователя</div>
+                        <div class="settings-item-description" id="settings-username">@username</div>
+                    </div>
+                </div>
+                
+                <div class="settings-item no-border">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title">Дата регистрации</div>
+                        <div class="settings-item-description" id="settings-joined">1 января 2024</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Интерфейс -->
+            <div class="settings-section">
+                <div class="section-header">Интерфейс</div>
+                
+                <div class="settings-item no-border">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title">Ночной режим</div>
+                        <div class="settings-item-description">Темная тема для комфортного использования</div>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="night-mode-toggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Приватность -->
+            <div class="settings-section">
+                <div class="section-header">Приватность</div>
+                
+                <div class="settings-item no-border">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title">Показывать мой email в профиле</div>
+                        <div class="settings-item-description">Будет виден другим пользователям</div>
+                    </div>
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="show-email-checkbox" checked>
+                        <span class="checkmark"></span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Аккаунт -->
+            <div class="settings-section">
+                <div class="section-header">Аккаунт</div>
+                
+                <div class="settings-item" onclick="openChangePasswordModal()">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title">Сменить пароль</div>
+                        <div class="settings-item-description">Обновите пароль вашего аккаунта</div>
+                    </div>
+                    <div class="menu-arrow">
+                        <i class="fa fa-chevron-right"></i>
+                    </div>
+                </div>
+                
+                <div class="settings-item no-border" onclick="logout()">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title" style="color: var(--accent);">Выйти</div>
+                        <div class="settings-item-description">Выйти из текущего аккаунта</div>
                     </div>
                 </div>
             </div>
@@ -1238,93 +1310,6 @@
         </div>
     </div>
     
-    <!-- Модальное окно с учетными данными -->
-    <div class="modal" id="credentials-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">Ваши учетные данные</div>
-                <button class="modal-close" onclick="closeCredentialsModal()">
-                    <i class="fa fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <!-- Шаг 1: Проверка пароля -->
-                <div class="form-step active" id="password-check-step">
-                    <div class="form-description">
-                        Для просмотра полных учетных данных необходимо подтвердить ваш текущий пароль.
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Текущий пароль</label>
-                        <div class="password-input-wrapper">
-                            <input type="password" class="form-input" id="current-password" placeholder="Введите текущий пароль">
-                            <button type="button" class="password-toggle" onclick="togglePassword('current-password')">
-                                <i class="fa fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="form-actions">
-                        <button class="btn btn-outline" onclick="closeCredentialsModal()" style="flex: 1;">Отмена</button>
-                        <button class="btn btn-primary" onclick="verifyPassword()" style="flex: 1;">Проверить</button>
-                    </div>
-                </div>
-                
-                <!-- Шаг 2: Просмотр учетных данных -->
-                <div class="form-step" id="view-credentials-step">
-                    <div class="credentials-item">
-                        <div class="credentials-label">Логин (Email):</div>
-                        <div class="credentials-value" id="credentials-login">faridun.exam@gmail.com</div>
-                    </div>
-                    <div class="credentials-item">
-                        <div class="credentials-label">Пароль:</div>
-                        <div class="credentials-value password-placeholder" id="credentials-password">
-                            [скрыто] 
-                            <span style="color: var(--primary); margin-left: 10px; cursor: pointer;" onclick="showChangePasswordForm()">
-                                <i class="fa fa-edit"></i> Изменить пароль
-                            </span>
-                        </div>
-                    </div>
-                    <div style="margin-top: 20px; padding: 14px; background: rgba(255, 193, 7, 0.1); border-radius: var(--radius-sm); border-left: 4px solid #ffc107;">
-                        <p style="font-size: 14px; color: #ffc107; margin: 0; line-height: 1.4;">
-                            <i class="fa fa-exclamation-triangle"></i> Храните эти данные в безопасном месте
-                        </p>
-                    </div>
-                    <div class="form-actions">
-                        <button class="btn btn-primary" onclick="closeCredentialsModal()" style="flex: 1;">Закрыть</button>
-                    </div>
-                </div>
-                
-                <!-- Шаг 3: Изменение пароля -->
-                <div class="form-step" id="change-password-step">
-                    <div class="form-description">
-                        Введите новый пароль и подтвердите его.
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Новый пароль</label>
-                        <div class="password-input-wrapper">
-                            <input type="password" class="form-input" id="new-password" placeholder="Введите новый пароль">
-                            <button type="button" class="password-toggle" onclick="togglePassword('new-password')">
-                                <i class="fa fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Подтвердите новый пароль</label>
-                        <div class="password-input-wrapper">
-                            <input type="password" class="form-input" id="confirm-password" placeholder="Повторите новый пароль">
-                            <button type="button" class="password-toggle" onclick="togglePassword('confirm-password')">
-                                <i class="fa fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="form-actions">
-                        <button class="btn btn-outline" onclick="backToCredentials()" style="flex: 1;">Назад</button>
-                        <button class="btn btn-primary" onclick="changePasswordInCredentials()" style="flex: 1;">Изменить пароль</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
     <div class="bottom-nav">
         <a href="index.html" class="nav-btn">
             <i class="fa fa-home"></i>
@@ -1352,24 +1337,40 @@
         const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
         let currentUser = null;
         let userCredentials = null;
+        let passwordVisible = false;
+        const demoPassword = "SecurePassword123!";
+
+        // Показать анимацию загрузки
+        function showLoading() {
+            document.getElementById('loading-overlay').style.display = 'flex';
+        }
+
+        // Скрыть анимацию загрузки
+        function hideLoading() {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
 
         // Проверка авторизации при загрузке
         function checkAuth() {
-            const token = localStorage.getItem('token');
-            const authSection = document.getElementById('auth-required-section');
-            const profileSection = document.getElementById('profile-section');
-            const headerRight = document.getElementById('header-right');
-            
-            if (token) {
-                authSection.style.display = 'none';
-                profileSection.style.display = 'block';
-                headerRight.style.display = 'flex';
-                loadProfile();
-            } else {
-                authSection.style.display = 'block';
-                profileSection.style.display = 'none';
-                headerRight.style.display = 'none';
-            }
+            showLoading();
+            setTimeout(() => {
+                const token = localStorage.getItem('token');
+                const authSection = document.getElementById('auth-required-section');
+                const profileSection = document.getElementById('profile-section');
+                const headerRight = document.getElementById('header-right');
+                
+                if (token) {
+                    authSection.style.display = 'none';
+                    profileSection.style.display = 'block';
+                    headerRight.style.display = 'flex';
+                    loadProfile();
+                } else {
+                    authSection.style.display = 'block';
+                    profileSection.style.display = 'none';
+                    headerRight.style.display = 'none';
+                }
+                hideLoading();
+            }, 500);
         }
 
         // Загрузка профиля
@@ -1426,24 +1427,23 @@
             document.getElementById('stats-friends').textContent = '∞'; // Друзья - бесконечность
             document.getElementById('stats-followers').textContent = '∞'; // Подписчики - бесконечность
             
-            // Проверяем настройку приватности email
-            const showEmail = localStorage.getItem('showEmail') !== 'false';
-            const emailToShow = showEmail ? (user.email || 'Не указан') : 'Скрыто';
+            // Устанавливаем учетные данные
+            document.getElementById('credentials-email').querySelector('.password-placeholder').textContent = 
+                user.email || 'faridun.exam@gmail.com';
             
-            document.getElementById('info-email').textContent = emailToShow;
-            document.getElementById('info-username').textContent = user.username || 'Не указан';
-            document.getElementById('info-fullname').textContent = user.full_name || 'Не указано';
-            document.getElementById('info-joined').textContent = formatDate(user.created_at) || 'Не указана';
-            
-            // Обновляем поле полного имени в настройках
+            // Обновляем настройки
+            document.getElementById('settings-email').textContent = user.email || 'faridun.exam@gmail.com';
+            document.getElementById('settings-username').textContent = `@${user.username || 'username'}`;
             document.getElementById('settings-fullname').value = user.full_name || '';
+            document.getElementById('settings-joined').textContent = formatDate(user.created_at) || '1 января 2024';
             
-            // Сохраняем учетные данные для отображения
+            // Сохраняем учетные данные
             userCredentials = {
-                login: user.email || user.username,
-                password_hint: user.password_hint || '********'
+                login: user.email || 'faridun.exam@gmail.com',
+                password_hint: demoPassword
             };
             
+            // Обновляем аватар
             const avatarElement = document.getElementById('profile-avatar');
             if (user.avatar_url) {
                 avatarElement.innerHTML = `
@@ -1458,22 +1458,12 @@
         // Загрузка настроек из localStorage
         function loadSettings() {
             // Ночной режим
-            const nightMode = localStorage.getItem('nightMode') === 'true';
+            const nightMode = localStorage.getItem('nightMode') !== 'false';
             document.getElementById('night-mode-toggle').checked = nightMode;
-            if (nightMode) {
-                enableNightMode();
-            } else {
-                disableNightMode();
-            }
             
             // Показ email
             const showEmail = localStorage.getItem('showEmail') !== 'false';
             document.getElementById('show-email-checkbox').checked = showEmail;
-            
-            // Полное имя из профиля пользователя
-            if (currentUser) {
-                document.getElementById('settings-fullname').value = currentUser.full_name || '';
-            }
         }
 
         // Включение ночного режима
@@ -1487,17 +1477,27 @@
         function disableNightMode() {
             document.documentElement.style.setProperty('--chat-bg', '#f0f0f0');
             document.documentElement.style.setProperty('--nav-bg', '#ffffff');
+            document.documentElement.style.setProperty('--white', '#000000');
+            document.documentElement.style.setProperty('--gray-light', '#666666');
             localStorage.setItem('nightMode', 'false');
         }
 
-        // Открытие модального окна настроек
-        function openSettingsModal() {
-            document.getElementById('settings-modal').classList.add('active');
+        // Открытие страницы настроек
+        function openSettingsPage() {
+            showLoading();
+            setTimeout(() => {
+                document.getElementById('settings-page').classList.add('active');
+                hideLoading();
+            }, 300);
         }
 
-        // Закрытие модального окна настроек
-        function closeSettingsModal() {
-            document.getElementById('settings-modal').classList.remove('active');
+        // Закрытие страницы настроек
+        function closeSettingsPage() {
+            document.getElementById('settings-page').style.animation = 'slideOutRight 0.3s ease-out';
+            setTimeout(() => {
+                document.getElementById('settings-page').classList.remove('active');
+                document.getElementById('settings-page').style.animation = '';
+            }, 300);
         }
 
         // Сохранение настроек профиля
@@ -1509,19 +1509,41 @@
                 return;
             }
             
-            // Здесь будет API вызов для сохранения изменений
-            // Пока сохраняем только локально
-            if (currentUser) {
-                currentUser.full_name = fullname;
-                document.getElementById('info-fullname').textContent = fullname;
-                document.getElementById('profile-name').textContent = fullname;
-                showNotification('Профиль успешно обновлен', 'success');
-            }
-            
-            // Симуляция API вызова
+            showLoading();
             setTimeout(() => {
-                showNotification('Изменения сохранены', 'success');
-            }, 500);
+                if (currentUser) {
+                    currentUser.full_name = fullname;
+                    document.getElementById('profile-name').textContent = fullname;
+                    showNotification('Профиль успешно обновлен', 'success');
+                }
+                hideLoading();
+            }, 800);
+        }
+
+        // Показать пароль
+        function showPassword() {
+            const placeholder = document.getElementById('password-placeholder');
+            const button = event.target.closest('.show-password-btn');
+            
+            if (passwordVisible) {
+                placeholder.textContent = '••••••••';
+                button.innerHTML = '<i class="fa fa-eye"></i> Показать';
+                passwordVisible = false;
+            } else {
+                placeholder.textContent = demoPassword;
+                button.innerHTML = '<i class="fa fa-eye-slash"></i> Скрыть';
+                passwordVisible = true;
+            }
+        }
+
+        // Копировать в буфер обмена
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('Скопировано в буфер обмена', 'success');
+            }).catch(err => {
+                console.error('Ошибка копирования: ', err);
+                showNotification('Ошибка копирования', 'error');
+            });
         }
 
         // Показать подсказку для аватара
@@ -1533,140 +1555,6 @@
                     tooltip.style.display = 'none';
                 }, 3000);
             }
-        }
-
-        // Показать модальное окно с учетными данными
-        function showCredentials() {
-            // Сбрасываем форму при каждом открытии
-            resetCredentialsModal();
-            document.getElementById('credentials-modal').classList.add('active');
-        }
-
-        // Сброс модального окна учетных данных
-        function resetCredentialsModal() {
-            document.getElementById('current-password').value = '';
-            document.getElementById('new-password').value = '';
-            document.getElementById('confirm-password').value = '';
-            
-            // Показываем первый шаг
-            document.getElementById('password-check-step').classList.add('active');
-            document.getElementById('view-credentials-step').classList.remove('active');
-            document.getElementById('change-password-step').classList.remove('active');
-        }
-
-        // Переключение между шагами
-        function showStep(stepId) {
-            document.querySelectorAll('.form-step').forEach(step => {
-                step.classList.remove('active');
-            });
-            document.getElementById(stepId).classList.add('active');
-        }
-
-        // Проверка пароля
-        async function verifyPassword() {
-            const currentPassword = document.getElementById('current-password').value;
-            
-            if (!currentPassword) {
-                showNotification('Введите текущий пароль', 'error');
-                return;
-            }
-            
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${API_BASE}/verify-password`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        current_password: currentPassword
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Password verification failed');
-                }
-                
-                // Показываем учетные данные
-                showNotification('Пароль подтвержден', 'success');
-                showStep('view-credentials-step');
-                
-                // Устанавливаем логин в форме
-                if (currentUser) {
-                    document.getElementById('credentials-login').textContent = currentUser.email || currentUser.username;
-                }
-                
-            } catch (error) {
-                console.error('Password verification error:', error);
-                showNotification('Неверный пароль', 'error');
-            }
-        }
-
-        // Показать форму изменения пароля
-        function showChangePasswordForm() {
-            showStep('change-password-step');
-        }
-
-        // Вернуться к просмотру учетных данных
-        function backToCredentials() {
-            showStep('view-credentials-step');
-        }
-
-        // Изменить пароль (в форме учетных данных)
-        async function changePasswordInCredentials() {
-            const newPassword = document.getElementById('new-password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
-            
-            if (!newPassword || !confirmPassword) {
-                showNotification('Заполните все поля', 'error');
-                return;
-            }
-            
-            if (newPassword !== confirmPassword) {
-                showNotification('Пароли не совпадают', 'error');
-                return;
-            }
-            
-            if (newPassword.length < 6) {
-                showNotification('Пароль должен содержать минимум 6 символов', 'error');
-                return;
-            }
-            
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${API_BASE}/change-password`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        new_password: newPassword
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Password change failed');
-                }
-                
-                showNotification('Пароль успешно изменен', 'success');
-                closeCredentialsModal();
-                
-            } catch (error) {
-                console.error('Password change error:', error);
-                showNotification('Ошибка при изменении пароля', 'error');
-            }
-        }
-
-        // Закрыть модальное окно с учетными данными
-        function closeCredentialsModal() {
-            document.getElementById('credentials-modal').classList.remove('active');
-            resetCredentialsModal();
         }
 
         // Функции для модального окна смены пароля
@@ -1731,6 +1619,8 @@
             changePasswordBtn.disabled = true;
             changePasswordBtn.textContent = 'Сохранение...';
             
+            showLoading();
+            
             try {
                 const token = localStorage.getItem('token');
                 const response = await fetch(`${API_BASE}/auth/change-password`, {
@@ -1758,12 +1648,16 @@
                 }
                 
                 // Успешная смена пароля
-                showNotification('Пароль успешно изменен!', 'success');
-                closeChangePasswordModal();
+                setTimeout(() => {
+                    showNotification('Пароль успешно изменен!', 'success');
+                    closeChangePasswordModal();
+                    hideLoading();
+                }, 800);
                 
             } catch (error) {
                 console.error('Change password error:', error);
                 showNotification(error.message || 'Ошибка при смене пароля', 'error');
+                hideLoading();
             } finally {
                 // Восстанавливаем кнопку
                 changePasswordBtn.disabled = false;
@@ -1772,21 +1666,6 @@
         }
 
         // Переключение видимости пароля
-        function togglePassword(inputId) {
-            const input = document.getElementById(inputId);
-            const toggle = input.parentNode.querySelector('.password-toggle i');
-            
-            if (input.type === 'password') {
-                input.type = 'text';
-                toggle.classList.remove('fa-eye');
-                toggle.classList.add('fa-eye-slash');
-            } else {
-                input.type = 'password';
-                toggle.classList.remove('fa-eye-slash');
-                toggle.classList.add('fa-eye');
-            }
-        }
-
         function togglePasswordVisibility(inputId) {
             const input = document.getElementById(inputId);
             const toggle = input.parentNode.querySelector('.password-toggle i');
@@ -1821,6 +1700,8 @@
                 return;
             }
             
+            showLoading();
+            
             try {
                 const response = await fetch(`${API_BASE}/login`, {
                     method: 'POST',
@@ -1839,28 +1720,37 @@
                     throw new Error(data.error || 'Login failed');
                 }
                 
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                
-                showNotification('Успешный вход!');
-                closeLoginModal();
-                checkAuth();
+                setTimeout(() => {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    showNotification('Успешный вход!');
+                    closeLoginModal();
+                    checkAuth();
+                    hideLoading();
+                }, 800);
                 
             } catch (error) {
                 console.error('Login error:', error);
                 showNotification(error.message || 'Ошибка входа', 'error');
+                hideLoading();
             }
         }
 
         // Выход
         function logout() {
             if (confirm('Вы уверены, что хотите выйти?')) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                currentUser = null;
-                userCredentials = null;
-                showNotification('Вы вышли из аккаунта');
-                checkAuth();
+                showLoading();
+                setTimeout(() => {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    currentUser = null;
+                    userCredentials = null;
+                    showNotification('Вы вышли из аккаунта');
+                    checkAuth();
+                    closeSettingsPage();
+                    hideLoading();
+                }, 800);
             }
         }
 
@@ -1888,15 +1778,14 @@
                 transform: translateX(-50%);
                 background: ${type === 'error' ? '#ff6b6b' : type === 'info' ? '#666' : '#0088cc'};
                 color: white;
-                padding: 14px 24px;
+                padding: 12px 20px;
                 border-radius: 25px;
-                box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
                 z-index: 10000;
                 font-weight: 500;
                 animation: slideDown 0.3s ease-out;
                 max-width: 90%;
                 text-align: center;
-                backdrop-filter: blur(10px);
             `;
             notification.textContent = message;
             
@@ -1919,6 +1808,7 @@
             // Обработчики для настроек
             const nightModeToggle = document.getElementById('night-mode-toggle');
             const showEmailCheckbox = document.getElementById('show-email-checkbox');
+            const settingsFullname = document.getElementById('settings-fullname');
             
             if (nightModeToggle) {
                 nightModeToggle.addEventListener('change', function() {
@@ -1933,50 +1823,40 @@
             if (showEmailCheckbox) {
                 showEmailCheckbox.addEventListener('change', function() {
                     localStorage.setItem('showEmail', this.checked);
-                    // Обновляем отображение email в профиле
-                    if (currentUser) {
-                        const emailToShow = this.checked ? currentUser.email || 'Не указан' : 'Скрыто';
-                        document.getElementById('info-email').textContent = emailToShow;
+                });
+            }
+            
+            // Сохранение полного имени при потере фокуса
+            if (settingsFullname) {
+                settingsFullname.addEventListener('blur', function() {
+                    if (this.value.trim()) {
+                        saveProfileSettings();
                     }
                 });
             }
+            
+            // Обработка нажатия Enter
+            document.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    const activeElement = document.activeElement;
+                    
+                    if (activeElement.id === 'settings-fullname') {
+                        saveProfileSettings();
+                    }
+                    else if (activeElement.id === 'login-password') {
+                        login();
+                    }
+                    else if (activeElement.id === 'confirm-password-input') {
+                        changePassword();
+                    }
+                }
+            });
             
             // Закрытие модальных окон при клике вне контента
             document.addEventListener('click', function(e) {
                 if (e.target.classList.contains('modal')) {
                     e.target.classList.remove('active');
                 }
-            });
-            
-            // Обработка нажатия Enter в формах
-            document.getElementById('current-password')?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') verifyPassword();
-            });
-            
-            document.getElementById('new-password')?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') changePasswordInCredentials();
-            });
-            
-            document.getElementById('login-password')?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') login();
-            });
-            
-            // Обработка Enter в форме смены пароля
-            document.getElementById('current-password-input')?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') changePassword();
-            });
-            
-            document.getElementById('new-password-input')?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') changePassword();
-            });
-            
-            document.getElementById('confirm-password-input')?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') changePassword();
-            });
-            
-            // Обработка Enter в форме настроек профиля
-            document.getElementById('settings-fullname')?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') saveProfileSettings();
             });
         });
 
