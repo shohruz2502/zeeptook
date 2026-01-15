@@ -870,6 +870,9 @@ let currentUserId = null;
 let pendingMessages = new Map(); // Map for tracking pending messages
 let messageCount = 0; // Counter for unique message IDs
 let autoReplyTimers = new Map(); // Для управления таймерами автоответов
+console.log('🔧 Инициализация...');
+console.log('🔧 Токен в localStorage:', localStorage.getItem('token') ? 'Есть' : 'Нет');
+console.log('🔧 Текущий пользователь ID:', getUserId());
 
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
