@@ -3243,6 +3243,369 @@ if (wss) {
 
 
 
+
+
+
+
+
+// ====================== АДМИН ENDPOINTS ======================
+
+// Middleware для проверки админ прав
+const isAdmin = (req, res, next) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ error: 'Требуется авторизация' });
+        }
+
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.userId = decoded.userId;
+
+        // Проверяем, является ли пользователь админом
+        pool.query('SELECT role FROM users WHERE id = $1', [decoded.userId])
+            .then(result => {
+                if (result.rows[0]?.role === 'admin') {
+                    next();
+                } else {
+                    res.status(403).json({ error: 'Требуются права администратора' });
+                }
+            })
+            .catch(err => {
+                console.error('Admin check error:', err);
+                res.status(500).json({ error: 'Ошибка проверки прав' });
+            });
+    } catch (error) {
+        res.status(401).json({ error: 'Недействительный токен' });
+    }
+};
+
+// Получить всех пользователей (только для админа)
+app.get('/api/admin/users', isAdmin, async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT 
+                id, username, email, full_name, avatar_url, 
+                google_id, rating, created_at, updated_at,
+                role, is_active, birth_year, auth_method
+             FROM users 
+             ORDER BY created_at DESC`
+        );
+
+        // Маскируем пароли для безопасности
+        const users = result.rows.map(user => ({
+            ...user,
+            password: user.password ? '••••••••' : null,
+            has_password: !!user.password
+        }));
+
+        res.json({
+            success: true,
+            users,
+            count: users.length
+        });
+    } catch (error) {
+        console.error('❌ Get users error:', error);
+        res.status(500).json({ error: 'Ошибка получения пользователей' });
+    }
+});
+
+// Получить конкретного пользователя по ID
+app.get('/api/admin/users/:id', isAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const result = await pool.query(
+            `SELECT 
+                id, username, email, full_name, avatar_url, 
+                google_id, rating, created_at, updated_at,
+                role, is_active, birth_year, auth_method
+             FROM users 
+             WHERE id = $1`,
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Пользователь не найден' });
+        }
+
+        const user = result.rows[0];
+        user.password = user.password ? '••••••••' : null;
+        user.has_password = !!user.password;
+
+        res.json({
+            success: true,
+            user
+        });
+    } catch (error) {
+        console.error('❌ Get user error:', error);
+        res.status(500).json({ error: 'Ошибка получения пользователя' });
+    }
+});
+
+// Обновить данные пользователя
+app.put('/api/admin/users/:id', isAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {
+            username, email, full_name, birth_year,
+            role, is_active, password, reset_password
+        } = req.body;
+
+        console.log('🔐 Admin update user:', { id, username, email, reset_password });
+
+        // Проверяем существование пользователя
+        const userExists = await pool.query(
+            'SELECT id FROM users WHERE id = $1',
+            [id]
+        );
+
+        if (userExists.rows.length === 0) {
+            return res.status(404).json({ error: 'Пользователь не найден' });
+        }
+
+        // Проверка уникальности email и username для других пользователей
+        if (email) {
+            const emailExists = await pool.query(
+                'SELECT id FROM users WHERE email = $1 AND id != $2',
+                [email, id]
+            );
+            if (emailExists.rows.length > 0) {
+                return res.status(400).json({ error: 'Email уже используется другим пользователем' });
+            }
+        }
+
+        if (username) {
+            const usernameExists = await pool.query(
+                'SELECT id FROM users WHERE username = $1 AND id != $2',
+                [username, id]
+            );
+            if (usernameExists.rows.length > 0) {
+                return res.status(400).json({ error: 'Имя пользователя уже занято' });
+            }
+        }
+
+        // Формируем запрос на обновление
+        const updateFields = [];
+        const updateValues = [];
+        let valueIndex = 1;
+
+        if (username !== undefined) {
+            updateFields.push(`username = $${valueIndex}`);
+            updateValues.push(username);
+            valueIndex++;
+        }
+
+        if (email !== undefined) {
+            updateFields.push(`email = $${valueIndex}`);
+            updateValues.push(email);
+            valueIndex++;
+        }
+
+        if (full_name !== undefined) {
+            updateFields.push(`full_name = $${valueIndex}`);
+            updateValues.push(full_name);
+            valueIndex++;
+        }
+
+        if (birth_year !== undefined) {
+            updateFields.push(`birth_year = $${valueIndex}`);
+            updateValues.push(birth_year);
+            valueIndex++;
+        }
+
+        if (role !== undefined) {
+            updateFields.push(`role = $${valueIndex}`);
+            updateValues.push(role);
+            valueIndex++;
+        }
+
+        if (is_active !== undefined) {
+            updateFields.push(`is_active = $${valueIndex}`);
+            updateValues.push(is_active);
+            valueIndex++;
+        }
+
+        // Обработка пароля
+        if (password && password.trim() !== '') {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            updateFields.push(`password = $${valueIndex}`);
+            updateValues.push(hashedPassword);
+            valueIndex++;
+        } else if (reset_password === true) {
+            // Сброс пароля (установка в NULL)
+            updateFields.push(`password = $${valueIndex}`);
+            updateValues.push(null);
+            valueIndex++;
+        }
+
+        // Добавляем updated_at
+        updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
+
+        if (updateFields.length === 0) {
+            return res.status(400).json({ error: 'Нет данных для обновления' });
+        }
+
+        // Добавляем ID в конец значений
+        updateValues.push(id);
+
+        // Выполняем обновление
+        const query = `
+            UPDATE users 
+            SET ${updateFields.join(', ')}
+            WHERE id = $${valueIndex}
+            RETURNING id, username, email, full_name, avatar_url, 
+                     role, is_active, birth_year, auth_method, created_at, updated_at
+        `;
+
+        const result = await pool.query(query, updateValues);
+
+        console.log('✅ User updated successfully:', result.rows[0].email);
+
+        res.json({
+            success: true,
+            message: 'Данные пользователя обновлены',
+            user: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('❌ Update user error:', error);
+        
+        if (error.code === '23505') { // unique_violation
+            if (error.constraint === 'users_email_key') {
+                return res.status(400).json({ error: 'Email уже используется' });
+            }
+            if (error.constraint === 'users_username_key') {
+                return res.status(400).json({ error: 'Имя пользователя уже занято' });
+            }
+        }
+        
+        res.status(500).json({ error: 'Ошибка обновления пользователя' });
+    }
+});
+
+// Удалить пользователя
+app.delete('/api/admin/users/:id', isAdmin, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Проверяем, не пытаемся ли удалить себя
+        const token = req.headers.authorization?.split(' ')[1];
+        const decoded = jwt.verify(token, JWT_SECRET);
+        
+        if (parseInt(id) === decoded.userId) {
+            return res.status(400).json({ error: 'Нельзя удалить свой аккаунт' });
+        }
+
+        const result = await pool.query(
+            'DELETE FROM users WHERE id = $1 RETURNING id, email',
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Пользователь не найден' });
+        }
+
+        console.log('✅ User deleted:', result.rows[0].email);
+
+        res.json({
+            success: true,
+            message: 'Пользователь удален',
+            deleted_user: result.rows[0]
+        });
+    } catch (error) {
+        console.error('❌ Delete user error:', error);
+        res.status(500).json({ error: 'Ошибка удаления пользователя' });
+    }
+});
+
+// Создать нового пользователя (админ)
+app.post('/api/admin/users', isAdmin, async (req, res) => {
+    try {
+        const {
+            username, email, password, full_name,
+            birth_year, role = 'user', is_active = true
+        } = req.body;
+
+        console.log('🔐 Admin create user:', { username, email, role });
+
+        // Валидация
+        if (!username || !email || !password || !full_name || !birth_year) {
+            return res.status(400).json({ error: 'Все обязательные поля должны быть заполнены' });
+        }
+
+        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+            return res.status(400).json({ error: 'Имя пользователя может содержать только буквы, цифры и подчеркивания' });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({ error: 'Пароль должен быть не менее 6 символов' });
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.status(400).json({ error: 'Введите корректный email' });
+        }
+
+        const currentYear = new Date().getFullYear();
+        if (birth_year < 1900 || birth_year > currentYear) {
+            return res.status(400).json({ error: 'Укажите корректный год рождения' });
+        }
+
+        // Проверка существования
+        const userExists = await pool.query(
+            'SELECT id FROM users WHERE email = $1 OR username = $2',
+            [email, username]
+        );
+
+        if (userExists.rows.length > 0) {
+            return res.status(400).json({ error: 'Пользователь с таким email или username уже существует' });
+        }
+
+        // Хешируем пароль
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Создаем пользователя
+        const result = await pool.query(
+            `INSERT INTO users (
+                username, email, password, full_name,
+                birth_year, role, is_active, auth_method
+            ) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, 'email')
+             RETURNING id, username, email, full_name, role, 
+                      is_active, birth_year, created_at`,
+            [username, email, hashedPassword, full_name, 
+             birth_year, role, is_active]
+        );
+
+        const user = result.rows[0];
+
+        console.log('✅ Admin created user successfully:', user.email);
+
+        res.json({
+            success: true,
+            message: 'Пользователь создан',
+            user
+        });
+
+    } catch (error) {
+        console.error('❌ Create user error:', error);
+        
+        if (error.code === '23505') {
+            return res.status(400).json({ error: 'Пользователь с таким email или username уже существует' });
+        }
+        
+        res.status(500).json({ error: 'Ошибка создания пользователя' });
+    }
+});
+
+
+
+
+
+
+
+
+
  
 
 // ============================================
