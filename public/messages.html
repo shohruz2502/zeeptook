@@ -1424,87 +1424,291 @@ async function sendMessage() {
     }
 }
 
-// Auto-reply function - ДЛЯ ПОДДЕРЖКИ И ЧАТОВ С ПРОДАВЦАМИ
+// Auto-reply function - ТОЛЬКО для чата поддержки
 async function sendAutoReply() {
-    // Проверяем условия для отправки автоответа
-    if (!currentChatId) {
-        console.log('Автоответ не отправлен: нет активного чата');
+    console.log('📨 [AUTO-REPLY] Функция sendAutoReply вызвана');
+    console.log('📨 [AUTO-REPLY] Текущий чат ID:', currentChatId);
+    console.log('📨 [AUTO-REPLY] Текущий чат:', currentChat);
+    
+    // КРИТИЧНО: работаем ТОЛЬКО в чате поддержки!
+    if (currentChatId !== 'support') {
+        console.log('📨 [AUTO-REPLY] ЭТО НЕ ЧАТ ПОДДЕРЖКИ - автоответчик НЕ работает здесь');
+        console.log('📨 [AUTO-REPLY] Автоответчик должен работать ТОЛЬКО в чате поддержки');
         return;
     }
     
     try {
-        // Проверяем еще раз, нет ли уже автоответа в истории
+        // Проверяем, нет ли уже автоответа в истории
         const hasAutoReply = await checkForExistingAutoReply();
+        console.log('📨 [AUTO-REPLY] Проверка существующего автоответа:', hasAutoReply);
+        
         if (hasAutoReply) {
-            console.log('Автоответ уже существует в этом чате');
+            console.log('📨 [AUTO-REPLY] Автоответ уже существует в этом чате, пропускаем');
             return;
         }
         
-        // Сообщение автоответа
+        // Сообщение автоответа от поддержки
         const autoReplyMessage = "Приветствуем игрок! Сообщаем, что ваше обращение в ZEEPTOOK успешно прошло первичную верификацию и интегрировано в систему обработки запросов. В данный момент мы проводим детальный анализ предоставленных вами данных. Благодарим за ваше терпение и понимание внутренних регламентов.";
         
-        console.log('Отправка автоответа в чат:', currentChatId);
+        console.log('🚀 [AUTO-REPLY] Начинаем отправку автоответа ОТ поддержки');
+        console.log('🚀 [AUTO-REPLY] Чат поддержки активирован');
         
-        // Показываем индикатор набора сообщения
+        // Показываем индикатор набора сообщения от поддержки
         showTypingIndicator();
+        console.log('⏳ [AUTO-REPLY] Индикатор набора от поддержки показан');
         
         // Задержка для имитации набора текста
         setTimeout(async () => {
+            console.log('⏰ [AUTO-REPLY] Таймер сработал, скрываем индикатор');
             hideTypingIndicator();
             
-            // Для чата поддержки - сообщение должно приходить ОТ поддержки
-            if (currentChatId === 'support') {
-                // Имитируем сообщение от поддержки
-                // В реальном приложении это должно быть реализовано на сервере
-                const tempMessage = {
-                    id: `auto_reply_${Date.now()}`,
-                    sender_id: 1, // ID поддержки
-                    content: autoReplyMessage,
-                    created_at: new Date().toISOString(),
-                    status: 'sent'
-                };
-                
-                // Отображаем сообщение от поддержки
-                const container = document.getElementById('messages-container');
-                const messageElement = createMessageElement(tempMessage);
-                container.appendChild(messageElement);
-                scrollToBottom();
-                
-                console.log('Автоответ от поддержки отправлен');
-                
-            } else {
-                // Для чатов с продавцами - обычная логика
+            // Отправляем автоответ ОТ поддержки
+            try {
                 const token = localStorage.getItem('token');
-                const response = await fetch(`${API_BASE}/messages`, {
+                console.log('📤 [AUTO-REPLY] Отправка автоответа ОТ поддержки...');
+                
+                // Отправляем на специальный endpoint для автоответа от поддержки
+                const response = await fetch(`${API_BASE}/messages/support/auto-reply`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        chat_id: currentChatId,
                         content: autoReplyMessage,
-                        receiver_id: currentReceiverId
+                        chatId: currentChatId
                     })
                 });
                 
+                console.log('📡 [AUTO-REPLY] Ответ сервера (статус):', response.status);
+                
                 if (response.ok) {
-                    console.log('Автоответ успешно отправлен продавцу');
+                    const result = await response.json();
+                    console.log('✅ [AUTO-REPLY] Автоответ ОТ поддержки успешно отправлен');
+                    console.log('✅ [AUTO-REPLY] ID сообщения:', result.messageId);
+                    
+                    // Перезагружаем сообщения
                     await loadMessages(currentChatId);
                     scrollToBottom();
-                    loadChats(false);
+                    console.log('🔄 [AUTO-REPLY] Сообщения перезагружены');
+                    
+                } else {
+                    console.error('❌ [AUTO-REPLY] Ошибка сервера, пытаемся имитировать...');
+                    
+                    // Имитируем автоответ на клиенте
+                    simulateSupportAutoReply(autoReplyMessage);
                 }
+            } catch (error) {
+                console.error('❌ [AUTO-REPLY] Ошибка при отправке:', error);
+                
+                // Имитируем автоответ на клиенте
+                simulateSupportAutoReply(autoReplyMessage);
             }
             
             // Удаляем таймер из мапы
             autoReplyTimers.delete(currentChatId);
+            console.log('🗑️ [AUTO-REPLY] Таймер удален для чата поддержки');
             
-        }, 2000); // 2 секунды для демо
+        }, 3000); // 3 секунды для демо
         
     } catch (error) {
-        console.error('Auto-reply error:', error);
+        console.error('❌ [AUTO-REPLY] Критическая ошибка:', error);
         hideTypingIndicator();
+        if (currentChatId) autoReplyTimers.delete(currentChatId);
+    }
+}
+
+// Имитация автоответа от поддержки на клиенте
+function simulateSupportAutoReply(message) {
+    console.log('🔄 [SIMULATION] Имитация автоответа ОТ поддержки');
+    
+    // Создаем сообщение от поддержки (ID 1)
+    const tempMessage = {
+        id: `support_auto_reply_${Date.now()}`,
+        sender_id: 1, // ID поддержки
+        content: message,
+        created_at: new Date().toISOString(),
+        status: 'sent'
+    };
+    
+    console.log('🔄 [SIMULATION] Создано сообщение от поддержки');
+    
+    try {
+        // Отображаем сообщение от поддержки
+        const container = document.getElementById('messages-container');
+        if (!container) {
+            console.error('❌ [SIMULATION] Контейнер сообщений не найден');
+            return;
+        }
+        
+        // Удаляем пустое состояние если есть
+        const emptyState = container.querySelector('.empty-state');
+        if (emptyState) {
+            emptyState.remove();
+        }
+        
+        // Создаем элемент сообщения как входящее (от поддержки)
+        const messageElement = document.createElement('div');
+        messageElement.className = 'message incoming';
+        messageElement.dataset.messageId = tempMessage.id;
+        
+        const time = formatMessageTime(tempMessage.created_at);
+        
+        messageElement.innerHTML = `
+            <div class="message-content">${escapeHtml(message)}</div>
+            <div class="message-meta">
+                <div class="message-time">${time}</div>
+            </div>
+        `;
+        
+        container.appendChild(messageElement);
+        console.log('✅ [SIMULATION] Сообщение от поддержки добавлено в DOM');
+        
+        scrollToBottom();
+        console.log('✅ [SIMULATION] Автоответ от поддержки успешно имитирован');
+        
+    } catch (error) {
+        console.error('❌ [SIMULATION] Ошибка при имитации:', error);
+    }
+}
+
+// Setup auto-reply for current chat - ТОЛЬКО для чата поддержки
+async function setupAutoReplyForChat() {
+    console.log('🔧 [AUTO-REPLY-SETUP] Проверка настроек автоответчика');
+    console.log('🔧 [AUTO-REPLY-SETUP] Текущий чат ID:', currentChatId);
+    console.log('🔧 [AUTO-REPLY-SETUP] Тип чата:', currentChat?.type);
+    console.log('🔧 [AUTO-REPLY-SETUP] Имя чата:', currentChat?.name);
+    
+    // Настраиваем автоответ ТОЛЬКО для чата поддержки!
+    if (currentChatId !== 'support') {
+        console.log('🔧 [AUTO-REPLY-SETUP] ЭТО НЕ ЧАТ ПОДДЕРЖКИ - автоответчик НЕ настраивается');
+        console.log('🔧 [AUTO-REPLY-SETUP] Автоответчик работает ТОЛЬКО в чате поддержки');
+        
+        // Очищаем таймер, если он есть для обычных чатов
+        if (autoReplyTimers.has(currentChatId)) {
+            clearTimeout(autoReplyTimers.get(currentChatId));
+            autoReplyTimers.delete(currentChatId);
+            console.log('🔧 [AUTO-REPLY-SETUP] Таймер очищен для обычного чата');
+        }
+        return;
+    }
+    
+    console.log('🔧 [AUTO-REPLY-SETUP] ЭТО ЧАТ ПОДДЕРЖКИ - настраиваем автоответчик');
+    
+    // Очищаем старый таймер, если есть
+    if (autoReplyTimers.has(currentChatId)) {
+        clearTimeout(autoReplyTimers.get(currentChatId));
         autoReplyTimers.delete(currentChatId);
+        console.log('🔧 [AUTO-REPLY-SETUP] Старый таймер очищен');
+    }
+    
+    try {
+        // Проверяем, есть ли уже автоответ в истории
+        const hasAutoReply = await checkForExistingAutoReply();
+        console.log('🔧 [AUTO-REPLY-SETUP] Существующий автоответ:', hasAutoReply);
+        
+        // Устанавливаем автоответ ТОЛЬКО для чата поддержки
+        if (!hasAutoReply && currentChatId === 'support') {
+            const delay = 5000; // 5 секунд для теста
+            const timerId = setTimeout(async () => {
+                console.log('⏰ [AUTO-REPLY-SETUP] Таймер сработал для чата поддержки!');
+                console.log('⏰ [AUTO-REPLY-SETUP] Запуск автоответа ОТ поддержки...');
+                await sendAutoReply();
+            }, delay);
+            
+            autoReplyTimers.set(currentChatId, timerId);
+            console.log('✅ [AUTO-REPLY-SETUP] Автоответчик УСТАНОВЛЕН для поддержки');
+            console.log('✅ [AUTO-REPLY-SETUP] Задержка:', delay / 1000, 'секунд');
+            console.log('✅ [AUTO-REPLY-SETUP] Пользователь получит автоответ через', delay / 1000, 'секунд');
+            
+        } else if (hasAutoReply) {
+            console.log('🔧 [AUTO-REPLY-SETUP] Автоответ уже был отправлен в этом чате поддержки');
+        } else {
+            console.log('🔧 [AUTO-REPLY-SETUP] Автоответчик не установлен (уже есть автоответ или не чат поддержки)');
+        }
+    } catch (error) {
+        console.error('❌ [AUTO-REPLY-SETUP] Ошибка при настройке:', error);
+    }
+}
+
+// Проверяем наличие автоответа в истории сообщений
+async function checkForExistingAutoReply() {
+    try {
+        const container = document.getElementById('messages-container');
+        if (!container) return false;
+        
+        const messages = container.querySelectorAll('.message.incoming .message-content');
+        
+        for (let msg of messages) {
+            const content = msg.textContent || '';
+            // Проверяем содержание на наличие ключевых фраз автоответа
+            if (content.includes('ZEEPTOOK') || 
+                content.includes('верификаци') || 
+                content.includes('регламент') ||
+                content.includes('Приветствуем игрок')) {
+                console.log('🔍 [CHECK] Найден существующий автоответ в истории');
+                return true;
+            }
+        }
+        console.log('🔍 [CHECK] Существующий автоответ не найден');
+        return false;
+    } catch (error) {
+        console.error('❌ [CHECK] Ошибка при проверке автоответа:', error);
+        return false;
+    }
+}le.error('❌ [AUTO-REPLY] Критическая ошибка:', error);
+        hideTypingIndicator();
+        if (currentChatId) autoReplyTimers.delete(currentChatId);
+    }
+}
+
+// Setup auto-reply for current chat - ТОЛЬКО для чатов с продавцами
+async function setupAutoReplyForChat() {
+    console.log('🔧 [AUTO-REPLY-SETUP] Проверка настроек автоответчика');
+    console.log('🔧 [AUTO-REPLY-SETUP] Текущий чат ID:', currentChatId);
+    console.log('🔧 [AUTO-REPLY-SETUP] Тип чата:', currentChat?.type);
+    console.log('🔧 [AUTO-REPLY-SETUP] Имя чата:', currentChat?.name);
+    
+    // НЕ настраиваем автоответ для чата поддержки!
+    if (currentChatId === 'support') {
+        console.log('🔧 [AUTO-REPLY-SETUP] ЭТО ЧАТ ПОДДЕРЖКИ - автоответчик НЕ настраивается');
+        console.log('🔧 [AUTO-REPLY-SETUP] Автоответчик работает только в чатах с продавцами');
+        return;
+    }
+    
+    // Очищаем старый таймер, если есть
+    if (autoReplyTimers.has(currentChatId)) {
+        clearTimeout(autoReplyTimers.get(currentChatId));
+        autoReplyTimers.delete(currentChatId);
+        console.log('🔧 [AUTO-REPLY-SETUP] Старый таймер очищен');
+    }
+    
+    try {
+        // Проверяем, есть ли уже автоответ в истории
+        const hasAutoReply = await checkForExistingAutoReply();
+        console.log('🔧 [AUTO-REPLY-SETUP] Существующий автоответ:', hasAutoReply);
+        
+        // Устанавливаем автоответ ТОЛЬКО для чатов с продавцами
+        if (!hasAutoReply && currentChatId && currentChatId !== 'support') {
+            const delay = 5000; // 5 секунд для теста
+            const timerId = setTimeout(async () => {
+                console.log('⏰ [AUTO-REPLY-SETUP] Таймер сработал! Запуск автоответа...');
+                await sendAutoReply();
+            }, delay);
+            
+            autoReplyTimers.set(currentChatId, timerId);
+            console.log('✅ [AUTO-REPLY-SETUP] Автоответчик УСТАНОВЛЕН');
+            console.log('✅ [AUTO-REPLY-SETUP] Для чата:', currentChat?.name);
+            console.log('✅ [AUTO-REPLY-SETUP] ID чата:', currentChatId);
+            console.log('✅ [AUTO-REPLY-SETUP] Задержка:', delay / 1000, 'секунд');
+            
+        } else if (hasAutoReply) {
+            console.log('🔧 [AUTO-REPLY-SETUP] Автоответ уже был отправлен ранее');
+        } else if (!currentChatId) {
+            console.log('🔧 [AUTO-REPLY-SETUP] Нет активного чата для настройки');
+        }
+    } catch (error) {
+        console.error('❌ [AUTO-REPLY-SETUP] Ошибка при настройке:', error);
     }
 }
 
