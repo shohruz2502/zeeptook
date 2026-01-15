@@ -1350,1178 +1350,1210 @@
     </div>
 
     <script>
-        // Глобальные переменные
-        const API_BASE = '/api';
-        const STORAGE_KEY = `zeeptook_random_attempts_${serverId}`;
-        
-        let currentServer = null;
-        let currentUser = null;
-        let userRole = 'member';
-        let isSubscribed = false;
-        let isBanned = false;
-        let currentChatType = null;
-        let messageCount = 0;
-        let randomSearchTimer = null;
-        let randomPartner = null;
-        
-        // Лимит попыток рандом чата
-        const MAX_DAILY_ATTEMPTS = 3;
-        let dailyAttempts = {
-            count: 0,
-            date: null,
-            usedToday: 0
-        };
+    // Глобальные переменные
+    const API_BASE = '/api';
+    const STORAGE_KEY = `zeeptook_random_attempts_${serverId}`;
+    
+    let currentServer = null;
+    let currentUser = null;
+    let userRole = 'member';
+    let isSubscribed = false;
+    let isBanned = false;
+    let currentChatType = null;
+    let messageCount = 0;
+    let randomSearchTimer = null;
+    let randomPartner = null;
+    let isSearching = false;
+    
+    // Лимит попыток рандом чата
+    const MAX_DAILY_ATTEMPTS = 3;
+    let dailyAttempts = {
+        count: MAX_DAILY_ATTEMPTS,
+        date: null,
+        usedToday: 0
+    };
 
-        // Получаем ID сервера из URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const serverId = urlParams.get('id');
+    // Получаем ID сервера из URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const serverId = urlParams.get('id');
 
-        // Проверка авторизации
-        const token = localStorage.getItem('token');
-        if (!token) {
-            window.location.href = '/login.html';
-        }
+    // Проверка авторизации
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = '/login.html';
+    }
 
-        if (!serverId) {
-            window.location.href = '/server-page.html';
-        }
+    if (!serverId) {
+        window.location.href = '/server-page.html';
+    }
 
-        // Назад к списку серверов
-        function goBackToServers() {
-            window.location.href = 'server-page.html';
-        }
+    // Назад к списку серверов
+    function goBackToServers() {
+        window.location.href = 'server-page.html';
+    }
 
-        // Утилиты
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+    // Утилиты
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 
-        function formatTime(dateString) {
-            if (!dateString) return '';
-            try {
-                const date = new Date(dateString);
-                const now = new Date();
-                const diff = now - date;
-                
-                if (diff < 60000) return 'только что';
-                if (diff < 3600000) return `${Math.floor(diff/60000)} мин`;
-                if (diff < 86400000) {
-                    return date.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
-                }
-                if (diff < 604800000) {
-                    const days = Math.floor(diff / 86400000);
-                    if (days === 1) return 'вчера';
-                    return date.toLocaleDateString('ru-RU', {weekday: 'short'});
-                }
-                return date.toLocaleDateString('ru-RU', {day:'2-digit', month:'2-digit'});
-            } catch (e) {
-                return '';
-            }
-        }
-
-        function formatMessageTime(dateString) {
-            try {
-                return new Date(dateString).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
-            } catch (e) {
-                return '';
-            }
-        }
-
-        function formatDateHeader(dateStr) {
-            const date = new Date(dateStr);
-            const today = new Date();
-            const yesterday = new Date(today);
-            yesterday.setDate(yesterday.getDate() - 1);
+    function formatTime(dateString) {
+        if (!dateString) return '';
+        try {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
             
-            if (date.toDateString() === today.toDateString()) {
-                return 'Сегодня';
-            } else if (date.toDateString() === yesterday.toDateString()) {
-                return 'Вчера';
-            } else if (today.getTime() - date.getTime() < 604800000) {
-                return date.toLocaleDateString('ru-RU', {weekday: 'long'});
+            if (diff < 60000) return 'только что';
+            if (diff < 3600000) return `${Math.floor(diff/60000)} мин`;
+            if (diff < 86400000) {
+                return date.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+            }
+            if (diff < 604800000) {
+                const days = Math.floor(diff / 86400000);
+                if (days === 1) return 'вчера';
+                return date.toLocaleDateString('ru-RU', {weekday: 'short'});
+            }
+            return date.toLocaleDateString('ru-RU', {day:'2-digit', month:'2-digit'});
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function formatMessageTime(dateString) {
+        try {
+            return new Date(dateString).toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'});
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function formatDateHeader(dateStr) {
+        const date = new Date(dateStr);
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        
+        if (date.toDateString() === today.toDateString()) {
+            return 'Сегодня';
+        } else if (date.toDateString() === yesterday.toDateString()) {
+            return 'Вчера';
+        } else if (today.getTime() - date.getTime() < 604800000) {
+            return date.toLocaleDateString('ru-RU', {weekday: 'long'});
+        } else {
+            return date.toLocaleDateString('ru-RU', {
+                day: 'numeric',
+                month: 'long',
+                year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
+            });
+        }
+    }
+
+    function getAvatarColor(userId) {
+        const colors = ['#0088cc', '#0077b3', '#005580', '#2b5278', '#182533'];
+        const num = (parseInt(userId) || 0) % colors.length;
+        return colors[num];
+    }
+
+    function getPluralForm(number, forms) {
+        const n = Math.abs(number) % 100;
+        const n1 = n % 10;
+
+        if (n > 10 && n < 20) return forms[2];
+        if (n1 > 1 && n1 < 5) return forms[1];
+        if (n1 === 1) return forms[0];
+        return forms[2];
+    }
+
+    function getCurrentUserId() {
+        try {
+            if (!token) return null;
+            if (token.includes('.')) {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.userId || payload.sub || payload.id;
             } else {
-                return date.toLocaleDateString('ru-RU', {
-                    day: 'numeric',
-                    month: 'long',
-                    year: date.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
-                });
+                const decoded = atob(token);
+                const [userId] = decoded.split(':');
+                return userId;
             }
+        } catch (e) {
+            console.error('Error parsing token:', e);
+            return null;
         }
+    }
 
-        function getAvatarColor(userId) {
-            const colors = ['#0088cc', '#0077b3', '#005580', '#2b5278', '#182533'];
-            const num = (parseInt(userId) || 0) % colors.length;
-            return colors[num];
-        }
+    // Загрузка данных сервера
+    async function loadServerInfo() {
+        try {
+            console.log('🔄 Загрузка информации о сервере ID:', serverId);
 
-        function getPluralForm(number, forms) {
-            const n = Math.abs(number) % 100;
-            const n1 = n % 10;
+            // Показываем экран загрузки
+            document.getElementById('loadingScreen').style.display = 'flex';
+            document.getElementById('chatsScreen').style.display = 'none';
 
-            if (n > 10 && n < 20) return forms[2];
-            if (n1 > 1 && n1 < 5) return forms[1];
-            if (n1 === 1) return forms[0];
-            return forms[2];
-        }
-
-        function getCurrentUserId() {
-            try {
-                if (!token) return null;
-                if (token.includes('.')) {
-                    const payload = JSON.parse(atob(token.split('.')[1]));
-                    return payload.userId || payload.sub || payload.id;
-                } else {
-                    const decoded = atob(token);
-                    const [userId] = decoded.split(':');
-                    return userId;
+            const response = await fetch(`${API_BASE}/server/${serverId}/info`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
                 }
-            } catch (e) {
-                console.error('Error parsing token:', e);
-                return null;
-            }
-        }
+            });
 
-        // Загрузка данных сервера
-        async function loadServerInfo() {
-            try {
-                console.log('🔄 Загрузка информации о сервере ID:', serverId);
+            console.log('📡 Статус ответа:', response.status);
 
-                // Показываем экран загрузки
-                document.getElementById('loadingScreen').style.display = 'flex';
-                document.getElementById('chatsScreen').style.display = 'none';
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Данные сервера получены:', data);
 
-                const response = await fetch(`${API_BASE}/server/${serverId}/info`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
+                if (!data.server) {
+                    throw new Error('Сервер не найден в ответе');
+                }
+
+                currentServer = data.server;
+                userRole = data.user_role || 'member';
+                isSubscribed = data.server.is_subscribed || false;
+                isBanned = data.is_banned || false;
+
+                console.log('📊 Статус:', {
+                    name: currentServer.name,
+                    userRole,
+                    isSubscribed,
+                    isBanned
                 });
 
-                console.log('📡 Статус ответа:', response.status);
+                // Загружаем попытки рандом чата
+                loadRandomAttempts();
 
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('✅ Данные сервера получены:', data);
+                // Скрываем экран загрузки
+                document.getElementById('loadingScreen').style.display = 'none';
+                document.getElementById('chatsScreen').style.display = 'block';
 
-                    if (!data.server) {
-                        throw new Error('Сервер не найден в ответе');
-                    }
+                renderServerInfo();
+                setupChats();
 
-                    currentServer = data.server;
-                    userRole = data.user_role || 'member';
-                    isSubscribed = data.server.is_subscribed || false;
-                    isBanned = data.is_banned || false;
-
-                    console.log('📊 Статус:', {
-                        name: currentServer.name,
-                        userRole,
-                        isSubscribed,
-                        isBanned
-                    });
-
-                    // Загружаем попытки рандом чата
-                    loadRandomAttempts();
-
-                    // Скрываем экран загрузки
-                    document.getElementById('loadingScreen').style.display = 'none';
-                    document.getElementById('chatsScreen').style.display = 'block';
-
-                    renderServerInfo();
-                    setupChats();
-
-                } else {
-                    const error = await response.json().catch(() => ({ error: 'Ошибка сервера' }));
-                    console.error('❌ Ошибка API:', error);
-                    showError(error.error || 'Ошибка загрузки сервера');
-                }
-            } catch (error) {
-                console.error('❌ Ошибка загрузки сервера:', error);
-                showError('Не удалось загрузить информацию о сервере. Проверьте подключение.');
+            } else {
+                const error = await response.json().catch(() => ({ error: 'Ошибка сервера' }));
+                console.error('❌ Ошибка API:', error);
+                showError(error.error || 'Ошибка загрузки сервера');
             }
+        } catch (error) {
+            console.error('❌ Ошибка загрузки сервера:', error);
+            showError('Не удалось загрузить информацию о сервере. Проверьте подключение.');
         }
+    }
 
-        function renderServerInfo() {
-            try {
-                const serverNameEl = document.getElementById('serverName');
-                const pageTitleEl = document.getElementById('pageTitle');
-                const serverAvatarEl = document.getElementById('serverAvatar');
-                const memberCountEl = document.getElementById('memberCount');
-                const messageCountEl = document.getElementById('messageCount');
+    function renderServerInfo() {
+        try {
+            const serverNameEl = document.getElementById('serverName');
+            const pageTitleEl = document.getElementById('pageTitle');
+            const serverAvatarEl = document.getElementById('serverAvatar');
+            const memberCountEl = document.getElementById('memberCount');
+            const messageCountEl = document.getElementById('messageCount');
 
-                if (!currentServer) {
-                    console.error('❌ currentServer не определен');
-                    return;
-                }
-
-                // Безопасно устанавливаем значения
-                if (serverNameEl) serverNameEl.textContent = currentServer.name || 'Сервер';
-                if (pageTitleEl) pageTitleEl.textContent = currentServer.name || 'Сервер';
-                
-                if (serverAvatarEl) {
-                    serverAvatarEl.textContent = (currentServer.name || 'S').charAt(0).toUpperCase();
-                    serverAvatarEl.style.background = getAvatarColor(currentServer.id);
-
-                    if (currentServer.avatar) {
-                        serverAvatarEl.innerHTML =
-                            `<img src="${escapeHtml(currentServer.avatar)}" alt="${escapeHtml(currentServer.name)}" 
-                             style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
-                    }
-                }
-
-                if (memberCountEl) {
-                    memberCountEl.textContent = currentServer.member_count || 0;
-                }
-
-                if (messageCountEl) {
-                    messageCountEl.textContent = currentServer.message_count || 0;
-                }
-
-                console.log('✅ Информация о сервере отрендерена');
-            } catch (error) {
-                console.error('❌ Ошибка в renderServerInfo:', error);
-            }
-        }
-
-        // Настройка чатов
-        function setupChats() {
-            const bannedMessageEl = document.getElementById('bannedMessage');
-            const subscribeContainerEl = document.getElementById('subscribeContainer');
-            const generalChatItemEl = document.getElementById('generalChatItem');
-            const exchangeChatItemEl = document.getElementById('exchangeChatItem');
-            const randomChatItemEl = document.getElementById('randomChatItem');
-
-            if (isBanned) {
-                bannedMessageEl.style.display = 'block';
-                subscribeContainerEl.style.display = 'none';
-                generalChatItemEl.style.display = 'none';
-                exchangeChatItemEl.style.display = 'none';
-                randomChatItemEl.style.display = 'none';
+            if (!currentServer) {
+                console.error('❌ currentServer не определен');
                 return;
             }
 
-            if (!isSubscribed) {
-                subscribeContainerEl.style.display = 'block';
-                generalChatItemEl.style.display = 'none';
-                exchangeChatItemEl.style.display = 'none';
-                randomChatItemEl.style.display = 'none';
-                return;
+            // Безопасно устанавливаем значения
+            if (serverNameEl) serverNameEl.textContent = currentServer.name || 'Сервер';
+            if (pageTitleEl) pageTitleEl.textContent = currentServer.name || 'Сервер';
+            
+            if (serverAvatarEl) {
+                serverAvatarEl.textContent = (currentServer.name || 'S').charAt(0).toUpperCase();
+                serverAvatarEl.style.background = getAvatarColor(currentServer.id);
+
+                if (currentServer.avatar) {
+                    serverAvatarEl.innerHTML =
+                        `<img src="${escapeHtml(currentServer.avatar)}" alt="${escapeHtml(currentServer.name)}" 
+                         style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+                }
             }
 
-            // Показываем все чаты для подписанных пользователей
+            if (memberCountEl) {
+                memberCountEl.textContent = currentServer.member_count || 0;
+            }
+
+            if (messageCountEl) {
+                messageCountEl.textContent = currentServer.message_count || 0;
+            }
+
+            console.log('✅ Информация о сервере отрендерена');
+        } catch (error) {
+            console.error('❌ Ошибка в renderServerInfo:', error);
+        }
+    }
+
+    // Настройка чатов
+    function setupChats() {
+        const bannedMessageEl = document.getElementById('bannedMessage');
+        const subscribeContainerEl = document.getElementById('subscribeContainer');
+        const generalChatItemEl = document.getElementById('generalChatItem');
+        const exchangeChatItemEl = document.getElementById('exchangeChatItem');
+        const randomChatItemEl = document.getElementById('randomChatItem');
+
+        if (isBanned) {
+            bannedMessageEl.style.display = 'block';
             subscribeContainerEl.style.display = 'none';
-            generalChatItemEl.style.display = 'flex';
-            exchangeChatItemEl.style.display = 'flex';
-            randomChatItemEl.style.display = 'flex';
-
-            // Обновляем статус попыток рандом чата
-            updateRandomAttemptsStatus();
+            generalChatItemEl.style.display = 'none';
+            exchangeChatItemEl.style.display = 'none';
+            randomChatItemEl.style.display = 'none';
+            return;
         }
 
-        // Загрузка попыток рандом чата
-        function loadRandomAttempts() {
-            try {
-                const saved = localStorage.getItem(STORAGE_KEY);
-                if (saved) {
-                    const data = JSON.parse(saved);
-                    const today = new Date().toDateString();
-                    
-                    if (data.date === today) {
-                        dailyAttempts = data;
-                    } else {
-                        // Сброс на новый день
-                        dailyAttempts = {
-                            count: MAX_DAILY_ATTEMPTS,
-                            date: today,
-                            usedToday: 0
-                        };
-                        saveRandomAttempts();
-                    }
+        if (!isSubscribed) {
+            subscribeContainerEl.style.display = 'block';
+            generalChatItemEl.style.display = 'none';
+            exchangeChatItemEl.style.display = 'none';
+            randomChatItemEl.style.display = 'none';
+            return;
+        }
+
+        // Показываем все чаты для подписанных пользователей
+        subscribeContainerEl.style.display = 'none';
+        generalChatItemEl.style.display = 'flex';
+        exchangeChatItemEl.style.display = 'flex';
+        randomChatItemEl.style.display = 'flex';
+
+        // Обновляем статус попыток рандом чата
+        updateRandomAttemptsStatus();
+    }
+
+    // Загрузка попыток рандом чата
+    function loadRandomAttempts() {
+        try {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const data = JSON.parse(saved);
+                const today = new Date().toDateString();
+                
+                if (data.date === today) {
+                    dailyAttempts = data;
                 } else {
-                    // Первый запуск
+                    // Сброс на новый день
                     dailyAttempts = {
                         count: MAX_DAILY_ATTEMPTS,
-                        date: new Date().toDateString(),
+                        date: today,
                         usedToday: 0
                     };
                     saveRandomAttempts();
                 }
-                
-                console.log('🎲 Загружены попытки рандом чата:', dailyAttempts);
-            } catch (error) {
-                console.error('❌ Ошибка загрузки попыток:', error);
+            } else {
+                // Первый запуск
                 dailyAttempts = {
                     count: MAX_DAILY_ATTEMPTS,
                     date: new Date().toDateString(),
                     usedToday: 0
                 };
-            }
-        }
-
-        // Сохранение попыток
-        function saveRandomAttempts() {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(dailyAttempts));
-            } catch (error) {
-                console.error('❌ Ошибка сохранения попыток:', error);
-            }
-        }
-
-        // Обновление статуса попыток
-        function updateRandomAttemptsStatus() {
-            const attemptsStatusEl = document.getElementById('randomAttemptsStatus');
-            const attemptsCounterEl = document.getElementById('attemptsCounter');
-            const remaining = dailyAttempts.count - dailyAttempts.usedToday;
-            
-            if (attemptsStatusEl) {
-                attemptsStatusEl.textContent = `${remaining}/${MAX_DAILY_ATTEMPTS}`;
+                saveRandomAttempts();
             }
             
-            if (attemptsCounterEl) {
-                attemptsCounterEl.textContent = `${remaining}/${MAX_DAILY_ATTEMPTS}`;
-            }
-            
-            // Обновляем описание поиска
-            const searchingDescEl = document.getElementById('searchingDescription');
-            if (searchingDescEl) {
-                if (remaining <= 0) {
-                    searchingDescEl.textContent = 'Вы использовали все попытки на сегодня. Попробуйте завтра!';
-                } else {
-                    searchingDescEl.textContent = `Ищем случайного участника сервера для вас. Осталось попыток: ${remaining}`;
-                }
-            }
-        }
-
-        // Подписка на сервер
-        async function subscribeToServer() {
-            const button = document.getElementById('subscribeButton');
-            if (!button) return;
-
-            const originalText = button.textContent;
-
-            try {
-                button.textContent = 'Подписка...';
-                button.disabled = true;
-
-                console.log('📝 Отправка запроса на подписку...');
-
-                const response = await fetch(`${API_BASE}/server/${serverId}/subscribe`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                console.log('📡 Ответ на подписку:', response.status);
-
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('✅ Подписка успешна:', data);
-
-                    isSubscribed = true;
-                    setupChats();
-
-                    // Показываем уведомление
-                    showNotification('🎉 Вы успешно подписались на сервер!', 'success');
-
-                } else {
-                    const error = await response.json().catch(() => ({ error: 'Ошибка сервера' }));
-                    console.error('❌ Ошибка подписки:', error);
-                    showNotification(error.error || '❌ Ошибка подписки', 'error');
-                }
-            } catch (error) {
-                console.error('❌ Ошибка сети при подписке:', error);
-                showNotification('🌐 Ошибка соединения с сервером', 'error');
-            } finally {
-                button.textContent = originalText;
-                button.disabled = false;
-            }
-        }
-
-        // Открытие общего чата
-        async function openGeneralChat() {
-            try {
-                currentChatType = 'general';
-                document.getElementById('chatsScreen').style.display = 'none';
-                document.getElementById('generalChatScreen').classList.add('active');
-                
-                // Загружаем сообщения
-                await loadChatMessages('general');
-                
-                // Автофокус на поле ввода
-                setTimeout(() => {
-                    const input = document.getElementById('generalMessageInput');
-                    if (input) input.focus();
-                }, 300);
-
-            } catch (error) {
-                console.error('❌ Ошибка открытия чата:', error);
-                showNotification('❌ Не удалось открыть чат', 'error');
-                closeChat('general');
-            }
-        }
-
-        // Открытие чата обмена
-        async function openExchangeChat() {
-            try {
-                currentChatType = 'exchange';
-                document.getElementById('chatsScreen').style.display = 'none';
-                document.getElementById('exchangeChatScreen').classList.add('active');
-                
-                // Загружаем сообщения обмена
-                await loadChatMessages('exchange');
-                
-                // Автофокус на поле ввода
-                setTimeout(() => {
-                    const input = document.getElementById('exchangeMessageInput');
-                    if (input) input.focus();
-                }, 300);
-
-            } catch (error) {
-                console.error('❌ Ошибка открытия чата обмена:', error);
-                showNotification('❌ Не удалось открыть чат обмена', 'error');
-                closeChat('exchange');
-            }
-        }
-
-        // Открытие поиска рандом собеседника
-        function openRandomSearch() {
-            const remaining = dailyAttempts.count - dailyAttempts.usedToday;
-            
-            if (remaining <= 0) {
-                showNotification('🎲 Вы использовали все попытки на сегодня. Попробуйте завтра!', 'info');
-                return;
-            }
-            
-            // Показываем экран поиска
-            document.getElementById('chatsScreen').style.display = 'none';
-            document.getElementById('randomSearchScreen').classList.remove('hidden');
-            
-            // Обновляем счетчик
-            updateRandomAttemptsStatus();
-            
-            // Начинаем поиск
-            startRandomSearch();
-        }
-
-        // Начать поиск рандом собеседника
-        async function startRandomSearch() {
-            try {
-                console.log('🎲 Начало поиска рандом собеседника');
-                
-                // Имитация поиска (3-8 секунд)
-                const searchTime = 3000 + Math.random() * 5000;
-                
-                randomSearchTimer = setTimeout(async () => {
-                    try {
-                        // Пытаемся найти реального собеседника
-                        const response = await fetch(`${API_BASE}/server/${serverId}/random-member`, {
-                            headers: {
-                                'Authorization': `Bearer ${token}`,
-                                'Content-Type': 'application/json'
-                            }
-                        });
-                        
-                        if (response.ok) {
-                            const data = await response.json();
-                            console.log('✅ Найден рандом собеседник:', data.user);
-                            
-                            // Уменьшаем счетчик попыток
-                            dailyAttempts.usedToday++;
-                            saveRandomAttempts();
-                            
-                            // Открываем чат с найденным собеседником
-                            openRandomChat(data.user);
-                            
-                        } else {
-                            // Если не нашли, создаем имитацию
-                            console.log('⚠️ Не удалось найти реального собеседника, создаем имитацию');
-                            createMockRandomPartner();
-                        }
-                        
-                    } catch (error) {
-                        console.error('❌ Ошибка поиска рандом собеседника:', error);
-                        createMockRandomPartner();
-                    }
-                }, searchTime);
-                
-            } catch (error) {
-                console.error('❌ Ошибка начала поиска:', error);
-                cancelRandomSearch();
-                showNotification('❌ Ошибка поиска собеседника', 'error');
-            }
-        }
-
-        // Создание имитации рандом собеседника
-        function createMockRandomPartner() {
-            // Уменьшаем счетчик попыток
-            dailyAttempts.usedToday++;
-            saveRandomAttempts();
-            
-            // Список возможных имен
-            const names = ['Алексей', 'Мария', 'Дмитрий', 'Анна', 'Иван', 'Елена', 'Сергей', 'Ольга', 'Максим', 'Наталья'];
-            const roles = ['Игрок CS:GO', 'Трейдер', 'Геймер', 'Коллекционер', 'Стример', 'Киберспортсмен'];
-            
-            const randomName = names[Math.floor(Math.random() * names.length)];
-            const randomRole = roles[Math.floor(Math.random() * roles.length)];
-            
-            const mockPartner = {
-                id: `mock_${Date.now()}`,
-                username: randomName,
-                avatar_url: null,
-                role: 'member',
-                mock: true
+            console.log('🎲 Загружены попытки рандом чата:', dailyAttempts);
+        } catch (error) {
+            console.error('❌ Ошибка загрузки попыток:', error);
+            dailyAttempts = {
+                count: MAX_DAILY_ATTEMPTS,
+                date: new Date().toDateString(),
+                usedToday: 0
             };
-            
-            console.log('🤖 Создан имитированный собеседник:', mockPartner);
-            openRandomChat(mockPartner);
         }
+    }
 
-        // Открыть чат с рандом собеседником
-        function openRandomChat(partner) {
-            randomPartner = partner;
-            
-            // Скрываем экран поиска
-            document.getElementById('randomSearchScreen').classList.add('hidden');
-            
-            // Показываем экран чата
-            document.getElementById('randomChatScreen').classList.add('active');
-            
-            // Обновляем заголовок
-            document.getElementById('randomPartnerName').textContent = partner.username;
-            document.getElementById('randomPartnerStatus').textContent = partner.role || 'Случайный собеседник';
-            
-            // Активируем поле ввода
-            const input = document.getElementById('randomMessageInput');
-            const sendBtn = document.getElementById('sendRandomMessage');
-            if (input) input.disabled = false;
-            if (sendBtn) sendBtn.disabled = false;
-            
-            // Показываем кнопку "Следующий" (только если остались попытки)
-            const remaining = dailyAttempts.count - dailyAttempts.usedToday;
-            const nextBtn = document.getElementById('nextRandomBtn');
-            if (nextBtn) {
-                if (remaining > 0 && partner.mock) {
-                    nextBtn.style.display = 'block';
-                } else {
-                    nextBtn.style.display = 'none';
+    // Сохранение попыток
+    function saveRandomAttempts() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(dailyAttempts));
+        } catch (error) {
+            console.error('❌ Ошибка сохранения попыток:', error);
+        }
+    }
+
+    // Обновление статуса попыток
+    function updateRandomAttemptsStatus() {
+        const attemptsStatusEl = document.getElementById('randomAttemptsStatus');
+        const attemptsCounterEl = document.getElementById('attemptsCounter');
+        const remaining = Math.max(0, dailyAttempts.count - dailyAttempts.usedToday);
+        
+        if (attemptsStatusEl) {
+            attemptsStatusEl.textContent = `${remaining}/${MAX_DAILY_ATTEMPTS}`;
+            if (remaining === 0) {
+                attemptsStatusEl.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%)';
+            } else {
+                attemptsStatusEl.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            }
+        }
+        
+        if (attemptsCounterEl) {
+            attemptsCounterEl.textContent = `${remaining}/${MAX_DAILY_ATTEMPTS}`;
+        }
+        
+        // Обновляем описание поиска
+        const searchingDescEl = document.getElementById('searchingDescription');
+        if (searchingDescEl) {
+            if (remaining <= 0) {
+                searchingDescEl.textContent = 'Вы использовали все попытки на сегодня. Попробуйте завтра!';
+            } else {
+                searchingDescEl.textContent = `Ищем случайного участника сервера для вас. Осталось попыток: ${remaining}`;
+            }
+        }
+    }
+
+    // Подписка на сервер
+    async function subscribeToServer() {
+        const button = document.getElementById('subscribeButton');
+        if (!button) return;
+
+        const originalText = button.textContent;
+
+        try {
+            button.textContent = 'Подписка...';
+            button.disabled = true;
+
+            console.log('📝 Отправка запроса на подписку...');
+
+            const response = await fetch(`${API_BASE}/server/${serverId}/subscribe`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
                 }
+            });
+
+            console.log('📡 Ответ на подписку:', response.status);
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Подписка успешна:', data);
+
+                isSubscribed = true;
+                setupChats();
+
+                // Показываем уведомление
+                showNotification('🎉 Вы успешно подписались на сервер!', 'success');
+
+            } else {
+                const error = await response.json().catch(() => ({ error: 'Ошибка сервера' }));
+                console.error('❌ Ошибка подписки:', error);
+                showNotification(error.error || '❌ Ошибка подписки', 'error');
             }
+        } catch (error) {
+            console.error('❌ Ошибка сети при подписке:', error);
+            showNotification('🌐 Ошибка соединения с сервером', 'error');
+        } finally {
+            button.textContent = originalText;
+            button.disabled = false;
+        }
+    }
+
+    // Открытие общего чата
+    async function openGeneralChat() {
+        try {
+            currentChatType = 'general';
+            document.getElementById('chatsScreen').style.display = 'none';
+            document.getElementById('generalChatScreen').classList.add('active');
             
-            // Очищаем сообщения
-            const container = document.getElementById('randomMessagesContainer');
-            if (container) {
-                container.innerHTML = '';
-                
-                // Добавляем приветственное сообщение
-                const welcomeMessage = {
-                    id: `welcome_${Date.now()}`,
-                    user_id: partner.id,
-                    username: partner.username,
-                    content: `Привет! Я ${partner.username}. Рад познакомиться!`,
-                    created_at: new Date().toISOString(),
-                    incoming: true
-                };
-                
-                const messageElement = createMessageElement(welcomeMessage, getCurrentUserId());
-                container.appendChild(messageElement);
-                
-                // Прокручиваем вниз
-                setTimeout(() => scrollToBottom('random'), 100);
-            }
+            // Загружаем сообщения
+            await loadChatMessages('general');
             
             // Автофокус на поле ввода
             setTimeout(() => {
+                const input = document.getElementById('generalMessageInput');
                 if (input) input.focus();
             }, 300);
+
+        } catch (error) {
+            console.error('❌ Ошибка открытия чата:', error);
+            showNotification('❌ Не удалось открыть чат', 'error');
+            closeChat('general');
         }
+    }
 
-        // Пропустить текущего собеседника
-        function skipRandomPartner() {
-            const remaining = dailyAttempts.count - dailyAttempts.usedToday;
+    // Открытие чата обмена
+    async function openExchangeChat() {
+        try {
+            currentChatType = 'exchange';
+            document.getElementById('chatsScreen').style.display = 'none';
+            document.getElementById('exchangeChatScreen').classList.add('active');
             
-            if (remaining <= 0) {
-                showNotification('🎲 Вы использовали все попытки на сегодня', 'info');
-                closeChat('random');
-                return;
-            }
+            // Загружаем сообщения обмена
+            await loadChatMessages('exchange');
             
-            if (confirm('Перейти к следующему собеседнику?')) {
-                closeChat('random');
-                openRandomSearch();
-            }
+            // Автофокус на поле ввода
+            setTimeout(() => {
+                const input = document.getElementById('exchangeMessageInput');
+                if (input) input.focus();
+            }, 300);
+
+        } catch (error) {
+            console.error('❌ Ошибка открытия чата обмена:', error);
+            showNotification('❌ Не удалось открыть чат обмена', 'error');
+            closeChat('exchange');
         }
+    }
 
-        // Отменить поиск рандом собеседника
-        function cancelRandomSearch() {
-            if (randomSearchTimer) {
-                clearTimeout(randomSearchTimer);
-                randomSearchTimer = null;
-            }
-            
-            document.getElementById('randomSearchScreen').classList.add('hidden');
-            document.getElementById('chatsScreen').style.display = 'block';
+    // Открытие поиска рандом собеседника
+    function openRandomSearch() {
+        const remaining = dailyAttempts.count - dailyAttempts.usedToday;
+        
+        if (remaining <= 0) {
+            showNotification('🎲 Вы использовали все попытки на сегодня. Попробуйте завтра!', 'info');
+            return;
         }
-
-        // Закрытие чата
-        function closeChat(chatType) {
-            if (chatType === 'random') {
-                document.getElementById('randomChatScreen').classList.remove('active');
-                randomPartner = null;
-            } else if (chatType === 'exchange') {
-                document.getElementById('exchangeChatScreen').classList.remove('active');
-            } else if (chatType === 'general') {
-                document.getElementById('generalChatScreen').classList.remove('active');
-            }
-            
-            document.getElementById('chatsScreen').style.display = 'block';
-            currentChatType = null;
+        
+        if (isSearching) {
+            showNotification('🔍 Поиск уже идет...', 'info');
+            return;
         }
+        
+        // Показываем экран поиска
+        document.getElementById('chatsScreen').style.display = 'none';
+        document.getElementById('randomSearchScreen').classList.remove('hidden');
+        
+        // Обновляем счетчик
+        updateRandomAttemptsStatus();
+        
+        // Начинаем поиск
+        startRandomSearch();
+    }
 
-        // Загрузка сообщений чата
-        async function loadChatMessages(type = 'general') {
-            try {
-                const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
-                                   type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
-                const container = document.getElementById(containerId);
-                if (!container) return;
-
-                container.innerHTML = `
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <div>Загрузка сообщений...</div>
-                    </div>
-                `;
-
-                if (type === 'random') {
-                    // Для рандом чата не загружаем историю
-                    container.innerHTML = '';
-                    return;
-                }
-
-                console.log(`📨 Загрузка сообщений ${type} для сервера:`, serverId);
-
-                const endpoint = type === 'exchange' 
-                    ? `${API_BASE}/server/${serverId}/exchange-messages`
-                    : `${API_BASE}/server/${serverId}/general-messages`;
-
-                const response = await fetch(endpoint, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
+    // Начать поиск рандом собеседника
+    async function startRandomSearch() {
+        try {
+            console.log('🎲 Начало поиска рандом собеседника');
+            isSearching = true;
+            
+            // Имитация поиска (3-8 секунд)
+            const searchTime = 3000 + Math.random() * 5000;
+            
+            randomSearchTimer = setTimeout(async () => {
+                try {
+                    // Пытаемся найти реального собеседника
+                    const response = await fetch(`${API_BASE}/server/${serverId}/random-member`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('✅ Найден рандом собеседник:', data.user);
+                        
+                        // Уменьшаем счетчик попыток
+                        dailyAttempts.usedToday++;
+                        saveRandomAttempts();
+                        
+                        // Останавливаем поиск
+                        isSearching = false;
+                        
+                        // Открываем чат с найденным собеседником
+                        openRandomChat(data.user);
+                        
+                    } else {
+                        // Если не нашли, создаем имитацию
+                        console.log('⚠️ Не удалось найти реального собеседника, создаем имитацию');
+                        
+                        // Уменьшаем счетчик попыток
+                        dailyAttempts.usedToday++;
+                        saveRandomAttempts();
+                        
+                        // Останавливаем поиск
+                        isSearching = false;
+                        
+                        createMockRandomPartner();
                     }
-                });
-
-                console.log(`📡 Ответ сообщений ${type}:`, response.status);
-
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log(`✅ Сообщений ${type} загружено:`, data.messages?.length || 0);
-
-                    displayMessages(data.messages || [], type);
-
-                    // Скроллим вниз
-                    setTimeout(() => scrollToBottom(type), 100);
-                } else {
-                    const error = await response.json().catch(() => ({ error: 'Ошибка загрузки' }));
-                    console.error(`❌ Ошибка загрузки сообщений ${type}:`, error);
-                    showErrorInChat(error.error || '❌ Ошибка загрузки сообщений', type);
+                    
+                } catch (error) {
+                    console.error('❌ Ошибка поиска рандом собеседника:', error);
+                    
+                    // Уменьшаем счетчик попыток
+                    dailyAttempts.usedToday++;
+                    saveRandomAttempts();
+                    
+                    // Останавливаем поиск
+                    isSearching = false;
+                    
+                    createMockRandomPartner();
                 }
-            } catch (error) {
-                console.error(`❌ Ошибка сети при загрузке сообщений ${type}:`, error);
-                showErrorInChat('🌐 Не удалось загрузить сообщения', type);
+            }, searchTime);
+            
+        } catch (error) {
+            console.error('❌ Ошибка начала поиска:', error);
+            isSearching = false;
+            cancelRandomSearch();
+            showNotification('❌ Ошибка поиска собеседника', 'error');
+        }
+    }
+
+    // Создание имитации рандом собеседника
+    function createMockRandomPartner() {
+        // Список возможных имен
+        const names = ['Алексей', 'Мария', 'Дмитрий', 'Анна', 'Иван', 'Елена', 'Сергей', 'Ольга', 'Максим', 'Наталья'];
+        const roles = ['Игрок CS:GO', 'Трейдер', 'Геймер', 'Коллекционер', 'Стример', 'Киберспортсмен'];
+        
+        const randomName = names[Math.floor(Math.random() * names.length)];
+        const randomRole = roles[Math.floor(Math.random() * roles.length)];
+        
+        const mockPartner = {
+            id: `mock_${Date.now()}`,
+            username: randomName,
+            avatar_url: null,
+            role: randomRole,
+            mock: true
+        };
+        
+        console.log('🤖 Создан имитированный собеседник:', mockPartner);
+        openRandomChat(mockPartner);
+    }
+
+    // Открыть чат с рандом собеседником
+    function openRandomChat(partner) {
+        randomPartner = partner;
+        
+        // Скрываем экран поиска
+        document.getElementById('randomSearchScreen').classList.add('hidden');
+        
+        // Показываем экран чата
+        document.getElementById('randomChatScreen').classList.add('active');
+        
+        // Обновляем заголовок
+        document.getElementById('randomPartnerName').textContent = partner.username;
+        document.getElementById('randomPartnerStatus').textContent = partner.role || 'Случайный собеседник';
+        
+        // Активируем поле ввода
+        const input = document.getElementById('randomMessageInput');
+        const sendBtn = document.getElementById('sendRandomMessage');
+        if (input) input.disabled = false;
+        if (sendBtn) sendBtn.disabled = false;
+        
+        // Показываем кнопку "Следующий" (только если остались попытки)
+        const remaining = dailyAttempts.count - dailyAttempts.usedToday;
+        const nextBtn = document.getElementById('nextRandomBtn');
+        if (nextBtn) {
+            if (remaining > 0) {
+                nextBtn.style.display = 'block';
+            } else {
+                nextBtn.style.display = 'none';
             }
         }
+        
+        // Очищаем сообщения
+        const container = document.getElementById('randomMessagesContainer');
+        if (container) {
+            container.innerHTML = '';
+            
+            // Добавляем приветственное сообщение
+            const welcomeMessage = {
+                id: `welcome_${Date.now()}`,
+                user_id: partner.id,
+                username: partner.username,
+                content: `Привет! Я ${partner.username}. Рад познакомиться!`,
+                created_at: new Date().toISOString(),
+                incoming: true
+            };
+            
+            const messageElement = createMessageElement(welcomeMessage, getCurrentUserId());
+            container.appendChild(messageElement);
+            
+            // Прокручиваем вниз
+            setTimeout(() => scrollToBottom('random'), 100);
+        }
+        
+        // Автофокус на поле ввода
+        setTimeout(() => {
+            if (input) input.focus();
+        }, 300);
+    }
 
-        // Отображение сообщений
-        function displayMessages(messages, type = 'general') {
+    // Пропустить текущего собеседника
+    function skipRandomPartner() {
+        const remaining = dailyAttempts.count - dailyAttempts.usedToday;
+        
+        if (remaining <= 0) {
+            showNotification('🎲 Вы использовали все попытки на сегодня', 'info');
+            closeChat('random');
+            return;
+        }
+        
+        if (confirm('Перейти к следующему собеседнику? Использовать еще одну попытку?')) {
+            closeChat('random');
+            openRandomSearch();
+        }
+    }
+
+    // Отменить поиск рандом собеседника
+    function cancelRandomSearch() {
+        if (randomSearchTimer) {
+            clearTimeout(randomSearchTimer);
+            randomSearchTimer = null;
+        }
+        
+        isSearching = false;
+        document.getElementById('randomSearchScreen').classList.add('hidden');
+        document.getElementById('chatsScreen').style.display = 'block';
+        
+        console.log('❌ Поиск отменен пользователем');
+    }
+
+    // Закрытие чата
+    function closeChat(chatType) {
+        if (chatType === 'random') {
+            document.getElementById('randomChatScreen').classList.remove('active');
+            randomPartner = null;
+        } else if (chatType === 'exchange') {
+            document.getElementById('exchangeChatScreen').classList.remove('active');
+        } else if (chatType === 'general') {
+            document.getElementById('generalChatScreen').classList.remove('active');
+        }
+        
+        document.getElementById('chatsScreen').style.display = 'block';
+        currentChatType = null;
+    }
+
+    // Загрузка сообщений чата
+    async function loadChatMessages(type = 'general') {
+        try {
             const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
                                type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
             const container = document.getElementById(containerId);
             if (!container) return;
 
-            const currentUserId = getCurrentUserId();
-            const typingIndicator = document.getElementById(type === 'exchange' ? 'exchangeTypingIndicator' : 
-                                                           type === 'random' ? 'randomTypingIndicator' : 'generalTypingIndicator');
-            
-            // Clear container but keep typing indicator
-            container.innerHTML = '';
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <div>Загрузка сообщений...</div>
+                </div>
+            `;
+
+            if (type === 'random') {
+                // Для рандом чата не загружаем историю
+                container.innerHTML = '';
+                return;
+            }
+
+            console.log(`📨 Загрузка сообщений ${type} для сервера:`, serverId);
+
+            const endpoint = type === 'exchange' 
+                ? `${API_BASE}/server/${serverId}/exchange-messages`
+                : `${API_BASE}/server/${serverId}/general-messages`;
+
+            const response = await fetch(endpoint, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            console.log(`📡 Ответ сообщений ${type}:`, response.status);
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log(`✅ Сообщений ${type} загружено:`, data.messages?.length || 0);
+
+                displayMessages(data.messages || [], type);
+
+                // Скроллим вниз
+                setTimeout(() => scrollToBottom(type), 100);
+            } else {
+                const error = await response.json().catch(() => ({ error: 'Ошибка загрузки' }));
+                console.error(`❌ Ошибка загрузки сообщений ${type}:`, error);
+                showErrorInChat(error.error || '❌ Ошибка загрузки сообщений', type);
+            }
+        } catch (error) {
+            console.error(`❌ Ошибка сети при загрузке сообщений ${type}:`, error);
+            showErrorInChat('🌐 Не удалось загрузить сообщения', type);
+        }
+    }
+
+    // Отображение сообщений
+    function displayMessages(messages, type = 'general') {
+        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
+                           type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const currentUserId = getCurrentUserId();
+        const typingIndicator = document.getElementById(type === 'exchange' ? 'exchangeTypingIndicator' : 
+                                                       type === 'random' ? 'randomTypingIndicator' : 'generalTypingIndicator');
+        
+        // Clear container but keep typing indicator
+        container.innerHTML = '';
+        if (typingIndicator) {
+            container.appendChild(typingIndicator);
+        }
+        
+        if (!messages || messages.length === 0) {
+            const emptyMessage = type === 'exchange' ?
+                '💼 Здесь пока нет сообщений обмена. Будьте первым, кто предложит сделку!' :
+                type === 'random' ?
+                '🎲 Начните общение со случайным собеседником!' :
+                '💬 Здесь пока нет сообщений. Будьте первым, кто напишет в этом чате!';
+                
+            container.innerHTML = `
+                <div class="empty-state" style="padding: 40px 20px;">
+                    <i class="fa fa-comments" style="font-size: 48px;"></i>
+                    <p>${emptyMessage}</p>
+                </div>
+            `;
             if (typingIndicator) {
                 container.appendChild(typingIndicator);
             }
+            return;
+        }
+        
+        // Add date dividers and display messages
+        let lastDate = null;
+        
+        messages.forEach(msg => {
+            const msgDate = new Date(msg.created_at).toDateString();
             
-            if (!messages || messages.length === 0) {
-                const emptyMessage = type === 'exchange' ?
-                    '💼 Здесь пока нет сообщений обмена. Будьте первым, кто предложит сделку!' :
-                    type === 'random' ?
-                    '🎲 Начните общение со случайным собеседником!' :
-                    '💬 Здесь пока нет сообщений. Будьте первым, кто напишет в этом чате!';
-                    
-                container.innerHTML = `
-                    <div class="empty-state" style="padding: 40px 20px;">
-                        <i class="fa fa-comments" style="font-size: 48px;"></i>
-                        <p>${emptyMessage}</p>
-                    </div>
-                `;
-                if (typingIndicator) {
-                    container.appendChild(typingIndicator);
-                }
-                return;
+            // Add date divider if needed
+            if (msgDate !== lastDate) {
+                const dateDivider = document.createElement('div');
+                dateDivider.className = 'date-divider';
+                dateDivider.innerHTML = `<span>${formatDateHeader(msg.created_at)}</span>`;
+                container.appendChild(dateDivider);
+                lastDate = msgDate;
             }
             
-            // Add date dividers and display messages
-            let lastDate = null;
-            
-            messages.forEach(msg => {
-                const msgDate = new Date(msg.created_at).toDateString();
-                
-                // Add date divider if needed
-                if (msgDate !== lastDate) {
-                    const dateDivider = document.createElement('div');
-                    dateDivider.className = 'date-divider';
-                    dateDivider.innerHTML = `<span>${formatDateHeader(msg.created_at)}</span>`;
-                    container.appendChild(dateDivider);
-                    lastDate = msgDate;
-                }
-                
-                // Add message
-                const messageElement = createMessageElement(msg, currentUserId);
-                container.appendChild(messageElement);
-            });
-            
-            // Show new messages indicator if not at bottom
-            setTimeout(() => checkScrollPosition(type), 500);
-        }
+            // Add message
+            const messageElement = createMessageElement(msg, currentUserId);
+            container.appendChild(messageElement);
+        });
+        
+        // Show new messages indicator if not at bottom
+        setTimeout(() => checkScrollPosition(type), 500);
+    }
 
-        // Создание элемента сообщения
-        function createMessageElement(msg, currentUserId) {
-            const element = document.createElement('div');
-            const isOutgoing = msg.user_id == currentUserId || (msg.user_id && msg.user_id.toString() === currentUserId?.toString());
-            const isDeleted = msg.deleted || msg.content === '[Сообщение удалено]';
-            
-            element.className = `message ${isOutgoing ? 'outgoing' : 'incoming'}`;
-            element.dataset.messageId = msg.id || msg.tempId;
-            
-            // Format time
-            const time = formatMessageTime(msg.created_at || new Date());
-            
-            // Status indicators for outgoing messages
-            let statusHtml = '';
-            if (isOutgoing && !isDeleted) {
-                if (msg.status === 'sending') {
-                    statusHtml = `<div class="message-status status-sending"><i class="fa fa-clock-o"></i></div>`;
-                } else if (msg.status === 'sent') {
-                    statusHtml = `<div class="message-status status-sent"><i class="fa fa-check"></i></div>`;
-                } else {
-                    statusHtml = `<div class="message-status status-sent"><i class="fa fa-check"></i></div>`;
-                }
-            }
-            
-            element.innerHTML = `
-                <div class="message-content">${escapeHtml(isDeleted ? '[Сообщение удалено]' : (msg.content || ''))}</div>
-                <div class="message-meta">
-                    <div class="message-time">${time}</div>
-                    ${statusHtml}
-                </div>
-            `;
-            
-            return element;
-        }
-
-        // Отправка сообщения
-        async function sendMessage(type = 'general') {
-            const inputId = type === 'exchange' ? 'exchangeMessageInput' : 
-                           type === 'random' ? 'randomMessageInput' : 'generalMessageInput';
-            const buttonId = type === 'exchange' ? 'sendExchangeMessage' : 
-                            type === 'random' ? 'sendRandomMessage' : 'sendGeneralMessage';
-            const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
-                               type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
-            
-            const input = document.getElementById(inputId);
-            const button = document.getElementById(buttonId);
-            const container = document.getElementById(containerId);
-
-            if (!input || !button || !container) return;
-
-            const message = input.value.trim();
-
-            if (!message) return;
-
-            try {
-                // Disable send button during sending
-                button.disabled = true;
-                button.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
-
-                // Создаем временное сообщение
-                const tempId = `temp_${Date.now()}_${messageCount++}`;
-                const tempMessage = {
-                    id: tempId,
-                    tempId: tempId,
-                    user_id: getCurrentUserId(),
-                    username: currentUser?.username || 'Вы',
-                    content: message,
-                    created_at: new Date().toISOString(),
-                    status: 'sending'
-                };
-                
-                // Отображаем временное сообщение
-                displayTempMessage(tempMessage, type);
-                
-                // Очищаем поле ввода
-                input.value = '';
-                input.style.height = 'auto';
-                
-                if (type === 'random') {
-                    // Для рандом чата - имитация ответа
-                    setTimeout(() => {
-                        // Обновляем статус на "отправлено"
-                        updateMessageStatus(tempId, 'sent', null, type);
-                        
-                        // Имитация ответа собеседника через 1-3 секунды
-                        setTimeout(() => {
-                            sendMockReply(type);
-                        }, 1000 + Math.random() * 2000);
-                    }, 500);
-                    
-                } else {
-                    // Отправляем на сервер для обычных чатов
-                    console.log(`📤 Отправка сообщения ${type}:`, message.substring(0, 50) + '...');
-
-                    const endpoint = type === 'exchange'
-                        ? `${API_BASE}/server/${serverId}/exchange-messages`
-                        : `${API_BASE}/server/${serverId}/general-messages`;
-
-                    const response = await fetch(endpoint, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ 
-                            content: message,
-                            type: type
-                        })
-                    });
-
-                    console.log(`📡 Ответ отправки ${type}:`, response.status);
-
-                    if (response.ok) {
-                        const result = await response.json();
-                        
-                        // Обновляем статус сообщения
-                        updateMessageStatus(tempId, 'sent', result.messageId || result.id, type);
-                        
-                    } else {
-                        const error = await response.json().catch(() => ({ error: 'Ошибка отправки' }));
-                        console.error(`❌ Ошибка отправки ${type}:`, error);
-                        
-                        // Обновляем статус сообщения на "ошибка"
-                        updateMessageStatus(tempId, 'error', null, type);
-                        showNotification(error.error || '❌ Ошибка отправки сообщения', 'error');
-                    }
-                }
-                
-            } catch (error) {
-                console.error(`❌ Ошибка сети при отправке ${type}:`, error);
-                showNotification('🌐 Ошибка соединения с сервером', 'error');
-            } finally {
-                // Re-enable send button
-                button.disabled = false;
-                button.innerHTML = '<i class="fa fa-paper-plane"></i>';
+    // Создание элемента сообщения
+    function createMessageElement(msg, currentUserId) {
+        const element = document.createElement('div');
+        const isOutgoing = msg.user_id == currentUserId || (msg.user_id && msg.user_id.toString() === currentUserId?.toString());
+        const isDeleted = msg.deleted || msg.content === '[Сообщение удалено]';
+        
+        element.className = `message ${isOutgoing ? 'outgoing' : 'incoming'}`;
+        element.dataset.messageId = msg.id || msg.tempId;
+        
+        // Format time
+        const time = formatMessageTime(msg.created_at || new Date());
+        
+        // Status indicators for outgoing messages
+        let statusHtml = '';
+        if (isOutgoing && !isDeleted) {
+            if (msg.status === 'sending') {
+                statusHtml = `<div class="message-status status-sending"><i class="fa fa-clock-o"></i></div>`;
+            } else if (msg.status === 'sent') {
+                statusHtml = `<div class="message-status status-sent"><i class="fa fa-check"></i></div>`;
+            } else {
+                statusHtml = `<div class="message-status status-sent"><i class="fa fa-check"></i></div>`;
             }
         }
+        
+        element.innerHTML = `
+            <div class="message-content">${escapeHtml(isDeleted ? '[Сообщение удалено]' : (msg.content || ''))}</div>
+            <div class="message-meta">
+                <div class="message-time">${time}</div>
+                ${statusHtml}
+            </div>
+        `;
+        
+        return element;
+    }
 
-        // Отправка имитации ответа
-        function sendMockReply(type) {
-            if (!randomPartner || type !== 'random') return;
-            
-            const possibleReplies = [
-                "Интересно! Расскажи подробнее",
-                "У меня тоже есть что предложить",
-                "Давай обсудим это",
-                "Отличная идея!",
-                "Я думаю, мы можем договориться",
-                "Интересное предложение",
-                "А что ты хочешь получить взамен?",
-                "Может обсудим в голосовом чате?",
-                "У меня есть похожий предмет",
-                "Давай посмотрим варианты"
-            ];
-            
-            const reply = possibleReplies[Math.floor(Math.random() * possibleReplies.length)];
-            
-            const mockMessage = {
-                id: `mock_${Date.now()}`,
-                user_id: randomPartner.id,
-                username: randomPartner.username,
-                content: reply,
+    // Отправка сообщения
+    async function sendMessage(type = 'general') {
+        const inputId = type === 'exchange' ? 'exchangeMessageInput' : 
+                       type === 'random' ? 'randomMessageInput' : 'generalMessageInput';
+        const buttonId = type === 'exchange' ? 'sendExchangeMessage' : 
+                        type === 'random' ? 'sendRandomMessage' : 'sendGeneralMessage';
+        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
+                           type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
+        
+        const input = document.getElementById(inputId);
+        const button = document.getElementById(buttonId);
+        const container = document.getElementById(containerId);
+
+        if (!input || !button || !container) return;
+
+        const message = input.value.trim();
+
+        if (!message) return;
+
+        try {
+            // Disable send button during sending
+            button.disabled = true;
+            button.innerHTML = '<i class="fa fa-spinner fa-spin"></i>';
+
+            // Создаем временное сообщение
+            const tempId = `temp_${Date.now()}_${messageCount++}`;
+            const tempMessage = {
+                id: tempId,
+                tempId: tempId,
+                user_id: getCurrentUserId(),
+                username: currentUser?.username || 'Вы',
+                content: message,
                 created_at: new Date().toISOString(),
-                incoming: true
+                status: 'sending'
             };
             
-            displayTempMessage(mockMessage, 'random');
-        }
-
-        // Отображение временного сообщения
-        function displayTempMessage(msg, type = 'general') {
-            const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
-                               type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
-            const container = document.getElementById(containerId);
+            // Отображаем временное сообщение
+            displayTempMessage(tempMessage, type);
             
-            // Удаляем состояние "пусто", если присутствует
-            const emptyState = container.querySelector('.empty-state');
-            if (emptyState) {
-                emptyState.remove();
-            }
+            // Очищаем поле ввода
+            input.value = '';
+            input.style.height = 'auto';
             
-            // Добавляем сообщение
-            const messageElement = createMessageElement(msg, getCurrentUserId());
-            container.appendChild(messageElement);
-            
-            // Скроллим вниз
-            scrollToBottom(type);
-        }
-
-        // Обновление статуса сообщения
-        function updateMessageStatus(tempId, status, newId = null, type = 'general') {
-            const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
-                               type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
-            const container = document.getElementById(containerId);
-            const messageElement = container.querySelector(`[data-message-id="${tempId}"]`);
-            
-            if (!messageElement) return;
-            
-            const statusElement = messageElement.querySelector('.message-status');
-            if (statusElement) {
-                if (status === 'sent') {
-                    statusElement.innerHTML = '<i class="fa fa-check"></i>';
-                    statusElement.className = 'message-status status-sent';
-                } else if (status === 'error') {
-                    statusElement.innerHTML = '<i class="fa fa-exclamation-triangle" style="color:#ff6b6b;"></i>';
-                    statusElement.className = 'message-status status-sending';
-                }
-            }
-            
-            // Обновляем data-атрибут, если предоставлен новый ID
-            if (newId) {
-                messageElement.dataset.messageId = newId;
-            }
-        }
-
-        // Вспомогательные функции
-        function autoResize(textarea) {
-            if (!textarea) return;
-            textarea.style.height = 'auto';
-            textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
-        }
-
-        function handleGeneralEnterKey(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage('general');
-            }
-        }
-
-        function handleExchangeEnterKey(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage('exchange');
-            }
-        }
-
-        function handleRandomEnterKey(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                sendMessage('random');
-            }
-        }
-
-        function scrollToBottom(type = 'general') {
-            const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
-                               type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
-            const container = document.getElementById(containerId);
-            if (container) {
+            if (type === 'random') {
+                // Для рандом чата - имитация ответа
                 setTimeout(() => {
-                    container.scrollTop = container.scrollHeight;
-                    hideNewMessagesIndicator(type);
-                }, 100);
-            }
-        }
-
-        function showNewMessagesIndicator(type = 'general') {
-            const indicatorId = type === 'exchange' ? 'exchangeNewMessagesIndicator' : 
-                               type === 'random' ? 'randomNewMessagesIndicator' : 'generalNewMessagesIndicator';
-            const indicator = document.getElementById(indicatorId);
-            if (indicator) {
-                indicator.style.display = 'block';
-            }
-        }
-
-        function hideNewMessagesIndicator(type = 'general') {
-            const indicatorId = type === 'exchange' ? 'exchangeNewMessagesIndicator' : 
-                               type === 'random' ? 'randomNewMessagesIndicator' : 'generalNewMessagesIndicator';
-            const indicator = document.getElementById(indicatorId);
-            if (indicator) {
-                indicator.style.display = 'none';
-            }
-        }
-
-        function checkScrollPosition(type = 'general') {
-            const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
-                               type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
-            const indicatorId = type === 'exchange' ? 'exchangeNewMessagesIndicator' : 
-                               type === 'random' ? 'randomNewMessagesIndicator' : 'generalNewMessagesIndicator';
-            
-            const container = document.getElementById(containerId);
-            const indicator = document.getElementById(indicatorId);
-            
-            if (!container || !indicator) return;
-            
-            const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-            
-            if (!isAtBottom) {
-                indicator.style.display = 'block';
+                    // Обновляем статус на "отправлено"
+                    updateMessageStatus(tempId, 'sent', null, type);
+                    
+                    // Имитация ответа собеседника через 1-3 секунды
+                    setTimeout(() => {
+                        sendMockReply(type);
+                    }, 1000 + Math.random() * 2000);
+                }, 500);
+                
             } else {
-                indicator.style.display = 'none';
-            }
-        }
+                // Отправляем на сервер для обычных чатов
+                console.log(`📤 Отправка сообщения ${type}:`, message.substring(0, 50) + '...');
 
-        // Уведомления
-        function showError(message) {
-            const container = document.getElementById('chatsScreen');
-            if (container) {
-                container.innerHTML = `
-                    <div class="error-message" style="margin: 20px;">
-                        ${escapeHtml(message)}
-                    </div>
-                `;
-            }
-        }
+                const endpoint = type === 'exchange'
+                    ? `${API_BASE}/server/${serverId}/exchange-messages`
+                    : `${API_BASE}/server/${serverId}/general-messages`;
 
-        function showErrorInChat(message, type = 'general') {
-            const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
-                               type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
-            const container = document.getElementById(containerId);
-            if (container) {
-                const errorElement = document.createElement('div');
-                errorElement.className = 'error-message';
-                errorElement.style.margin = '10px';
-                errorElement.textContent = message;
-                container.appendChild(errorElement);
-            }
-        }
-
-        function showNotification(message, type = 'success') {
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: ${type === 'error' ? '#ff6b6b' : type === 'info' ? '#666' : '#0088cc'};
-                color: white;
-                padding: 12px 24px;
-                border-radius: 25px;
-                z-index: 10000;
-                font-weight: 500;
-                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-                animation: slideDown 0.3s ease-out;
-                font-size: 14px;
-                max-width: 80%;
-                text-align: center;
-            `;
-            notification.textContent = message;
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.animation = 'slideUp 0.3s ease-in';
-                setTimeout(() => notification.remove(), 300);
-            }, 3000);
-        }
-
-        function showFileNotice() {
-            showNotification('Отправка файлов временно недоступна', 'info');
-        }
-
-        function showEmojiNotice() {
-            showNotification('Выбор эмодзи скоро будет доступен', 'info');
-        }
-
-        // Инициализация
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log('🚀 DOM загружен, начинаем инициализацию...');
-
-            // Проверяем наличие токена
-            if (!token) {
-                window.location.href = '/login.html';
-                return;
-            }
-
-            // Проверяем serverId
-            if (!serverId) {
-                window.location.href = '/server-page.html';
-                return;
-            }
-
-            // Добавляем анимации для уведомлений
-            const style = document.createElement('style');
-            style.textContent = `
-                @keyframes slideDown {
-                    from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
-                    to { transform: translateX(-50%) translateY(0); opacity: 1; }
-                }
-                @keyframes slideUp {
-                    from { transform: translateX(-50%) translateY(0); opacity: 1; }
-                    to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
-                }
-                .chat-action-btn {
-                    color: var(--gray-light);
-                    font-size: 20px;
-                    cursor: pointer;
-                    width: 36px;
-                    height: 36px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    border-radius: 50%;
-                    transition: all 0.2s ease;
-                    background: none;
-                    border: none;
-                }
-                .chat-action-btn:active {
-                    background: rgba(255, 255, 255, 0.1);
-                }
-                .chat-actions {
-                    display: flex;
-                    gap: 8px;
-                }
-            `;
-            document.head.appendChild(style);
-
-            // Загружаем информацию о сервере
-            await loadServerInfo();
-
-            // Получаем данные текущего пользователя
-            try {
-                const response = await fetch(`${API_BASE}/profile`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ 
+                        content: message,
+                        type: type
+                    })
                 });
 
+                console.log(`📡 Ответ отправки ${type}:`, response.status);
+
                 if (response.ok) {
-                    const data = await response.json();
-                    currentUser = data.user;
-                    console.log('✅ Данные пользователя загружены:', currentUser?.username);
+                    const result = await response.json();
+                    
+                    // Обновляем статус сообщения
+                    updateMessageStatus(tempId, 'sent', result.messageId || result.id, type);
+                    
                 } else {
-                    console.warn('⚠️ Не удалось загрузить данные профиля');
+                    const error = await response.json().catch(() => ({ error: 'Ошибка отправки' }));
+                    console.error(`❌ Ошибка отправки ${type}:`, error);
+                    
+                    // Обновляем статус сообщения на "ошибка"
+                    updateMessageStatus(tempId, 'error', null, type);
+                    showNotification(error.error || '❌ Ошибка отправки сообщения', 'error');
                 }
-            } catch (error) {
-                console.error('❌ Ошибка загрузки профиля:', error);
             }
-        });
-    </script>
+            
+        } catch (error) {
+            console.error(`❌ Ошибка сети при отправке ${type}:`, error);
+            showNotification('🌐 Ошибка соединения с сервером', 'error');
+        } finally {
+            // Re-enable send button
+            button.disabled = false;
+            button.innerHTML = '<i class="fa fa-paper-plane"></i>';
+        }
+    }
+
+    // Отправка имитации ответа
+    function sendMockReply(type) {
+        if (!randomPartner || type !== 'random') return;
+        
+        const possibleReplies = [
+            "Интересно! Расскажи подробнее",
+            "У меня тоже есть что предложить",
+            "Давай обсудим это",
+            "Отличная идея!",
+            "Я думаю, мы можем договориться",
+            "Интересное предложение",
+            "А что ты хочешь получить взамен?",
+            "Может обсудим в голосовом чате?",
+            "У меня есть похожий предмет",
+            "Давай посмотрим варианты"
+        ];
+        
+        const reply = possibleReplies[Math.floor(Math.random() * possibleReplies.length)];
+        
+        const mockMessage = {
+            id: `mock_${Date.now()}`,
+            user_id: randomPartner.id,
+            username: randomPartner.username,
+            content: reply,
+            created_at: new Date().toISOString(),
+            incoming: true
+        };
+        
+        displayTempMessage(mockMessage, 'random');
+    }
+
+    // Отображение временного сообщения
+    function displayTempMessage(msg, type = 'general') {
+        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
+                           type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
+        const container = document.getElementById(containerId);
+        
+        // Удаляем состояние "пусто", если присутствует
+        const emptyState = container.querySelector('.empty-state');
+        if (emptyState) {
+            emptyState.remove();
+        }
+        
+        // Добавляем сообщение
+        const messageElement = createMessageElement(msg, getCurrentUserId());
+        container.appendChild(messageElement);
+        
+        // Скроллим вниз
+        scrollToBottom(type);
+    }
+
+    // Обновление статуса сообщения
+    function updateMessageStatus(tempId, status, newId = null, type = 'general') {
+        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
+                           type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
+        const container = document.getElementById(containerId);
+        const messageElement = container.querySelector(`[data-message-id="${tempId}"]`);
+        
+        if (!messageElement) return;
+        
+        const statusElement = messageElement.querySelector('.message-status');
+        if (statusElement) {
+            if (status === 'sent') {
+                statusElement.innerHTML = '<i class="fa fa-check"></i>';
+                statusElement.className = 'message-status status-sent';
+            } else if (status === 'error') {
+                statusElement.innerHTML = '<i class="fa fa-exclamation-triangle" style="color:#ff6b6b;"></i>';
+                statusElement.className = 'message-status status-sending';
+            }
+        }
+        
+        // Обновляем data-атрибут, если предоставлен новый ID
+        if (newId) {
+            messageElement.dataset.messageId = newId;
+        }
+    }
+
+    // Вспомогательные функции
+    function autoResize(textarea) {
+        if (!textarea) return;
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    }
+
+    function handleGeneralEnterKey(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendMessage('general');
+        }
+    }
+
+    function handleExchangeEnterKey(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendMessage('exchange');
+        }
+    }
+
+    function handleRandomEnterKey(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendMessage('random');
+        }
+    }
+
+    function scrollToBottom(type = 'general') {
+        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
+                           type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
+        const container = document.getElementById(containerId);
+        if (container) {
+            setTimeout(() => {
+                container.scrollTop = container.scrollHeight;
+                hideNewMessagesIndicator(type);
+            }, 100);
+        }
+    }
+
+    function showNewMessagesIndicator(type = 'general') {
+        const indicatorId = type === 'exchange' ? 'exchangeNewMessagesIndicator' : 
+                           type === 'random' ? 'randomNewMessagesIndicator' : 'generalNewMessagesIndicator';
+        const indicator = document.getElementById(indicatorId);
+        if (indicator) {
+            indicator.style.display = 'block';
+        }
+    }
+
+    function hideNewMessagesIndicator(type = 'general') {
+        const indicatorId = type === 'exchange' ? 'exchangeNewMessagesIndicator' : 
+                           type === 'random' ? 'randomNewMessagesIndicator' : 'generalNewMessagesIndicator';
+        const indicator = document.getElementById(indicatorId);
+        if (indicator) {
+            indicator.style.display = 'none';
+        }
+    }
+
+    function checkScrollPosition(type = 'general') {
+        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
+                           type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
+        const indicatorId = type === 'exchange' ? 'exchangeNewMessagesIndicator' : 
+                           type === 'random' ? 'randomNewMessagesIndicator' : 'generalNewMessagesIndicator';
+        
+        const container = document.getElementById(containerId);
+        const indicator = document.getElementById(indicatorId);
+        
+        if (!container || !indicator) return;
+        
+        const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+        
+        if (!isAtBottom) {
+            indicator.style.display = 'block';
+        } else {
+            indicator.style.display = 'none';
+        }
+    }
+
+    // Уведомления
+    function showError(message) {
+        const container = document.getElementById('chatsScreen');
+        if (container) {
+            container.innerHTML = `
+                <div class="error-message" style="margin: 20px;">
+                    ${escapeHtml(message)}
+                </div>
+            `;
+        }
+    }
+
+    function showErrorInChat(message, type = 'general') {
+        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
+                           type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
+        const container = document.getElementById(containerId);
+        if (container) {
+            const errorElement = document.createElement('div');
+            errorElement.className = 'error-message';
+            errorElement.style.margin = '10px';
+            errorElement.textContent = message;
+            container.appendChild(errorElement);
+        }
+    }
+
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: ${type === 'error' ? '#ff6b6b' : type === 'info' ? '#666' : '#0088cc'};
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            z-index: 10000;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            animation: slideDown 0.3s ease-out;
+            font-size: 14px;
+            max-width: 80%;
+            text-align: center;
+        `;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideUp 0.3s ease-in';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    function showFileNotice() {
+        showNotification('Отправка файлов временно недоступна', 'info');
+    }
+
+    function showEmojiNotice() {
+        showNotification('Выбор эмодзи скоро будет доступен', 'info');
+    }
+
+    // Инициализация
+    document.addEventListener('DOMContentLoaded', async () => {
+        console.log('🚀 DOM загружен, начинаем инициализацию...');
+
+        // Проверяем наличие токена
+        if (!token) {
+            window.location.href = '/login.html';
+            return;
+        }
+
+        // Проверяем serverId
+        if (!serverId) {
+            window.location.href = '/server-page.html';
+            return;
+        }
+
+        // Добавляем анимации для уведомлений
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideDown {
+                from { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+                to { transform: translateX(-50%) translateY(0); opacity: 1; }
+            }
+            @keyframes slideUp {
+                from { transform: translateX(-50%) translateY(0); opacity: 1; }
+                to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
+            }
+            .chat-action-btn {
+                color: var(--gray-light);
+                font-size: 20px;
+                cursor: pointer;
+                width: 36px;
+                height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                transition: all 0.2s ease;
+                background: none;
+                border: none;
+            }
+            .chat-action-btn:active {
+                background: rgba(255, 255, 255, 0.1);
+            }
+            .chat-actions {
+                display: flex;
+                gap: 8px;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Загружаем информацию о сервере
+        await loadServerInfo();
+
+        // Получаем данные текущего пользователя
+        try {
+            const response = await fetch(`${API_BASE}/profile`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                currentUser = data.user;
+                console.log('✅ Данные пользователя загружены:', currentUser?.username);
+            } else {
+                console.warn('⚠️ Не удалось загрузить данные профиля');
+            }
+        } catch (error) {
+            console.error('❌ Ошибка загрузки профиля:', error);
+        }
+    });
+</script>
 </body>
 </html>
+
