@@ -879,6 +879,13 @@ const STORAGE_KEYS = {
     AUTO_REPLIES: 'zeeptook_auto_replies'
 };
 
+// Константы для приложения
+const APP_CONSTANTS = {
+    SUPPORT_USER_ID: 'support_system_user', // Уникальный ID для системы поддержки
+    AUTO_REPLY_CHECK_LIMIT: 1000, // Увеличиваем лимит проверки автоответов
+    SUPPORT_CHAT_ID: 'support'
+};
+
 // Initialize
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Инициализация чатов Zeeptook...');
@@ -1050,7 +1057,7 @@ async function loadChatsFromServer(showLoading = true) {
         
         // Добавляем чат поддержки
         const supportChat = {
-            id: 'support',
+            id: APP_CONSTANTS.SUPPORT_CHAT_ID,
             name: 'Поддержка Zeeptook',
             type: 'support',
             last_message: 'Здравствуйте! Чем могу помочь?',
@@ -1199,7 +1206,7 @@ async function openChat(chat) {
     
     // Установка ID получателя
     if (chat.type === 'support') {
-        currentReceiverId = 1; // ID поддержки
+        currentReceiverId = APP_CONSTANTS.SUPPORT_USER_ID; // Уникальный ID поддержки
     } else {
         currentReceiverId = chat.other_user_id;
     }
@@ -1226,7 +1233,7 @@ async function openChat(chat) {
     }
     
     // Установить автоответчик для чата поддержки
-    if (currentChatId === 'support') {
+    if (currentChatId === APP_CONSTANTS.SUPPORT_CHAT_ID) {
         setupAutoReplyForChat();
     }
 }
@@ -1235,14 +1242,11 @@ async function openChat(chat) {
 async function setupAutoReplyForChat() {
     console.log('🔧 Настройка автоответчика для чата:', currentChatId);
     
-    // Очищаем старый таймер
-    if (autoReplyTimers.has(currentChatId)) {
-        clearTimeout(autoReplyTimers.get(currentChatId));
-        autoReplyTimers.delete(currentChatId);
-    }
+    // Очищаем старый таймер для этого чата
+    clearExistingAutoReplyTimer(currentChatId);
     
     // Автоответчик только для чата поддержки
-    if (currentChatId !== 'support') {
+    if (currentChatId !== APP_CONSTANTS.SUPPORT_CHAT_ID) {
         console.log('🔧 Не чат поддержки, автоответчик не настраивается');
         return;
     }
@@ -1277,6 +1281,15 @@ async function setupAutoReplyForChat() {
     }
 }
 
+// Очистка существующего таймера автоответа
+function clearExistingAutoReplyTimer(chatId) {
+    if (autoReplyTimers.has(chatId)) {
+        clearTimeout(autoReplyTimers.get(chatId));
+        autoReplyTimers.delete(chatId);
+        console.log('🗑️ Удален таймер автоответа для чата:', chatId);
+    }
+}
+
 // Получение списка автоответов из localStorage
 function getAutoRepliesFromStorage() {
     try {
@@ -1306,12 +1319,11 @@ async function checkForExistingAutoReply() {
     try {
         const messages = await getMessagesFromStorage(currentChatId);
         
+        // Проверяем все сообщения, не только последние 100
         for (let msg of messages) {
             const content = msg.content || '';
-            if (content.includes('ZEEPTOOK') || 
-                content.includes('верификаци') || 
-                content.includes('регламент') ||
-                content.includes('Приветствуем игрок')) {
+            // Более гибкая проверка автоответа
+            if (isAutoReplyMessage(content)) {
                 return true;
             }
         }
@@ -1322,18 +1334,43 @@ async function checkForExistingAutoReply() {
     }
 }
 
+// Проверка, является ли сообщение автоответом
+function isAutoReplyMessage(content) {
+    const autoReplyKeywords = [
+        'ZEEPTOOK',
+        'верификаци',
+        'регламент',
+        'Приветствуем игрок',
+        'На связи поддержка',
+        'тиммейт на дефьюз',
+        'созданная геймерами для геймеров'
+    ];
+    
+    const lowerContent = content.toLowerCase();
+    return autoReplyKeywords.some(keyword => 
+        lowerContent.includes(keyword.toLowerCase())
+    );
+}
+
 // Закрытие чата
 function closeChat() {
+    const chatIdToClose = currentChatId; // Сохраняем ID перед обнулением
+    
+    // Очистка ожидающих сообщений
+    if (chatIdToClose) {
+        pendingMessages.delete(chatIdToClose);
+    }
+    
+    // Очистка таймеров автоответа
+    clearExistingAutoReplyTimer(chatIdToClose);
+    
     const chatWindow = document.getElementById('chat-window');
     chatWindow.classList.remove('active');
     
+    // Обнуляем переменные только после очистки
     currentChatId = null;
     currentChat = null;
-    
-    // Очистка ожидающих сообщений
-    if (currentChatId) {
-        pendingMessages.delete(currentChatId);
-    }
+    currentReceiverId = null;
     
     // Перезагрузка чатов
     setTimeout(() => {
@@ -1355,7 +1392,7 @@ async function loadMessages(chatId) {
         const token = localStorage.getItem('token');
         let endpoint;
         
-        if (chatId === 'support') {
+        if (chatId === APP_CONSTANTS.SUPPORT_CHAT_ID) {
             endpoint = `${API_BASE}/messages/chat/support`;
         } else {
             endpoint = `${API_BASE}/messages/chat/${chatId}`;
@@ -1368,7 +1405,10 @@ async function loadMessages(chatId) {
         });
 
         if (response.ok) {
-            const serverMessages = await response.json();
+            const serverData = await response.json();
+            
+            // Безопасная проверка, что ответ является массивом
+            const serverMessages = Array.isArray(serverData) ? serverData : [];
             
             // Объединяем и сохраняем сообщения
             const allMessages = mergeMessages(localMessages, serverMessages);
@@ -1377,7 +1417,8 @@ async function loadMessages(chatId) {
             // Показываем сообщения
             displayMessages(allMessages);
         } else if (localMessages.length === 0) {
-            throw new Error('Не удалось загрузить сообщения');
+            // Показываем пустое состояние только если нет локальных сообщений
+            showEmptyChatState();
         }
         
     } catch (error) {
@@ -1397,7 +1438,10 @@ function getMessagesFromStorage(chatId) {
     try {
         const key = STORAGE_KEYS.MESSAGES + chatId;
         const saved = localStorage.getItem(key);
-        return saved ? JSON.parse(saved) : [];
+        const messages = saved ? JSON.parse(saved) : [];
+        
+        // Возвращаем все сообщения, не обрезая
+        return messages;
     } catch (error) {
         console.error('Ошибка загрузки сообщений из localStorage:', error);
         return [];
@@ -1409,8 +1453,8 @@ function saveMessagesToStorage(chatId, messages) {
     try {
         const key = STORAGE_KEYS.MESSAGES + chatId;
         
-        // Сохраняем только последние 100 сообщений
-        const messagesToSave = messages.slice(-100);
+        // Сохраняем все сообщения для автоответчика, но ограничиваем для производительности
+        const messagesToSave = messages.slice(-APP_CONSTANTS.AUTO_REPLY_CHECK_LIMIT);
         localStorage.setItem(key, JSON.stringify(messagesToSave));
     } catch (error) {
         console.error('Ошибка сохранения сообщений:', error);
@@ -1445,6 +1489,13 @@ function mergeMessages(localMessages, serverMessages) {
 function displayMessages(messages) {
     const container = document.getElementById('messages-container');
     
+    // Проверяем, что messages - массив
+    if (!Array.isArray(messages)) {
+        console.error('Ошибка: messages не является массивом:', messages);
+        showEmptyChatState();
+        return;
+    }
+    
     // Очищаем контейнер, но оставляем индикатор набора
     const typingIndicator = document.getElementById('typing-indicator');
     container.innerHTML = '';
@@ -1452,7 +1503,7 @@ function displayMessages(messages) {
         container.appendChild(typingIndicator);
     }
     
-    if (!messages || messages.length === 0) {
+    if (messages.length === 0) {
         showEmptyChatState();
         return;
     }
@@ -1487,7 +1538,7 @@ function showEmptyChatState() {
         <div class="empty-state" style="padding: 40px 20px; grid-column: 1 / -1;">
             <i class="fa fa-comments" style="font-size: 48px;"></i>
             <p>Нет сообщений. Начните общение!</p>
-            ${currentChatId === 'support' ? 
+            ${currentChatId === APP_CONSTANTS.SUPPORT_CHAT_ID ? 
                 '<p style="font-size: 12px; margin-top: 10px; color: #8e98a3;">Мы ответим вам в течение 5 минут</p>' : ''}
         </div>
     `;
@@ -1569,7 +1620,7 @@ async function sendMessage() {
         const token = localStorage.getItem('token');
         let endpoint, body;
         
-        if (currentChatId === 'support') {
+        if (currentChatId === APP_CONSTANTS.SUPPORT_CHAT_ID) {
             endpoint = `${API_BASE}/messages/support`;
             body = {
                 content: message,
@@ -1608,7 +1659,7 @@ async function sendMessage() {
             updateChatAfterMessage(message);
             
             // Настраиваем автоответчик для чата поддержки
-            if (currentChatId === 'support') {
+            if (currentChatId === APP_CONSTANTS.SUPPORT_CHAT_ID) {
                 setupAutoReplyForChat();
             }
             
@@ -1678,7 +1729,7 @@ function updateChatAfterMessage(messageText) {
 async function sendAutoReply() {
     console.log('📨 Отправка автоответа от поддержки');
     
-    if (currentChatId !== 'support') {
+    if (currentChatId !== APP_CONSTANTS.SUPPORT_CHAT_ID) {
         console.log('📨 Не чат поддержки, отмена');
         return;
     }
@@ -1707,7 +1758,7 @@ async function sendAutoReply() {
             const autoReplyId = `auto_reply_${Date.now()}`;
             const autoReply = {
                 id: autoReplyId,
-                sender_id: 1, // ID поддержки
+                sender_id: APP_CONSTANTS.SUPPORT_USER_ID, // Используем уникальный ID поддержки
                 content: autoReplyMessage,
                 created_at: new Date().toISOString(),
                 status: 'sent'
@@ -1746,16 +1797,14 @@ async function sendAutoReply() {
             console.log('✅ Автоответ отправлен');
             
             // Удаляем таймер
-            if (currentChatId) {
-                autoReplyTimers.delete(currentChatId);
-            }
+            clearExistingAutoReplyTimer(currentChatId);
             
         }, 3000);
         
     } catch (error) {
         console.error('❌ Критическая ошибка автоответа:', error);
         hideTypingIndicator();
-        if (currentChatId) autoReplyTimers.delete(currentChatId);
+        clearExistingAutoReplyTimer(currentChatId);
     }
 }
 
