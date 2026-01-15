@@ -232,6 +232,84 @@
             font-weight: 500;
         }
 
+        /* Auth Required - Красивые кнопки как в чате */
+        .auth-required {
+            text-align: center;
+            padding: 40px 20px;
+            background: var(--nav-bg);
+            margin: 12px;
+            border-radius: var(--radius);
+            border: 1px solid var(--gray-dark);
+        }
+        
+        .auth-required i {
+            font-size: 64px;
+            color: var(--primary);
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+        
+        .auth-required h3 {
+            font-size: 20px;
+            margin-bottom: 12px;
+            color: var(--white);
+            font-weight: 600;
+        }
+        
+        .auth-required p {
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 30px;
+            max-width: 300px;
+            margin-left: auto;
+            margin-right: auto;
+            color: var(--gray-light);
+        }
+        
+        .auth-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        
+        .btn {
+            padding: 16px 24px;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+            box-shadow: 0 4px 15px rgba(0, 136, 204, 0.3);
+        }
+        
+        .btn-outline {
+            background: rgba(0, 136, 204, 0.1);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline:active {
+            background: rgba(0, 136, 204, 0.2);
+        }
+
         /* Menu Items */
         .menu-list {
             background: var(--nav-bg);
@@ -293,106 +371,39 @@
             font-size: 14px;
         }
 
-        /* Auth Required */
-        .auth-required {
-            text-align: center;
-            padding: 60px 20px;
-            background: var(--nav-bg);
-            margin: 12px;
-            border-radius: var(--radius);
-            border: 1px solid var(--gray-dark);
-        }
-        
-        .auth-required i {
-            font-size: 64px;
-            color: var(--gray-light);
-            margin-bottom: 20px;
-            opacity: 0.6;
-        }
-        
-        .auth-required h3 {
-            font-size: 18px;
-            margin-bottom: 10px;
-            color: var(--white);
-            font-weight: 500;
-        }
-        
-        .auth-required p {
-            font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 25px;
-            max-width: 280px;
-            margin-left: auto;
-            margin-right: auto;
-            color: var(--gray-light);
-        }
-        
-        .auth-buttons {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-direction: column;
-            max-width: 280px;
-            margin: 0 auto;
-        }
-        
-        .btn {
-            padding: 16px 24px;
-            border: none;
-            border-radius: 25px;
-            font-size: 15px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: var(--transition);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-        }
-        
-        .btn:active {
-            transform: scale(0.97);
-        }
-        
-        .btn-primary {
-            background: var(--gradient);
-            color: white;
-        }
-        
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--primary);
-            color: var(--primary);
-        }
-        
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        /* Настройки - Полноэкранная страница */
-        .settings-page {
+        /* Настройки - Анимация появления */
+        .settings-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: var(--chat-bg);
+            background: rgba(0, 0, 0, 0.9);
             z-index: 2000;
-            overflow-y: auto;
             display: none;
-            animation: slideInRight 0.3s ease-out;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
         
-        .settings-page.active {
+        .settings-overlay.active {
             display: block;
+            opacity: 1;
         }
         
         .settings-container {
-            padding-bottom: 20px;
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--nav-bg);
+            z-index: 2001;
+            overflow-y: auto;
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .settings-container.active {
+            right: 0;
         }
         
         .settings-section {
@@ -464,59 +475,7 @@
             outline: none;
             border-color: var(--primary);
         }
-        
-        .settings-divider {
-            height: 1px;
-            background: var(--gray-dark);
-            margin: 16px 0;
-        }
-        
-        /* Toggle Switch */
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 52px;
-            height: 28px;
-        }
-        
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: var(--gray-medium);
-            border-radius: 34px;
-            transition: var(--transition);
-        }
-        
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 22px;
-            width: 22px;
-            left: 3px;
-            bottom: 3px;
-            background-color: white;
-            border-radius: 50%;
-            transition: var(--transition);
-        }
-        
-        input:checked + .toggle-slider {
-            background-color: var(--primary);
-        }
-        
-        input:checked + .toggle-slider:before {
-            transform: translateX(24px);
-        }
-        
+
         /* Checkbox */
         .checkbox-container {
             display: flex;
@@ -559,88 +518,46 @@
         .checkbox-container input:checked ~ .checkmark:after {
             opacity: 1;
         }
-        
-        /* Credentials Section */
-        .credentials-section {
-            background: var(--nav-bg);
-            padding: 16px;
-            margin: 12px;
-            border-radius: var(--radius);
-            border: 1px solid var(--gray-dark);
-        }
-        
-        .credentials-item {
-            margin-bottom: 20px;
-        }
-        
-        .credentials-label {
-            font-size: 13px;
-            color: var(--gray-light);
-            margin-bottom: 6px;
-        }
-        
-        .credentials-value {
-            background: var(--input-bg);
-            padding: 14px;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--gray-medium);
-            font-family: monospace;
-            font-size: 15px;
-            word-break: break-all;
-            color: var(--white);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .password-placeholder {
-            color: var(--gray-light);
-            font-style: italic;
-        }
-        
-        .show-password-btn {
-            background: none;
-            border: none;
-            color: var(--primary);
-            font-size: 13px;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: var(--radius-xs);
-            transition: var(--transition);
-        }
-        
-        .show-password-btn:active {
-            background: rgba(0, 136, 204, 0.1);
-        }
 
-        /* Модальные окна */
-        .modal {
-            display: none;
+        /* Модальное окно смены пароля - улучшенная анимация */
+        .password-modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0, 0, 0, 0.7);
             z-index: 3000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+        
+        .password-modal-overlay.active {
+            display: flex;
+            opacity: 1;
             align-items: center;
             justify-content: center;
-            padding: 20px;
         }
         
-        .modal.active {
-            display: flex;
-        }
-        
-        .modal-content {
+        .password-modal {
             background: var(--nav-bg);
             border-radius: var(--radius);
-            width: 100%;
+            width: 90%;
             max-width: 400px;
-            max-height: 85vh;
+            max-height: 80vh;
             overflow-y: auto;
-            animation: slideUp 0.3s ease-out;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border: 1px solid var(--gray-dark);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+        
+        .password-modal-overlay.active .password-modal {
+            transform: translateY(0);
+            opacity: 1;
         }
         
         .modal-header {
@@ -720,63 +637,45 @@
             border-radius: var(--radius-sm);
         }
 
-        /* Анимация загрузки - улучшенная */
-        .loading-overlay {
+        /* Login Modal */
+        .login-modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: var(--chat-bg);
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 3000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+        
+        .login-modal-overlay.active {
             display: flex;
-            flex-direction: column;
+            opacity: 1;
             align-items: center;
             justify-content: center;
-            z-index: 9999;
-            animation: fadeIn 0.3s ease-out;
         }
         
-        .telegram-loader {
-            width: 60px;
-            height: 60px;
-            position: relative;
-            margin-bottom: 20px;
+        .login-modal {
+            background: var(--nav-bg);
+            border-radius: var(--radius);
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--gray-dark);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
         }
         
-        .telegram-loader-circle {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border: 4px solid transparent;
-            border-top-color: var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        .telegram-loader-circle:nth-child(2) {
-            border-top-color: var(--primary-dark);
-            animation-delay: 0.2s;
-            width: 80%;
-            height: 80%;
-            top: 10%;
-            left: 10%;
-        }
-        
-        .telegram-loader-circle:nth-child(3) {
-            border-top-color: var(--white);
-            animation-delay: 0.4s;
-            width: 60%;
-            height: 60%;
-            top: 20%;
-            left: 20%;
-        }
-        
-        .loading-text {
-            font-size: 16px;
-            color: var(--gray-light);
-            font-weight: 500;
-            text-align: center;
-            animation: pulse 1.5s ease-in-out infinite;
+        .login-modal-overlay.active .login-modal {
+            transform: translateY(0);
+            opacity: 1;
         }
 
         /* Password Input Wrapper */
@@ -907,59 +806,6 @@
             border-bottom-color: rgba(0, 0, 0, 0.9);
         }
 
-        /* Animations */
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: translateX(100%);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-        
-        @keyframes slideOutRight {
-            from {
-                opacity: 1;
-                transform: translateX(0);
-            }
-            to {
-                opacity: 0;
-                transform: translateX(100%);
-            }
-        }
-        
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
         /* Responsive */
         @media (max-width: 360px) {
             .header {
@@ -988,10 +834,8 @@
                 box-shadow: 0 0 30px rgba(0,0,0,0.3);
             }
             
-            .settings-page {
+            .settings-container {
                 max-width: 500px;
-                left: 50%;
-                transform: translateX(-50%);
             }
             
             .bottom-nav {
@@ -1003,16 +847,6 @@
     </style>
 </head>
 <body>
-    <!-- Анимация загрузки -->
-    <div class="loading-overlay" id="loading-overlay">
-        <div class="telegram-loader">
-            <div class="telegram-loader-circle"></div>
-            <div class="telegram-loader-circle"></div>
-            <div class="telegram-loader-circle"></div>
-        </div>
-        <div class="loading-text">Загрузка...</div>
-    </div>
-    
     <div class="app-container">
         <!-- Header -->
         <div class="header">
@@ -1024,7 +858,7 @@
             </div>
             
             <div class="header-right" id="header-right" style="display: none;">
-                <button class="header-btn" onclick="openSettingsPage()" title="Настройки">
+                <button class="header-btn" onclick="openSettings()" title="Настройки">
                     <i class="fa fa-cog"></i>
                 </button>
                 <button class="header-btn logout-btn" onclick="logout()" title="Выйти">
@@ -1086,28 +920,6 @@
                 </div>
             </div>
             
-            <!-- Учетные данные -->
-            <div class="credentials-section">
-                <div class="credentials-item">
-                    <div class="credentials-label">Логин (Email)</div>
-                    <div class="credentials-value" id="credentials-email">
-                        <span class="password-placeholder">faridun.exam@gmail.com</span>
-                        <button class="show-password-btn" onclick="copyToClipboard('faridun.exam@gmail.com')">
-                            <i class="fa fa-copy"></i> Копировать
-                        </button>
-                    </div>
-                </div>
-                <div class="credentials-item">
-                    <div class="credentials-label">Пароль</div>
-                    <div class="credentials-value">
-                        <span class="password-placeholder" id="password-placeholder">••••••••</span>
-                        <button class="show-password-btn" onclick="showPassword()">
-                            <i class="fa fa-eye"></i> Показать
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
             <!-- Меню профиля -->
             <div class="menu-list">
                 <div class="menu-item" onclick="openChangePasswordModal()">
@@ -1126,110 +938,92 @@
         </div>
     </div>
     
-    <!-- Страница настроек -->
-    <div class="settings-page" id="settings-page">
+    <!-- Настройки (оверлей + контейнер) -->
+    <div class="settings-overlay" id="settings-overlay" onclick="closeSettings()"></div>
+    <div class="settings-container" id="settings-container">
         <div class="header">
             <div class="header-left">
-                <button class="back-btn" onclick="closeSettingsPage()">
+                <button class="back-btn" onclick="closeSettings()">
                     <i class="fa fa-arrow-left"></i>
                 </button>
                 <div class="page-title">Настройки</div>
             </div>
         </div>
         
-        <div class="settings-container">
-            <!-- Профиль -->
-            <div class="settings-section">
-                <div class="section-header">Профиль</div>
-                
-                <div class="settings-item">
-                    <div class="settings-item-content">
-                        <div class="settings-item-title">Полное имя</div>
-                        <input type="text" class="settings-input" id="settings-fullname" placeholder="Введите ваше полное имя">
-                    </div>
-                </div>
-                
-                <div class="settings-item">
-                    <div class="settings-item-content">
-                        <div class="settings-item-title">Email</div>
-                        <div class="settings-item-description" id="settings-email">faridun.exam@gmail.com</div>
-                    </div>
-                </div>
-                
-                <div class="settings-item">
-                    <div class="settings-item-content">
-                        <div class="settings-item-title">Имя пользователя</div>
-                        <div class="settings-item-description" id="settings-username">@username</div>
-                    </div>
-                </div>
-                
-                <div class="settings-item no-border">
-                    <div class="settings-item-content">
-                        <div class="settings-item-title">Дата регистрации</div>
-                        <div class="settings-item-description" id="settings-joined">1 января 2024</div>
-                    </div>
+        <div class="settings-section">
+            <div class="section-header">Профиль</div>
+            
+            <div class="settings-item">
+                <div class="settings-item-content">
+                    <div class="settings-item-title">Полное имя</div>
+                    <input type="text" class="settings-input" id="settings-fullname" placeholder="Введите ваше полное имя">
                 </div>
             </div>
             
-            <!-- Интерфейс -->
-            <div class="settings-section">
-                <div class="section-header">Интерфейс</div>
-                
-                <div class="settings-item no-border">
-                    <div class="settings-item-content">
-                        <div class="settings-item-title">Ночной режим</div>
-                        <div class="settings-item-description">Темная тема для комфортного использования</div>
-                    </div>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="night-mode-toggle" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
+            <div class="settings-item">
+                <div class="settings-item-content">
+                    <div class="settings-item-title">Email</div>
+                    <div class="settings-item-description" id="settings-email">faridun.exam@gmail.com</div>
                 </div>
             </div>
             
-            <!-- Приватность -->
-            <div class="settings-section">
-                <div class="section-header">Приватность</div>
-                
-                <div class="settings-item no-border">
-                    <div class="settings-item-content">
-                        <div class="settings-item-title">Показывать мой email в профиле</div>
-                        <div class="settings-item-description">Будет виден другим пользователям</div>
-                    </div>
-                    <label class="checkbox-container">
-                        <input type="checkbox" id="show-email-checkbox" checked>
-                        <span class="checkmark"></span>
-                    </label>
+            <div class="settings-item">
+                <div class="settings-item-content">
+                    <div class="settings-item-title">Имя пользователя</div>
+                    <div class="settings-item-description" id="settings-username">@username</div>
                 </div>
             </div>
             
-            <!-- Аккаунт -->
-            <div class="settings-section">
-                <div class="section-header">Аккаунт</div>
-                
-                <div class="settings-item" onclick="openChangePasswordModal()">
-                    <div class="settings-item-content">
-                        <div class="settings-item-title">Сменить пароль</div>
-                        <div class="settings-item-description">Обновите пароль вашего аккаунта</div>
-                    </div>
-                    <div class="menu-arrow">
-                        <i class="fa fa-chevron-right"></i>
-                    </div>
+            <div class="settings-item no-border">
+                <div class="settings-item-content">
+                    <div class="settings-item-title">Дата регистрации</div>
+                    <div class="settings-item-description" id="settings-joined">1 января 2024</div>
                 </div>
-                
-                <div class="settings-item no-border" onclick="logout()">
-                    <div class="settings-item-content">
-                        <div class="settings-item-title" style="color: var(--accent);">Выйти</div>
-                        <div class="settings-item-description">Выйти из текущего аккаунта</div>
-                    </div>
+            </div>
+        </div>
+        
+        <!-- Приватность -->
+        <div class="settings-section">
+            <div class="section-header">Приватность</div>
+            
+            <div class="settings-item no-border">
+                <div class="settings-item-content">
+                    <div class="settings-item-title">Показывать мой email в профиле</div>
+                    <div class="settings-item-description">Будет виден другим пользователям</div>
+                </div>
+                <label class="checkbox-container">
+                    <input type="checkbox" id="show-email-checkbox" checked>
+                    <span class="checkmark"></span>
+                </label>
+            </div>
+        </div>
+        
+        <!-- Аккаунт -->
+        <div class="settings-section">
+            <div class="section-header">Аккаунт</div>
+            
+            <div class="settings-item" onclick="openChangePasswordModal()">
+                <div class="settings-item-content">
+                    <div class="settings-item-title">Сменить пароль</div>
+                    <div class="settings-item-description">Обновите пароль вашего аккаунта</div>
+                </div>
+                <div class="menu-arrow">
+                    <i class="fa fa-chevron-right"></i>
+                </div>
+            </div>
+            
+            <div class="settings-item no-border" onclick="logout()">
+                <div class="settings-item-content">
+                    <div class="settings-item-title" style="color: var(--accent);">Выйти</div>
+                    <div class="settings-item-description">Выйти из текущего аккаунта</div>
                 </div>
             </div>
         </div>
     </div>
     
     <!-- Модальное окно входа -->
-    <div class="modal" id="login-modal">
-        <div class="modal-content">
+    <div class="login-modal-overlay" id="login-modal-overlay" onclick="closeLoginModal(event)">
+        <div class="login-modal" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <div class="modal-title">Вход в аккаунт</div>
                 <button class="modal-close" onclick="closeLoginModal()">
@@ -1260,8 +1054,8 @@
     </div>
     
     <!-- Модальное окно смены пароля -->
-    <div class="modal" id="changePasswordModal">
-        <div class="modal-content">
+    <div class="password-modal-overlay" id="password-modal-overlay" onclick="closeChangePasswordModal(event)">
+        <div class="password-modal" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <div class="modal-title">Смена пароля</div>
                 <button class="modal-close" onclick="closeChangePasswordModal()">
@@ -1336,41 +1130,24 @@
     <script>
         const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
         let currentUser = null;
-        let userCredentials = null;
-        let passwordVisible = false;
-        const demoPassword = "SecurePassword123!";
-
-        // Показать анимацию загрузки
-        function showLoading() {
-            document.getElementById('loading-overlay').style.display = 'flex';
-        }
-
-        // Скрыть анимацию загрузки
-        function hideLoading() {
-            document.getElementById('loading-overlay').style.display = 'none';
-        }
 
         // Проверка авторизации при загрузке
         function checkAuth() {
-            showLoading();
-            setTimeout(() => {
-                const token = localStorage.getItem('token');
-                const authSection = document.getElementById('auth-required-section');
-                const profileSection = document.getElementById('profile-section');
-                const headerRight = document.getElementById('header-right');
-                
-                if (token) {
-                    authSection.style.display = 'none';
-                    profileSection.style.display = 'block';
-                    headerRight.style.display = 'flex';
-                    loadProfile();
-                } else {
-                    authSection.style.display = 'block';
-                    profileSection.style.display = 'none';
-                    headerRight.style.display = 'none';
-                }
-                hideLoading();
-            }, 500);
+            const token = localStorage.getItem('token');
+            const authSection = document.getElementById('auth-required-section');
+            const profileSection = document.getElementById('profile-section');
+            const headerRight = document.getElementById('header-right');
+            
+            if (token) {
+                authSection.style.display = 'none';
+                profileSection.style.display = 'block';
+                headerRight.style.display = 'flex';
+                loadProfile();
+            } else {
+                authSection.style.display = 'block';
+                profileSection.style.display = 'none';
+                headerRight.style.display = 'none';
+            }
         }
 
         // Загрузка профиля
@@ -1424,24 +1201,14 @@
             
             // Обновляем статистику с новыми названиями
             document.getElementById('stats-ads').textContent = stats.total_ads || 0;
-            document.getElementById('stats-friends').textContent = '∞'; // Друзья - бесконечность
-            document.getElementById('stats-followers').textContent = '∞'; // Подписчики - бесконечность
-            
-            // Устанавливаем учетные данные
-            document.getElementById('credentials-email').querySelector('.password-placeholder').textContent = 
-                user.email || 'faridun.exam@gmail.com';
+            document.getElementById('stats-friends').textContent = '∞';
+            document.getElementById('stats-followers').textContent = '∞';
             
             // Обновляем настройки
             document.getElementById('settings-email').textContent = user.email || 'faridun.exam@gmail.com';
             document.getElementById('settings-username').textContent = `@${user.username || 'username'}`;
             document.getElementById('settings-fullname').value = user.full_name || '';
             document.getElementById('settings-joined').textContent = formatDate(user.created_at) || '1 января 2024';
-            
-            // Сохраняем учетные данные
-            userCredentials = {
-                login: user.email || 'faridun.exam@gmail.com',
-                password_hint: demoPassword
-            };
             
             // Обновляем аватар
             const avatarElement = document.getElementById('profile-avatar');
@@ -1457,115 +1224,56 @@
 
         // Загрузка настроек из localStorage
         function loadSettings() {
-            // Ночной режим
-            const nightMode = localStorage.getItem('nightMode') !== 'false';
-            document.getElementById('night-mode-toggle').checked = nightMode;
-            
             // Показ email
             const showEmail = localStorage.getItem('showEmail') !== 'false';
             document.getElementById('show-email-checkbox').checked = showEmail;
         }
 
-        // Включение ночного режима
-        function enableNightMode() {
-            document.documentElement.style.setProperty('--chat-bg', '#0e1621');
-            document.documentElement.style.setProperty('--nav-bg', '#17212b');
-            localStorage.setItem('nightMode', 'true');
-        }
-
-        // Выключение ночного режима
-        function disableNightMode() {
-            document.documentElement.style.setProperty('--chat-bg', '#f0f0f0');
-            document.documentElement.style.setProperty('--nav-bg', '#ffffff');
-            document.documentElement.style.setProperty('--white', '#000000');
-            document.documentElement.style.setProperty('--gray-light', '#666666');
-            localStorage.setItem('nightMode', 'false');
-        }
-
-        // Открытие страницы настроек
-        function openSettingsPage() {
-            showLoading();
+        // Открытие настроек
+        function openSettings() {
+            document.getElementById('settings-overlay').classList.add('active');
             setTimeout(() => {
-                document.getElementById('settings-page').classList.add('active');
-                hideLoading();
+                document.getElementById('settings-container').classList.add('active');
+            }, 10);
+        }
+
+        // Закрытие настроек
+        function closeSettings() {
+            document.getElementById('settings-container').classList.remove('active');
+            setTimeout(() => {
+                document.getElementById('settings-overlay').classList.remove('active');
             }, 300);
         }
 
-        // Закрытие страницы настроек
-        function closeSettingsPage() {
-            document.getElementById('settings-page').style.animation = 'slideOutRight 0.3s ease-out';
-            setTimeout(() => {
-                document.getElementById('settings-page').classList.remove('active');
-                document.getElementById('settings-page').style.animation = '';
-            }, 300);
+        // Открытие модального окна входа
+        function openLoginModal() {
+            document.getElementById('login-modal-overlay').classList.add('active');
         }
 
-        // Сохранение настроек профиля
-        function saveProfileSettings() {
-            const fullname = document.getElementById('settings-fullname').value.trim();
-            
-            if (!fullname) {
-                showNotification('Введите полное имя', 'error');
-                return;
-            }
-            
-            showLoading();
-            setTimeout(() => {
-                if (currentUser) {
-                    currentUser.full_name = fullname;
-                    document.getElementById('profile-name').textContent = fullname;
-                    showNotification('Профиль успешно обновлен', 'success');
-                }
-                hideLoading();
-            }, 800);
-        }
-
-        // Показать пароль
-        function showPassword() {
-            const placeholder = document.getElementById('password-placeholder');
-            const button = event.target.closest('.show-password-btn');
-            
-            if (passwordVisible) {
-                placeholder.textContent = '••••••••';
-                button.innerHTML = '<i class="fa fa-eye"></i> Показать';
-                passwordVisible = false;
-            } else {
-                placeholder.textContent = demoPassword;
-                button.innerHTML = '<i class="fa fa-eye-slash"></i> Скрыть';
-                passwordVisible = true;
+        // Закрытие модального окна входа
+        function closeLoginModal(event) {
+            if (event && event.target === event.currentTarget) {
+                document.getElementById('login-modal-overlay').classList.remove('active');
+            } else if (!event) {
+                document.getElementById('login-modal-overlay').classList.remove('active');
             }
         }
 
-        // Копировать в буфер обмена
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                showNotification('Скопировано в буфер обмена', 'success');
-            }).catch(err => {
-                console.error('Ошибка копирования: ', err);
-                showNotification('Ошибка копирования', 'error');
-            });
-        }
-
-        // Показать подсказку для аватара
-        function showAvatarTooltip() {
-            const tooltip = document.getElementById('avatar-tooltip');
-            if (tooltip) {
-                tooltip.style.display = 'block';
-                setTimeout(() => {
-                    tooltip.style.display = 'none';
-                }, 3000);
-            }
-        }
-
-        // Функции для модального окна смены пароля
+        // Открытие модального окна смены пароля
         function openChangePasswordModal() {
             clearPasswordErrors();
             resetChangePasswordForm();
-            document.getElementById('changePasswordModal').classList.add('active');
+            closeSettings(); // Закрываем настройки если открыты
+            document.getElementById('password-modal-overlay').classList.add('active');
         }
 
-        function closeChangePasswordModal() {
-            document.getElementById('changePasswordModal').classList.remove('active');
+        // Закрытие модального окна смены пароля
+        function closeChangePasswordModal(event) {
+            if (event && event.target === event.currentTarget) {
+                document.getElementById('password-modal-overlay').classList.remove('active');
+            } else if (!event) {
+                document.getElementById('password-modal-overlay').classList.remove('active');
+            }
             resetChangePasswordForm();
         }
 
@@ -1619,8 +1327,6 @@
             changePasswordBtn.disabled = true;
             changePasswordBtn.textContent = 'Сохранение...';
             
-            showLoading();
-            
             try {
                 const token = localStorage.getItem('token');
                 const response = await fetch(`${API_BASE}/auth/change-password`, {
@@ -1648,16 +1354,12 @@
                 }
                 
                 // Успешная смена пароля
-                setTimeout(() => {
-                    showNotification('Пароль успешно изменен!', 'success');
-                    closeChangePasswordModal();
-                    hideLoading();
-                }, 800);
+                showNotification('Пароль успешно изменен!', 'success');
+                closeChangePasswordModal();
                 
             } catch (error) {
                 console.error('Change password error:', error);
                 showNotification(error.message || 'Ошибка при смене пароля', 'error');
-                hideLoading();
             } finally {
                 // Восстанавливаем кнопку
                 changePasswordBtn.disabled = false;
@@ -1681,15 +1383,6 @@
             }
         }
 
-        // Функции модальных окон
-        function openLoginModal() {
-            document.getElementById('login-modal').classList.add('active');
-        }
-
-        function closeLoginModal() {
-            document.getElementById('login-modal').classList.remove('active');
-        }
-
         // Вход
         async function login() {
             const username = document.getElementById('login-username').value;
@@ -1699,8 +1392,6 @@
                 showNotification('Заполните все поля', 'error');
                 return;
             }
-            
-            showLoading();
             
             try {
                 const response = await fetch(`${API_BASE}/login`, {
@@ -1720,37 +1411,39 @@
                     throw new Error(data.error || 'Login failed');
                 }
                 
-                setTimeout(() => {
-                    localStorage.setItem('token', data.token);
-                    localStorage.setItem('user', JSON.stringify(data.user));
-                    
-                    showNotification('Успешный вход!');
-                    closeLoginModal();
-                    checkAuth();
-                    hideLoading();
-                }, 800);
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('user', JSON.stringify(data.user));
+                
+                showNotification('Успешный вход!');
+                closeLoginModal();
+                checkAuth();
                 
             } catch (error) {
                 console.error('Login error:', error);
                 showNotification(error.message || 'Ошибка входа', 'error');
-                hideLoading();
             }
         }
 
         // Выход
         function logout() {
             if (confirm('Вы уверены, что хотите выйти?')) {
-                showLoading();
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                currentUser = null;
+                showNotification('Вы вышли из аккаунта');
+                checkAuth();
+                closeSettings();
+            }
+        }
+
+        // Показать подсказку для аватара
+        function showAvatarTooltip() {
+            const tooltip = document.getElementById('avatar-tooltip');
+            if (tooltip) {
+                tooltip.style.display = 'block';
                 setTimeout(() => {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    currentUser = null;
-                    userCredentials = null;
-                    showNotification('Вы вышли из аккаунта');
-                    checkAuth();
-                    closeSettingsPage();
-                    hideLoading();
-                }, 800);
+                    tooltip.style.display = 'none';
+                }, 3000);
             }
         }
 
@@ -1805,21 +1498,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             checkAuth();
             
-            // Обработчики для настроек
-            const nightModeToggle = document.getElementById('night-mode-toggle');
+            // Обработчик для чекбокса показа email
             const showEmailCheckbox = document.getElementById('show-email-checkbox');
-            const settingsFullname = document.getElementById('settings-fullname');
-            
-            if (nightModeToggle) {
-                nightModeToggle.addEventListener('change', function() {
-                    if (this.checked) {
-                        enableNightMode();
-                    } else {
-                        disableNightMode();
-                    }
-                });
-            }
-            
             if (showEmailCheckbox) {
                 showEmailCheckbox.addEventListener('change', function() {
                     localStorage.setItem('showEmail', this.checked);
@@ -1827,10 +1507,13 @@
             }
             
             // Сохранение полного имени при потере фокуса
+            const settingsFullname = document.getElementById('settings-fullname');
             if (settingsFullname) {
                 settingsFullname.addEventListener('blur', function() {
-                    if (this.value.trim()) {
-                        saveProfileSettings();
+                    if (this.value.trim() && currentUser) {
+                        currentUser.full_name = this.value.trim();
+                        document.getElementById('profile-name').textContent = this.value.trim();
+                        showNotification('Имя обновлено', 'success');
                     }
                 });
             }
@@ -1841,7 +1524,7 @@
                     const activeElement = document.activeElement;
                     
                     if (activeElement.id === 'settings-fullname') {
-                        saveProfileSettings();
+                        activeElement.blur();
                     }
                     else if (activeElement.id === 'login-password') {
                         login();
@@ -1849,13 +1532,6 @@
                     else if (activeElement.id === 'confirm-password-input') {
                         changePassword();
                     }
-                }
-            });
-            
-            // Закрытие модальных окон при клике вне контента
-            document.addEventListener('click', function(e) {
-                if (e.target.classList.contains('modal')) {
-                    e.target.classList.remove('active');
                 }
             });
         });
