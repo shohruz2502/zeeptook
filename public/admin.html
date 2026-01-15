@@ -3,467 +3,468 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Админ панель - Управление пользователями</title>
+    <title>Admin Zeeptook ✦ Панель управления</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif;
         }
         
         :root {
-            --primary: #4f46e5;
-            --primary-dark: #3730a3;
-            --secondary: #0f172a;
-            --danger: #ef4444;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --info: #3b82f6;
-            --dark: #1e293b;
-            --light: #f8fafc;
-            --gray: #64748b;
-            --gray-light: #cbd5e1;
-            --white: #ffffff;
-            --sidebar: #1e1b4b;
-            --sidebar-hover: #312e81;
-            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --radius: 8px;
+            --neon-blue: #00f2fe;
+            --neon-purple: #9d4edd;
+            --neon-pink: #ff2e93;
+            --dark-bg: #0a0a1a;
+            --darker-bg: #050510;
+            --card-bg: rgba(20, 20, 40, 0.8);
+            --card-border: rgba(0, 242, 254, 0.2);
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0d0;
+            --text-muted: #6b6b9b;
+            --success: #00ff9d;
+            --warning: #ffcc00;
+            --danger: #ff4d7d;
+            --info: #4facfe;
+            --radius: 16px;
+            --radius-sm: 10px;
+            --shadow-glow: 0 0 30px rgba(0, 242, 254, 0.3);
+            --shadow-neon: 0 0 15px rgba(157, 78, 221, 0.5);
+            --gradient-primary: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            --gradient-dark: linear-gradient(135deg, var(--darker-bg), #1a1a3a);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         body {
-            background: #f1f5f9;
-            color: #334155;
+            background: var(--gradient-dark);
+            color: var(--text-primary);
             min-height: 100vh;
-            display: flex;
+            overflow-x: hidden;
         }
         
-        /* Сайдбар */
-        .sidebar {
-            width: 250px;
-            background: var(--sidebar);
-            color: var(--white);
-            height: 100vh;
-            position: fixed;
-            padding: 20px 0;
-            box-shadow: var(--shadow);
+        /* Неоновый эффект для текста */
+        .neon-text {
+            text-shadow: 0 0 10px var(--neon-blue),
+                         0 0 20px var(--neon-blue),
+                         0 0 30px var(--neon-blue);
         }
         
-        .logo {
-            padding: 0 20px 30px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            margin-bottom: 20px;
+        .neon-purple {
+            text-shadow: 0 0 10px var(--neon-purple),
+                         0 0 20px var(--neon-purple);
         }
         
-        .logo h1 {
-            font-size: 22px;
-            font-weight: 700;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .logo i {
-            color: var(--primary);
-        }
-        
-        .logo .subtitle {
-            font-size: 12px;
-            color: var(--gray-light);
-            margin-top: 5px;
-            opacity: 0.8;
-        }
-        
-        .nav-links {
-            list-style: none;
-            padding: 0 15px;
-        }
-        
-        .nav-links li {
-            margin-bottom: 5px;
-        }
-        
-        .nav-links a {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 15px;
-            color: var(--gray-light);
-            text-decoration: none;
-            border-radius: var(--radius);
-            transition: all 0.3s ease;
-        }
-        
-        .nav-links a:hover {
-            background: var(--sidebar-hover);
-            color: var(--white);
-        }
-        
-        .nav-links a.active {
-            background: var(--primary);
-            color: var(--white);
-        }
-        
-        .nav-links i {
-            width: 20px;
-            text-align: center;
-        }
-        
-        .user-info {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            padding: 15px 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            color: white;
-        }
-        
-        .user-details {
-            flex: 1;
-        }
-        
-        .user-name {
-            font-weight: 600;
-            font-size: 14px;
-        }
-        
-        .user-role {
-            font-size: 12px;
-            color: var(--gray-light);
-            background: rgba(255, 255, 255, 0.1);
-            padding: 2px 8px;
-            border-radius: 12px;
-            display: inline-block;
-            margin-top: 3px;
-        }
-        
-        /* Основной контент */
-        .main-content {
-            flex: 1;
-            margin-left: 250px;
-            padding: 30px;
-            min-height: 100vh;
-        }
-        
-        .header {
+        /* Панель навигации */
+        .navbar {
+            background: rgba(10, 10, 26, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(0, 242, 254, 0.1);
+            padding: 15px 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
         }
         
-        .header h2 {
-            font-size: 28px;
-            font-weight: 700;
-            color: var(--secondary);
-        }
-        
-        .header-actions {
+        .navbar-brand {
             display: flex;
-            gap: 10px;
-        }
-        
-        .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: var(--radius);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
             align-items: center;
-            gap: 8px;
-            font-size: 14px;
+            gap: 12px;
+            font-size: 24px;
+            font-weight: 800;
         }
         
-        .btn-primary {
-            background: var(--primary);
-            color: var(--white);
+        .navbar-brand .diamond {
+            color: var(--neon-blue);
+            animation: diamond-spin 8s linear infinite;
         }
         
-        .btn-primary:hover {
-            background: var(--primary-dark);
+        @keyframes diamond-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
-        .btn-success {
-            background: var(--success);
-            color: var(--white);
+        .navbar-brand span {
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
-        .btn-danger {
-            background: var(--danger);
-            color: var(--white);
-        }
-        
-        .btn-warning {
-            background: var(--warning);
-            color: var(--white);
-        }
-        
-        /* Статистика */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .stat-card {
-            background: var(--white);
-            border-radius: var(--radius);
-            padding: 20px;
-            box-shadow: var(--shadow);
+        .navbar-actions {
             display: flex;
             align-items: center;
             gap: 15px;
         }
         
+        /* Карточки */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            border: 1px solid var(--card-border);
+            backdrop-filter: blur(10px);
+            transition: var(--transition);
+        }
+        
+        .card:hover {
+            border-color: var(--neon-blue);
+            box-shadow: var(--shadow-glow);
+            transform: translateY(-5px);
+        }
+        
+        /* Основной контент */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        
+        .page-title {
+            font-size: 36px;
+            margin-bottom: 30px;
+            background: linear-gradient(90deg, var(--neon-blue), var(--neon-pink));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .page-title i {
+            font-size: 32px;
+        }
+        
+        /* Статистика */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .stat-card {
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        
         .stat-icon {
-            width: 50px;
-            height: 50px;
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 28px;
+            background: var(--gradient-primary);
             color: white;
+            box-shadow: var(--shadow-neon);
         }
         
-        .stat-icon.total { background: var(--primary); }
-        .stat-icon.active { background: var(--success); }
-        .stat-icon.inactive { background: var(--danger); }
-        .stat-icon.admins { background: var(--warning); }
-        
         .stat-info h3 {
-            font-size: 24px;
-            font-weight: 700;
+            font-size: 32px;
+            font-weight: 800;
             margin-bottom: 5px;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .stat-info p {
-            color: var(--gray);
+            color: var(--text-secondary);
             font-size: 14px;
+            font-weight: 500;
         }
         
-        /* Таблица пользователей */
-        .users-table {
-            background: var(--white);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
+        /* Таблица */
+        .table-container {
             overflow: hidden;
+            margin-bottom: 40px;
         }
         
         .table-header {
-            padding: 20px;
-            border-bottom: 1px solid var(--gray-light);
+            padding: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
         }
         
         .search-box {
             position: relative;
-            width: 300px;
+            width: 350px;
         }
         
         .search-box input {
             width: 100%;
-            padding: 10px 15px 10px 40px;
-            border: 1px solid var(--gray-light);
-            border-radius: var(--radius);
-            font-size: 14px;
+            padding: 14px 20px 14px 50px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 15px;
+            transition: var(--transition);
+        }
+        
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
         }
         
         .search-box i {
             position: absolute;
-            left: 15px;
+            left: 20px;
             top: 50%;
             transform: translateY(-50%);
-            color: var(--gray);
+            color: var(--neon-blue);
+            font-size: 18px;
         }
         
+        .filters {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .filter-select {
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--neon-blue);
+        }
+        
+        /* Кнопки */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+        
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+            box-shadow: 0 5px 20px rgba(0, 242, 254, 0.3);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 242, 254, 0.5);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--success), #00cc7a);
+            color: white;
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger), #ff2e63);
+            color: white;
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, var(--warning), #ffaa00);
+            color: #000;
+        }
+        
+        /* Таблица */
         table {
             width: 100%;
             border-collapse: collapse;
         }
         
         thead {
-            background: #f8fafc;
+            background: rgba(0, 242, 254, 0.1);
         }
         
         th {
-            padding: 15px;
+            padding: 18px 20px;
             text-align: left;
             font-weight: 600;
-            color: var(--dark);
-            border-bottom: 1px solid var(--gray-light);
+            color: var(--neon-blue);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-bottom: 2px solid rgba(0, 242, 254, 0.3);
         }
         
         td {
-            padding: 15px;
-            border-bottom: 1px solid #f1f5f9;
+            padding: 18px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
         
         tr:hover {
-            background: #f8fafc;
+            background: rgba(0, 242, 254, 0.05);
         }
         
         .user-cell {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
         }
         
-        .user-avatar-small {
-            width: 36px;
-            height: 36px;
+        .user-avatar {
+            width: 45px;
+            height: 45px;
             border-radius: 50%;
-            background: var(--primary);
+            background: var(--gradient-primary);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: bold;
-            font-size: 14px;
+            font-size: 18px;
+            box-shadow: var(--shadow-neon);
         }
         
-        .user-details-small .name {
+        .user-info .name {
             font-weight: 600;
-            margin-bottom: 3px;
+            margin-bottom: 5px;
         }
         
-        .user-details-small .email {
-            font-size: 12px;
-            color: var(--gray);
+        .user-info .email {
+            font-size: 13px;
+            color: var(--text-secondary);
         }
         
-        .status-badge {
-            padding: 5px 10px;
+        /* Бейджи */
+        .badge {
+            padding: 6px 14px;
             border-radius: 20px;
             font-size: 12px;
             font-weight: 600;
             display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
-        .status-active {
-            background: #d1fae5;
-            color: #065f46;
+        .badge-admin {
+            background: rgba(157, 78, 221, 0.2);
+            color: var(--neon-purple);
+            border: 1px solid rgba(157, 78, 221, 0.4);
         }
         
-        .status-inactive {
-            background: #fee2e2;
-            color: #991b1b;
+        .badge-user {
+            background: rgba(0, 242, 254, 0.2);
+            color: var(--neon-blue);
+            border: 1px solid rgba(0, 242, 254, 0.4);
         }
         
-        .role-badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-block;
+        .badge-active {
+            background: rgba(0, 255, 157, 0.2);
+            color: var(--success);
+            border: 1px solid rgba(0, 255, 157, 0.4);
         }
         
-        .role-admin {
-            background: #fef3c7;
-            color: #92400e;
+        .badge-inactive {
+            background: rgba(255, 77, 125, 0.2);
+            color: var(--danger);
+            border: 1px solid rgba(255, 77, 125, 0.4);
         }
         
-        .role-user {
-            background: #dbeafe;
-            color: #1e40af;
+        .badge-google {
+            background: rgba(66, 133, 244, 0.2);
+            color: #4285f4;
+            border: 1px solid rgba(66, 133, 244, 0.4);
         }
         
-        .auth-badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-block;
-            background: #f3e8ff;
-            color: #6b21a8;
+        .badge-email {
+            background: rgba(255, 46, 147, 0.2);
+            color: var(--neon-pink);
+            border: 1px solid rgba(255, 46, 147, 0.4);
         }
         
+        /* Действия */
         .actions {
             display: flex;
             gap: 8px;
         }
         
         .action-btn {
-            width: 32px;
-            height: 32px;
-            border-radius: 6px;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
             border: none;
-            background: transparent;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: var(--transition);
             display: flex;
             align-items: center;
             justify-content: center;
         }
         
         .action-btn:hover {
-            background: #f1f5f9;
+            background: rgba(0, 242, 254, 0.1);
+            color: var(--neon-blue);
+            transform: scale(1.1);
         }
         
-        .edit-btn { color: var(--info); }
-        .delete-btn { color: var(--danger); }
-        .view-btn { color: var(--success); }
+        .action-btn.delete:hover {
+            background: rgba(255, 77, 125, 0.1);
+            color: var(--danger);
+        }
         
+        /* Пагинация */
         .pagination {
-            padding: 20px;
+            padding: 25px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-top: 1px solid var(--gray-light);
-        }
-        
-        .pagination-info {
-            color: var(--gray);
-            font-size: 14px;
-        }
-        
-        .pagination-controls {
-            display: flex;
-            gap: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .page-btn {
-            width: 36px;
-            height: 36px;
-            border-radius: 6px;
-            border: 1px solid var(--gray-light);
-            background: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            background: transparent;
+            color: var(--text-secondary);
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: var(--transition);
         }
         
         .page-btn:hover {
-            background: #f1f5f9;
+            border-color: var(--neon-blue);
+            color: var(--neon-blue);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
         }
         
         .page-btn.active {
-            background: var(--primary);
+            background: var(--gradient-primary);
             color: white;
-            border-color: var(--primary);
+            border: none;
         }
         
         /* Модальные окна */
@@ -473,74 +474,103 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(5, 5, 16, 0.95);
+            backdrop-filter: blur(10px);
             display: none;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
+            z-index: 2000;
             padding: 20px;
         }
         
         .modal {
-            background: white;
-            border-radius: 12px;
+            background: var(--card-bg);
+            border-radius: var(--radius);
             width: 100%;
             max-width: 600px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--card-border);
+            box-shadow: var(--shadow-glow);
+            animation: modalAppear 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        @keyframes modalAppear {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
         }
         
         .modal-header {
-            padding: 20px 24px;
-            border-bottom: 1px solid #e5e7eb;
+            padding: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         
         .modal-title {
-            font-size: 20px;
+            font-size: 24px;
             font-weight: 700;
-            color: var(--secondary);
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .close-modal {
             background: none;
             border: none;
-            font-size: 24px;
+            font-size: 28px;
             cursor: pointer;
-            color: var(--gray);
+            color: var(--text-secondary);
+            transition: var(--transition);
+        }
+        
+        .close-modal:hover {
+            color: var(--neon-blue);
+            transform: rotate(90deg);
         }
         
         .modal-body {
-            padding: 24px;
+            padding: 25px;
+            max-height: 70vh;
+            overflow-y: auto;
         }
         
+        /* Формы */
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 25px;
         }
         
         .form-label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+            color: var(--neon-blue);
             font-weight: 600;
-            color: var(--dark);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         
         .form-control {
             width: 100%;
-            padding: 10px 14px;
-            border: 1px solid #d1d5db;
-            border-radius: var(--radius);
-            font-size: 14px;
-            transition: border-color 0.3s ease;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-size: 15px;
+            transition: var(--transition);
         }
         
         .form-control:focus {
             outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
         }
         
         .form-row {
@@ -552,52 +582,75 @@
         .form-actions {
             display: flex;
             justify-content: flex-end;
-            gap: 12px;
+            gap: 15px;
             margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #e5e7eb;
+            padding-top: 25px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
         
-        .btn-cancel {
-            background: #f3f4f6;
-            color: #374151;
+        /* Уведомления */
+        .notification {
+            position: fixed;
+            top: 100px;
+            right: 30px;
+            padding: 15px 25px;
+            border-radius: var(--radius-sm);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            box-shadow: var(--shadow-glow);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 3000;
+            animation: slideIn 0.3s ease-out;
+            max-width: 400px;
         }
         
-        .btn-cancel:hover {
-            background: #e5e7eb;
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
         
-        .alert {
-            padding: 12px 16px;
-            border-radius: var(--radius);
-            margin-bottom: 20px;
-            font-size: 14px;
+        .notification.success {
+            border-color: var(--success);
+            box-shadow: 0 0 20px rgba(0, 255, 157, 0.3);
         }
         
-        .alert-success {
-            background: #d1fae5;
-            color: #065f46;
-            border: 1px solid #a7f3d0;
+        .notification.error {
+            border-color: var(--danger);
+            box-shadow: 0 0 20px rgba(255, 77, 125, 0.3);
         }
         
-        .alert-error {
-            background: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fecaca;
+        .notification.warning {
+            border-color: var(--warning);
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
         }
         
-        .alert-info {
-            background: #dbeafe;
-            color: #1e40af;
-            border: 1px solid #bfdbfe;
+        .notification-icon {
+            font-size: 20px;
         }
         
-        .loading {
+        .notification.success .notification-icon {
+            color: var(--success);
+        }
+        
+        .notification.error .notification-icon {
+            color: var(--danger);
+        }
+        
+        /* Загрузка */
+        .loading-spinner {
             display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid var(--primary);
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid var(--neon-blue);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -608,75 +661,77 @@
         }
         
         /* Адаптивность */
-        @media (max-width: 1024px) {
-            .sidebar {
-                width: 70px;
-                overflow: hidden;
-            }
-            
-            .logo h1 span,
-            .nav-links a span,
-            .user-details,
-            .user-role,
-            .subtitle {
-                display: none;
-            }
-            
-            .logo h1 {
-                justify-content: center;
-            }
-            
-            .nav-links a {
-                justify-content: center;
-                padding: 15px;
-            }
-            
-            .user-info {
-                justify-content: center;
-            }
-            
-            .main-content {
-                margin-left: 70px;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .main-content {
-                padding: 20px 15px;
+        @media (max-width: 1200px) {
+            .container {
+                padding: 20px;
             }
             
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
+        }
+        
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 15px 20px;
+            }
             
-            .form-row {
+            .navbar-brand {
+                font-size: 20px;
+            }
+            
+            .page-title {
+                font-size: 28px;
+            }
+            
+            .stats-grid {
                 grid-template-columns: 1fr;
             }
             
-            .header {
+            .table-header {
                 flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-            
-            .header-actions {
-                width: 100%;
-                justify-content: space-between;
+                align-items: stretch;
             }
             
             .search-box {
                 width: 100%;
             }
             
+            .filters {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
             table {
                 display: block;
                 overflow-x: auto;
             }
+            
+            .user-cell {
+                min-width: 200px;
+            }
         }
         
         @media (max-width: 480px) {
-            .stats-grid {
-                grid-template-columns: 1fr;
+            .container {
+                padding: 15px;
+            }
+            
+            .modal {
+                margin: 10px;
+            }
+            
+            .form-actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
             }
             
             .actions {
@@ -687,54 +742,99 @@
                 width: 100%;
             }
         }
+        
+        /* Кастомный скроллбар */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--gradient-primary);
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple));
+        }
+        
+        /* Анимации */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        /* Эффект частиц (опционально) */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: var(--neon-blue);
+            border-radius: 50%;
+            animation: particle-float linear infinite;
+        }
+        
+        @keyframes particle-float {
+            to { transform: translateY(-100vh); }
+        }
     </style>
 </head>
 <body>
-    <!-- Сайдбар -->
-    <div class="sidebar">
-        <div class="logo">
-            <h1><i class="fas fa-shield-alt"></i> <span>Админ-панель</span></h1>
-            <div class="subtitle">Управление системой</div>
+    <!-- Частицы фона -->
+    <div class="particles" id="particles"></div>
+    
+    <!-- Панель навигации -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <i class="fas fa-diamond diamond"></i>
+            <span>Admin Zeeptook</span>
         </div>
         
-        <ul class="nav-links">
-            <li><a href="#" class="active"><i class="fas fa-users"></i> <span>Пользователи</span></a></li>
-            <li><a href="#"><i class="fas fa-chart-bar"></i> <span>Статистика</span></a></li>
-            <li><a href="#"><i class="fas fa-cog"></i> <span>Настройки</span></a></li>
-            <li><a href="#"><i class="fas fa-history"></i> <span>Логи</span></a></li>
-            <li><a href="#"><i class="fas fa-question-circle"></i> <span>Помощь</span></a></li>
-        </ul>
-        
-        <div class="user-info">
-            <div class="user-avatar" id="admin-avatar">A</div>
-            <div class="user-details">
-                <div class="user-name" id="admin-name">Загрузка...</div>
-                <div class="user-role">Администратор</div>
+        <div class="navbar-actions">
+            <div class="user-info">
+                <span id="admin-greeting">Добро пожаловать</span>
             </div>
+            <button class="btn btn-primary" onclick="loadUsers()">
+                <i class="fas fa-sync-alt"></i> Обновить
+            </button>
+            <button class="btn btn-success" onclick="showCreateModal()">
+                <i class="fas fa-plus"></i> Новый
+            </button>
+            <button class="btn btn-warning" onclick="logout()">
+                <i class="fas fa-sign-out-alt"></i> Выход
+            </button>
         </div>
-    </div>
+    </nav>
     
     <!-- Основной контент -->
-    <div class="main-content">
-        <div class="header">
-            <h2>Управление пользователями</h2>
-            <div class="header-actions">
-                <button class="btn btn-primary" onclick="showCreateModal()">
-                    <i class="fas fa-plus"></i> Новый пользователь
-                </button>
-                <button class="btn btn-success" onclick="refreshUsers()">
-                    <i class="fas fa-sync-alt"></i> Обновить
-                </button>
-                <button class="btn btn-warning" onclick="exportUsers()">
-                    <i class="fas fa-download"></i> Экспорт
-                </button>
-            </div>
-        </div>
+    <div class="container">
+        <h1 class="page-title">
+            <i class="fas fa-users-cog"></i> Панель управления пользователями
+        </h1>
         
         <!-- Статистика -->
         <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon total">
+            <div class="card stat-card">
+                <div class="stat-icon floating">
                     <i class="fas fa-users"></i>
                 </div>
                 <div class="stat-info">
@@ -743,8 +843,8 @@
                 </div>
             </div>
             
-            <div class="stat-card">
-                <div class="stat-icon active">
+            <div class="card stat-card">
+                <div class="stat-icon floating">
                     <i class="fas fa-user-check"></i>
                 </div>
                 <div class="stat-info">
@@ -753,18 +853,8 @@
                 </div>
             </div>
             
-            <div class="stat-card">
-                <div class="stat-icon inactive">
-                    <i class="fas fa-user-slash"></i>
-                </div>
-                <div class="stat-info">
-                    <h3 id="inactive-users">0</h3>
-                    <p>Неактивных</p>
-                </div>
-            </div>
-            
-            <div class="stat-card">
-                <div class="stat-icon admins">
+            <div class="card stat-card">
+                <div class="stat-icon floating">
                     <i class="fas fa-user-shield"></i>
                 </div>
                 <div class="stat-info">
@@ -772,55 +862,88 @@
                     <p>Администраторов</p>
                 </div>
             </div>
+            
+            <div class="card stat-card">
+                <div class="stat-icon floating">
+                    <i class="fab fa-google"></i>
+                </div>
+                <div class="stat-info">
+                    <h3 id="google-users">0</h3>
+                    <p>Через Google</p>
+                </div>
+            </div>
         </div>
         
-        <!-- Таблица пользователей -->
-        <div class="users-table">
+        <!-- Панель управления -->
+        <div class="card table-container">
             <div class="table-header">
                 <div class="search-box">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="search-input" placeholder="Поиск пользователей..." onkeyup="searchUsers()">
+                    <input type="text" id="search-input" placeholder="Поиск по email, имени или username..." 
+                           onkeyup="searchUsers()">
                 </div>
-                <div>
-                    <select id="filter-role" class="form-control" style="width: 150px;" onchange="filterUsers()">
+                
+                <div class="filters">
+                    <select class="filter-select" id="filter-role" onchange="filterUsers()">
                         <option value="">Все роли</option>
                         <option value="admin">Администраторы</option>
                         <option value="user">Пользователи</option>
                     </select>
+                    
+                    <select class="filter-select" id="filter-status" onchange="filterUsers()">
+                        <option value="">Все статусы</option>
+                        <option value="active">Активные</option>
+                        <option value="inactive">Неактивные</option>
+                    </select>
+                    
+                    <select class="filter-select" id="filter-auth" onchange="filterUsers()">
+                        <option value="">Все методы</option>
+                        <option value="google">Google</option>
+                        <option value="email">Email</option>
+                    </select>
                 </div>
             </div>
             
-            <div id="alert-container"></div>
-            
+            <!-- Таблица пользователей -->
             <table>
                 <thead>
                     <tr>
                         <th>Пользователь</th>
                         <th>Статус</th>
                         <th>Роль</th>
-                        <th>Метод авторизации</th>
+                        <th>Метод</th>
                         <th>Дата регистрации</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody id="users-table-body">
                     <tr>
-                        <td colspan="6" style="text-align: center; padding: 40px;">
-                            <div class="loading" style="margin: 0 auto 15px;"></div>
-                            <div>Загрузка пользователей...</div>
+                        <td colspan="6" style="text-align: center; padding: 60px;">
+                            <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
+                            <div style="color: var(--neon-blue); font-size: 16px; font-weight: 600;">
+                                Загрузка пользователей...
+                            </div>
+                            <div style="color: var(--text-secondary); margin-top: 10px;">
+                                Проверка прав доступа...
+                            </div>
                         </td>
                     </tr>
                 </tbody>
             </table>
             
             <div class="pagination">
-                <div class="pagination-info">
-                    Показано <span id="shown-count">0</span> из <span id="total-count">0</span>
+                <div style="color: var(--text-secondary);">
+                    Показано <span id="shown-count" style="color: var(--neon-blue); font-weight: 600;">0</span> 
+                    из <span id="total-count" style="color: var(--neon-purple); font-weight: 600;">0</span> пользователей
                 </div>
-                <div class="pagination-controls">
-                    <button class="page-btn" onclick="changePage(-1)"><i class="fas fa-chevron-left"></i></button>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button class="page-btn" onclick="changePage(-1)">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
                     <span class="page-btn active">1</span>
-                    <button class="page-btn" onclick="changePage(1)"><i class="fas fa-chevron-right"></i></button>
+                    <button class="page-btn" onclick="changePage(1)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -830,7 +953,9 @@
     <div id="create-modal" class="modal-overlay">
         <div class="modal">
             <div class="modal-header">
-                <h2 class="modal-title">Создание нового пользователя</h2>
+                <h2 class="modal-title">
+                    <i class="fas fa-user-plus"></i> Создание пользователя
+                </h2>
                 <button class="close-modal" onclick="closeModal('create-modal')">&times;</button>
             </div>
             <div class="modal-body">
@@ -839,19 +964,21 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Имя пользователя *</label>
-                            <input type="text" class="form-control" id="create-username" required>
-                            <small style="color: #6b7280; font-size: 12px;">Только буквы, цифры и подчеркивания</small>
+                            <input type="text" class="form-control" id="create-username" 
+                                   placeholder="username" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Email *</label>
-                            <input type="email" class="form-control" id="create-email" required>
+                            <input type="email" class="form-control" id="create-email" 
+                                   placeholder="user@example.com" required>
                         </div>
                     </div>
                     
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Полное имя *</label>
-                            <input type="text" class="form-control" id="create-fullname" required>
+                            <input type="text" class="form-control" id="create-fullname" 
+                                   placeholder="Иванов Иван" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Год рождения *</label>
@@ -862,17 +989,10 @@
                     
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label">Пароль *</label>
-                            <input type="password" class="form-control" id="create-password" minlength="6" required>
-                            <small style="color: #6b7280; font-size: 12px;">Минимум 6 символов</small>
+                            <label class="form-label">Пароль (необязательно)</label>
+                            <input type="password" class="form-control" id="create-password" 
+                                   placeholder="Минимум 6 символов">
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Подтверждение пароля *</label>
-                            <input type="password" class="form-control" id="create-password-confirm" minlength="6" required>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Роль</label>
                             <select class="form-control" id="create-role">
@@ -880,6 +1000,9 @@
                                 <option value="admin">Администратор</option>
                             </select>
                         </div>
+                    </div>
+                    
+                    <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Статус</label>
                             <select class="form-control" id="create-status">
@@ -887,10 +1010,19 @@
                                 <option value="false">Неактивный</option>
                             </select>
                         </div>
+                        <div class="form-group">
+                            <label class="form-label">Метод авторизации</label>
+                            <select class="form-control" id="create-auth">
+                                <option value="email">Email</option>
+                                <option value="google">Google</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <div class="form-actions">
-                        <button type="button" class="btn btn-cancel" onclick="closeModal('create-modal')">
+                        <button type="button" class="btn" 
+                                onclick="closeModal('create-modal')"
+                                style="background: rgba(255,255,255,0.05);">
                             Отмена
                         </button>
                         <button type="submit" class="btn btn-primary">
@@ -902,11 +1034,13 @@
         </div>
     </div>
     
-    <!-- Модальное окно редактирования пользователя -->
+    <!-- Модальное окно редактирования -->
     <div id="edit-modal" class="modal-overlay">
         <div class="modal">
             <div class="modal-header">
-                <h2 class="modal-title">Редактирование пользователя</h2>
+                <h2 class="modal-title">
+                    <i class="fas fa-edit"></i> Редактирование пользователя
+                </h2>
                 <button class="close-modal" onclick="closeModal('edit-modal')">&times;</button>
             </div>
             <div class="modal-body">
@@ -932,7 +1066,7 @@
                         </div>
                         <div class="form-group">
                             <label class="form-label">Год рождения *</label>
-                            <input type="number" class="form-control" id="edit-birthyear" min="1900" max="2024" required>
+                            <input type="number" class="form-control" id="edit-birthyear" required>
                         </div>
                     </div>
                     
@@ -954,22 +1088,18 @@
                     </div>
                     
                     <div class="form-group">
-                        <label class="form-label">Пароль</label>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <input type="password" class="form-control" id="edit-password" 
-                                   placeholder="Оставьте пустым, чтобы не менять">
-                            <button type="button" class="btn btn-warning" onclick="resetPassword()" 
-                                    style="white-space: nowrap;">
-                                <i class="fas fa-key"></i> Сбросить
-                            </button>
+                        <label class="form-label">Новый пароль</label>
+                        <input type="password" class="form-control" id="edit-password" 
+                               placeholder="Оставьте пустым, чтобы не менять">
+                        <div style="color: var(--text-secondary); font-size: 12px; margin-top: 5px;">
+                            Минимум 6 символов. Для Google пользователей можно оставить пустым.
                         </div>
-                        <small style="color: #6b7280; font-size: 12px;">
-                            Минимум 6 символов. Сброс уберет пароль (только для входа через Google)
-                        </small>
                     </div>
                     
                     <div class="form-actions">
-                        <button type="button" class="btn btn-cancel" onclick="closeModal('edit-modal')">
+                        <button type="button" class="btn" 
+                                onclick="closeModal('edit-modal')"
+                                style="background: rgba(255,255,255,0.05);">
                             Отмена
                         </button>
                         <button type="submit" class="btn btn-primary">
@@ -981,25 +1111,43 @@
         </div>
     </div>
     
-    <!-- Модальное окно подтверждения удаления -->
+    <!-- Модальное окно удаления -->
     <div id="delete-modal" class="modal-overlay">
-        <div class="modal" style="max-width: 400px;">
+        <div class="modal" style="max-width: 500px;">
             <div class="modal-header">
-                <h2 class="modal-title">Подтверждение удаления</h2>
+                <h2 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> Подтверждение удаления
+                </h2>
                 <button class="close-modal" onclick="closeModal('delete-modal')">&times;</button>
             </div>
             <div class="modal-body">
                 <div id="delete-alert"></div>
-                <p>Вы уверены, что хотите удалить пользователя <strong id="delete-user-name"></strong>?</p>
-                <p style="color: #ef4444; font-size: 14px; margin-top: 10px;">
-                    <i class="fas fa-exclamation-triangle"></i> Это действие нельзя отменить!
-                </p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <div style="width: 80px; height: 80px; background: rgba(255,77,125,0.2); 
+                                border-radius: 50%; display: flex; align-items: center; 
+                                justify-content: center; margin: 0 auto 20px; border: 2px solid var(--danger);">
+                        <i class="fas fa-trash" style="font-size: 32px; color: var(--danger);"></i>
+                    </div>
+                    
+                    <h3 style="color: var(--text-primary); margin-bottom: 15px;">
+                        Удалить пользователя <span id="delete-user-name" style="color: var(--neon-blue);"></span>?
+                    </h3>
+                    
+                    <p style="color: var(--text-secondary); line-height: 1.6;">
+                        Это действие <span style="color: var(--danger); font-weight: 600;">нельзя отменить</span>. 
+                        Все данные пользователя будут безвозвратно удалены из системы.
+                    </p>
+                </div>
+                
                 <div class="form-actions">
-                    <button type="button" class="btn btn-cancel" onclick="closeModal('delete-modal')">
+                    <button type="button" class="btn" 
+                            onclick="closeModal('delete-modal')"
+                            style="background: rgba(255,255,255,0.05);">
                         Отмена
                     </button>
                     <button type="button" class="btn btn-danger" onclick="confirmDelete()">
-                        <i class="fas fa-trash"></i> Удалить
+                        <i class="fas fa-trash"></i> Удалить пользователя
                     </button>
                 </div>
             </div>
@@ -1011,51 +1159,67 @@
     let users = [];
     let filteredUsers = [];
     let currentPage = 1;
-    const usersPerPage = 10;
+    const usersPerPage = 15;
     let userToDelete = null;
+    let currentAdmin = null;
     
-    // Проверка авторизации и прав
+    // Создание частиц фона
+    function createParticles() {
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 50; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = `${Math.random() * 100}%`;
+            particle.style.top = `${Math.random() * 100}%`;
+            particle.style.animationDuration = `${Math.random() * 20 + 10}s`;
+            particle.style.animationDelay = `${Math.random() * 5}s`;
+            particle.style.opacity = Math.random() * 0.5 + 0.2;
+            particle.style.background = Math.random() > 0.5 ? 'var(--neon-blue)' : 'var(--neon-purple)';
+            particlesContainer.appendChild(particle);
+        }
+    }
+    
+    // Проверка доступа
     async function checkAdminAccess() {
         const token = localStorage.getItem('token');
+        
         if (!token) {
-            window.location.href = 'register.html';
+            showNotification('Требуется авторизация', 'warning');
+            setTimeout(() => {
+                window.location.href = 'profile.html';
+            }, 2000);
             return false;
         }
         
         try {
-            // Получаем информацию о текущем пользователе
-            const response = await fetch(`${API_BASE}/user/me`, {
+            const response = await fetch(`${API_BASE}/admin/check-access`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
             
-            if (!response.ok) {
-                window.location.href = 'register.html';
-                return false;
-            }
-            
             const data = await response.json();
             
-            if (data.user.role !== 'admin') {
-                alert('У вас нет прав доступа к админ-панели');
-                window.location.href = 'profile.html';
+            if (data.success && data.isAdmin) {
+                currentAdmin = data.user;
+                document.getElementById('admin-greeting').textContent = 
+                    `Админ: ${data.user.full_name}`;
+                return true;
+            } else {
+                showNotification('У вас нет прав администратора', 'error');
+                setTimeout(() => {
+                    window.location.href = 'profile.html';
+                }, 2000);
                 return false;
             }
-            
-            // Отображаем информацию об админе
-            document.getElementById('admin-name').textContent = data.user.full_name;
-            document.getElementById('admin-avatar').textContent = data.user.full_name.charAt(0).toUpperCase();
-            
-            return true;
         } catch (error) {
-            console.error('Admin check error:', error);
-            window.location.href = 'register.html';
+            console.error('Access check error:', error);
+            showNotification('Ошибка проверки доступа', 'error');
             return false;
         }
     }
     
-    // Загрузка всех пользователей
+    // Загрузка пользователей
     async function loadUsers() {
         const token = localStorage.getItem('token');
         if (!token) return;
@@ -1063,52 +1227,61 @@
         try {
             showLoading();
             
-            const response = await fetch(`${API_BASE}/admin/users`, {
+            // Загружаем статистику
+            const statsResponse = await fetch(`${API_BASE}/admin/stats`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
             });
             
-            if (!response.ok) {
-                if (response.status === 403) {
-                    showAlert('У вас нет прав администратора', 'error');
-                    setTimeout(() => window.location.href = 'profile.html', 2000);
+            if (statsResponse.ok) {
+                const statsData = await statsResponse.json();
+                if (statsData.success) {
+                    updateStats(statsData.stats);
+                }
+            }
+            
+            // Загружаем пользователей
+            const usersResponse = await fetch(`${API_BASE}/admin/users`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (!usersResponse.ok) {
+                if (usersResponse.status === 403) {
+                    showNotification('Доступ запрещен', 'error');
+                    return;
                 }
                 throw new Error('Ошибка загрузки пользователей');
             }
             
-            const data = await response.json();
+            const data = await usersResponse.json();
             
             if (data.success) {
                 users = data.users;
                 filteredUsers = [...users];
-                updateStats();
                 renderUsersTable();
-                hideLoading();
+                showNotification(`Загружено ${users.length} пользователей`, 'success');
             } else {
                 throw new Error(data.error || 'Ошибка загрузки данных');
             }
             
         } catch (error) {
             console.error('Load users error:', error);
-            showAlert('Ошибка загрузки пользователей: ' + error.message, 'error');
-            hideLoading();
+            showNotification('Ошибка загрузки пользователей: ' + error.message, 'error');
         }
     }
     
     // Обновление статистики
-    function updateStats() {
-        const total = users.length;
-        const active = users.filter(u => u.is_active).length;
-        const admins = users.filter(u => u.role === 'admin').length;
-        
-        document.getElementById('total-users').textContent = total;
-        document.getElementById('active-users').textContent = active;
-        document.getElementById('inactive-users').textContent = total - active;
-        document.getElementById('admin-users').textContent = admins;
+    function updateStats(stats) {
+        document.getElementById('total-users').textContent = stats.total;
+        document.getElementById('active-users').textContent = stats.active;
+        document.getElementById('admin-users').textContent = stats.admins;
+        document.getElementById('google-users').textContent = stats.google;
     }
     
-    // Рендер таблицы пользователей
+    // Рендер таблицы
     function renderUsersTable() {
         const tbody = document.getElementById('users-table-body');
         const startIndex = (currentPage - 1) * usersPerPage;
@@ -1118,9 +1291,14 @@
         if (pageUsers.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" style="text-align: center; padding: 40px;">
-                        <i class="fas fa-users" style="font-size: 48px; color: #cbd5e1; margin-bottom: 15px;"></i>
-                        <div style="font-size: 16px; color: #64748b;">Пользователи не найдены</div>
+                    <td colspan="6" style="text-align: center; padding: 60px;">
+                        <i class="fas fa-users" style="font-size: 48px; color: var(--text-muted); margin-bottom: 20px;"></i>
+                        <div style="font-size: 18px; color: var(--text-secondary); margin-bottom: 10px;">
+                            Пользователи не найдены
+                        </div>
+                        <div style="color: var(--text-muted); font-size: 14px;">
+                            Попробуйте изменить параметры поиска
+                        </div>
                     </td>
                 </tr>
             `;
@@ -1131,51 +1309,56 @@
             <tr>
                 <td>
                     <div class="user-cell">
-                        <div class="user-avatar-small" style="background: ${getAvatarColor(user.id)}">
+                        <div class="user-avatar" style="background: ${getAvatarColor(user.id)}">
                             ${user.full_name.charAt(0).toUpperCase()}
                         </div>
-                        <div class="user-details-small">
+                        <div class="user-info">
                             <div class="name">${escapeHtml(user.full_name)}</div>
                             <div class="email">${escapeHtml(user.email)}</div>
-                            <div style="font-size: 11px; color: #94a3b8;">
-                                ID: ${user.id} | @${escapeHtml(user.username)}
+                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
+                                @${escapeHtml(user.username)} • ID: ${user.id}
                             </div>
                         </div>
                     </div>
                 </td>
                 <td>
-                    <span class="status-badge ${user.is_active ? 'status-active' : 'status-inactive'}">
-                        ${user.is_active ? 'Активный' : 'Неактивный'}
+                    <span class="badge ${user.is_active ? 'badge-active' : 'badge-inactive'}">
+                        ${user.is_active ? 'Активен' : 'Неактивен'}
                     </span>
                 </td>
                 <td>
-                    <span class="role-badge ${user.role === 'admin' ? 'role-admin' : 'role-user'}">
-                        ${user.role === 'admin' ? 'Администратор' : 'Пользователь'}
+                    <span class="badge ${user.role === 'admin' ? 'badge-admin' : 'badge-user'}">
+                        ${user.role === 'admin' ? 'Админ' : 'Пользователь'}
                     </span>
                 </td>
                 <td>
-                    <span class="auth-badge">
+                    <span class="badge ${user.auth_method === 'google' ? 'badge-google' : 'badge-email'}">
                         ${user.auth_method === 'google' ? 'Google' : 'Email'}
-                        ${!user.has_password && user.auth_method === 'google' ? ' (без пароля)' : ''}
                     </span>
                 </td>
                 <td>
-                    ${formatDate(user.created_at)}
+                    <div style="font-size: 14px; color: var(--text-primary);">
+                        ${formatDate(user.created_at)}
+                    </div>
                     ${user.updated_at !== user.created_at ? 
-                      `<div style="font-size: 11px; color: #94a3b8;">Обновлено: ${formatDate(user.updated_at)}</div>` : ''}
+                      `<div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">
+                        Обновлено: ${formatDate(user.updated_at)}
+                      </div>` : ''}
                 </td>
                 <td>
                     <div class="actions">
-                        <button class="action-btn edit-btn" onclick="editUser(${user.id})" 
+                        <button class="action-btn" onclick="editUser(${user.id})" 
                                 title="Редактировать">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="action-btn view-btn" onclick="viewUser(${user.id})" 
-                                title="Просмотреть">
+                        <button class="action-btn" onclick="viewUserDetails(${user.id})" 
+                                title="Подробнее">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="action-btn delete-btn" onclick="deleteUser(${user.id}, '${escapeHtml(user.full_name)}')" 
-                                title="Удалить" ${user.role === 'admin' ? 'disabled style="opacity: 0.5;"' : ''}>
+                        <button class="action-btn delete" 
+                                onclick="showDeleteConfirm(${user.id}, '${escapeHtml(user.full_name)}')" 
+                                title="Удалить"
+                                ${user.id === 1 ? 'disabled style="opacity: 0.3;"' : ''}>
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -1189,10 +1372,12 @@
         document.getElementById('total-count').textContent = filteredUsers.length;
     }
     
-    // Поиск пользователей
+    // Поиск
     function searchUsers() {
         const searchTerm = document.getElementById('search-input').value.toLowerCase();
         const roleFilter = document.getElementById('filter-role').value;
+        const statusFilter = document.getElementById('filter-status').value;
+        const authFilter = document.getElementById('filter-auth').value;
         
         filteredUsers = users.filter(user => {
             const matchesSearch = 
@@ -1201,15 +1386,19 @@
                 user.full_name.toLowerCase().includes(searchTerm);
             
             const matchesRole = !roleFilter || user.role === roleFilter;
+            const matchesStatus = !statusFilter || 
+                (statusFilter === 'active' && user.is_active) ||
+                (statusFilter === 'inactive' && !user.is_active);
+            const matchesAuth = !authFilter || user.auth_method === authFilter;
             
-            return matchesSearch && matchesRole;
+            return matchesSearch && matchesRole && matchesStatus && matchesAuth;
         });
         
         currentPage = 1;
         renderUsersTable();
     }
     
-    // Фильтрация по роли
+    // Функции фильтрации
     function filterUsers() {
         searchUsers();
     }
@@ -1234,9 +1423,9 @@
         const fullname = document.getElementById('create-fullname').value.trim();
         const birthyear = parseInt(document.getElementById('create-birthyear').value);
         const password = document.getElementById('create-password').value;
-        const passwordConfirm = document.getElementById('create-password-confirm').value;
         const role = document.getElementById('create-role').value;
         const status = document.getElementById('create-status').value === 'true';
+        const auth = document.getElementById('create-auth').value;
         
         // Валидация
         if (!/^[a-zA-Z0-9_]+$/.test(username)) {
@@ -1244,13 +1433,8 @@
             return;
         }
         
-        if (password.length < 6) {
+        if (password && password.length < 6) {
             showAlertInModal('create-alert', 'Пароль должен быть не менее 6 символов', 'error');
-            return;
-        }
-        
-        if (password !== passwordConfirm) {
-            showAlertInModal('create-alert', 'Пароли не совпадают', 'error');
             return;
         }
         
@@ -1272,8 +1456,22 @@
         try {
             const submitBtn = event.target.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<span class="loading"></span> Создание...';
+            submitBtn.innerHTML = '<span class="loading-spinner"></span> Создание...';
             submitBtn.disabled = true;
+            
+            const userData = {
+                username,
+                email,
+                full_name: fullname,
+                birth_year: birthyear,
+                role,
+                is_active: status,
+                auth_method: auth
+            };
+            
+            if (password) {
+                userData.password = password;
+            }
             
             const response = await fetch(`${API_BASE}/admin/users`, {
                 method: 'POST',
@@ -1281,21 +1479,13 @@
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    username,
-                    email,
-                    password,
-                    full_name: fullname,
-                    birth_year: birthyear,
-                    role,
-                    is_active: status
-                })
+                body: JSON.stringify(userData)
             });
             
             const data = await response.json();
             
             if (data.success) {
-                showAlertInModal('create-alert', 'Пользователь успешно создан', 'success');
+                showAlertInModal('create-alert', 'Пользователь успешно создан!', 'success');
                 setTimeout(() => {
                     closeModal('create-modal');
                     loadUsers();
@@ -1307,7 +1497,7 @@
             
         } catch (error) {
             console.error('Create user error:', error);
-            showAlertInModal('create-alert', 'Ошибка создания пользователя: ' + error.message, 'error');
+            showAlertInModal('create-alert', 'Ошибка: ' + error.message, 'error');
         } finally {
             const submitBtn = event.target.querySelector('button[type="submit"]');
             submitBtn.innerHTML = '<i class="fas fa-plus"></i> Создать пользователя';
@@ -1348,7 +1538,7 @@
             
         } catch (error) {
             console.error('Edit user error:', error);
-            showAlert('Ошибка загрузки данных пользователя', 'error');
+            showNotification('Ошибка загрузки данных пользователя', 'error');
         }
     }
     
@@ -1394,7 +1584,7 @@
         try {
             const submitBtn = event.target.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<span class="loading"></span> Сохранение...';
+            submitBtn.innerHTML = '<span class="loading-spinner"></span> Сохранение...';
             submitBtn.disabled = true;
             
             const updateData = {
@@ -1422,7 +1612,7 @@
             const data = await response.json();
             
             if (data.success) {
-                showAlertInModal('edit-alert', 'Данные пользователя обновлены', 'success');
+                showAlertInModal('edit-alert', 'Данные пользователя обновлены!', 'success');
                 setTimeout(() => {
                     closeModal('edit-modal');
                     loadUsers();
@@ -1433,7 +1623,7 @@
             
         } catch (error) {
             console.error('Update user error:', error);
-            showAlertInModal('edit-alert', 'Ошибка обновления пользователя: ' + error.message, 'error');
+            showAlertInModal('edit-alert', 'Ошибка: ' + error.message, 'error');
         } finally {
             const submitBtn = event.target.querySelector('button[type="submit"]');
             submitBtn.innerHTML = '<i class="fas fa-save"></i> Сохранить изменения';
@@ -1441,64 +1631,8 @@
         }
     }
     
-    // Сброс пароля
-    function resetPassword() {
-        document.getElementById('edit-password').value = '';
-        showAlertInModal('edit-alert', 'Пароль будет сброшен при сохранении. Пользователь сможет войти только через Google.', 'info');
-    }
-    
-    // Удаление пользователя
-    function deleteUser(userId, userName) {
-        userToDelete = userId;
-        document.getElementById('delete-user-name').textContent = userName;
-        showModal('delete-modal');
-    }
-    
-    // Подтверждение удаления
-    async function confirmDelete() {
-        if (!userToDelete) return;
-        
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        
-        try {
-            const deleteBtn = document.querySelector('#delete-modal .btn-danger');
-            const originalText = deleteBtn.innerHTML;
-            deleteBtn.innerHTML = '<span class="loading"></span> Удаление...';
-            deleteBtn.disabled = true;
-            
-            const response = await fetch(`${API_BASE}/admin/users/${userToDelete}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                showAlertInModal('delete-alert', 'Пользователь успешно удален', 'success');
-                setTimeout(() => {
-                    closeModal('delete-modal');
-                    loadUsers();
-                    userToDelete = null;
-                }, 1500);
-            } else {
-                throw new Error(data.error || 'Ошибка удаления пользователя');
-            }
-            
-        } catch (error) {
-            console.error('Delete user error:', error);
-            showAlertInModal('delete-alert', 'Ошибка удаления пользователя: ' + error.message, 'error');
-        } finally {
-            const deleteBtn = document.querySelector('#delete-modal .btn-danger');
-            deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Удалить';
-            deleteBtn.disabled = false;
-        }
-    }
-    
-    // Просмотр пользователя (расширенная информация)
-    async function viewUser(userId) {
+    // Просмотр деталей пользователя
+    async function viewUserDetails(userId) {
         const token = localStorage.getItem('token');
         if (!token) return;
         
@@ -1514,25 +1648,90 @@
             if (data.success) {
                 const user = data.user;
                 alert(`
-Детальная информация о пользователе:
+╔════════════════════════════════════╗
+║      ДЕТАЛИ ПОЛЬЗОВАТЕЛЯ           ║
+╚════════════════════════════════════╝
 
-ID: ${user.id}
-Имя пользователя: ${user.username}
-Email: ${user.email}
-Полное имя: ${user.full_name}
-Год рождения: ${user.birth_year}
-Роль: ${user.role === 'admin' ? 'Администратор' : 'Пользователь'}
-Статус: ${user.is_active ? 'Активный' : 'Неактивный'}
-Метод авторизации: ${user.auth_method === 'google' ? 'Google' : 'Email'}
-Имеет пароль: ${user.has_password ? 'Да' : 'Нет'}
-Дата регистрации: ${formatDate(user.created_at)}
-Последнее обновление: ${formatDate(user.updated_at)}
+👤 ИДЕНТИФИКАЦИЯ:
+   • ID: ${user.id}
+   • Username: @${user.username}
+   • Email: ${user.email}
+   • Полное имя: ${user.full_name}
+
+📅 ДЕМОГРАФИЯ:
+   • Год рождения: ${user.birth_year}
+   • Возраст: ${new Date().getFullYear() - user.birth_year}
+
+🔐 АККАУНТ:
+   • Роль: ${user.role === 'admin' ? '👑 Администратор' : '👤 Пользователь'}
+   • Статус: ${user.is_active ? '✅ Активен' : '❌ Неактивен'}
+   • Метод авторизации: ${user.auth_method === 'google' ? '🔵 Google' : '📧 Email'}
+   • Имеет пароль: ${user.has_password ? '✅ Да' : '❌ Нет'}
+
+📊 СТАТИСТИКА:
+   • Рейтинг: ${user.rating || '5.00'}/5.00
+   • Зарегистрирован: ${formatDate(user.created_at)}
+   • Последнее обновление: ${formatDate(user.updated_at)}
+${user.google_id ? `   • Google ID: ${user.google_id.substring(0, 20)}...` : ''}
+${user.avatar_url ? `   • Аватар: ${user.avatar_url}` : ''}
+
+═══════════════════════════════════════
                 `);
             }
             
         } catch (error) {
             console.error('View user error:', error);
-            showAlert('Ошибка загрузки данных пользователя', 'error');
+            showNotification('Ошибка загрузки данных пользователя', 'error');
+        }
+    }
+    
+    // Подтверждение удаления
+    function showDeleteConfirm(userId, userName) {
+        userToDelete = userId;
+        document.getElementById('delete-user-name').textContent = userName;
+        showModal('delete-modal');
+    }
+    
+    // Удаление пользователя
+    async function confirmDelete() {
+        if (!userToDelete) return;
+        
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        try {
+            const deleteBtn = document.querySelector('#delete-modal .btn-danger');
+            const originalText = deleteBtn.innerHTML;
+            deleteBtn.innerHTML = '<span class="loading-spinner"></span> Удаление...';
+            deleteBtn.disabled = true;
+            
+            const response = await fetch(`${API_BASE}/admin/users/${userToDelete}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                showAlertInModal('delete-alert', 'Пользователь успешно удален!', 'success');
+                setTimeout(() => {
+                    closeModal('delete-modal');
+                    loadUsers();
+                    userToDelete = null;
+                }, 1500);
+            } else {
+                throw new Error(data.error || 'Ошибка удаления пользователя');
+            }
+            
+        } catch (error) {
+            console.error('Delete user error:', error);
+            showAlertInModal('delete-alert', 'Ошибка: ' + error.message, 'error');
+        } finally {
+            const deleteBtn = document.querySelector('#delete-modal .btn-danger');
+            deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Удалить пользователя';
+            deleteBtn.disabled = false;
         }
     }
     
@@ -1543,10 +1742,14 @@ Email: ${user.email}
     
     function closeModal(modalId) {
         document.getElementById(modalId).style.display = 'none';
-        document.getElementById(modalId.replace('modal', 'alert')).innerHTML = '';
+        const alertId = modalId.replace('modal', 'alert');
+        if (document.getElementById(alertId)) {
+            document.getElementById(alertId).innerHTML = '';
+        }
     }
     
     function showCreateModal() {
+        resetCreateForm();
         showModal('create-modal');
     }
     
@@ -1555,29 +1758,56 @@ Email: ${user.email}
         document.getElementById('create-birthyear').value = '1990';
         document.getElementById('create-role').value = 'user';
         document.getElementById('create-status').value = 'true';
+        document.getElementById('create-auth').value = 'email';
     }
     
-    function showAlert(message, type = 'info') {
-        const alertContainer = document.getElementById('alert-container');
-        const alertClass = type === 'error' ? 'alert-error' : type === 'success' ? 'alert-success' : 'alert-info';
+    function showNotification(message, type = 'info') {
+        // Удаляем старые уведомления
+        const oldNotifications = document.querySelectorAll('.notification');
+        oldNotifications.forEach(n => n.remove());
         
-        alertContainer.innerHTML = `
-            <div class="alert ${alertClass}">
-                ${message}
-            </div>
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        
+        const icons = {
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-circle',
+            warning: 'fa-exclamation-triangle',
+            info: 'fa-info-circle'
+        };
+        
+        notification.innerHTML = `
+            <i class="fas ${icons[type]} notification-icon"></i>
+            <div>${message}</div>
         `;
         
+        document.body.appendChild(notification);
+        
+        // Автоматическое скрытие
         setTimeout(() => {
-            alertContainer.innerHTML = '';
+            notification.style.animation = 'slideIn 0.3s ease-out reverse';
+            setTimeout(() => notification.remove(), 300);
         }, 5000);
     }
     
     function showAlertInModal(containerId, message, type = 'info') {
         const container = document.getElementById(containerId);
-        const alertClass = type === 'error' ? 'alert-error' : type === 'success' ? 'alert-success' : 'alert-info';
+        const colors = {
+            success: 'var(--success)',
+            error: 'var(--danger)',
+            warning: 'var(--warning)',
+            info: 'var(--neon-blue)'
+        };
         
         container.innerHTML = `
-            <div class="alert ${alertClass}">
+            <div style="padding: 15px; background: ${colors[type]}20; 
+                        border: 1px solid ${colors[type]}40; border-radius: 8px; 
+                        color: ${colors[type]}; font-size: 14px;">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 
+                               type === 'error' ? 'fa-exclamation-circle' : 
+                               type === 'warning' ? 'fa-exclamation-triangle' : 
+                               'fa-info-circle'}" 
+                   style="margin-right: 10px;"></i>
                 ${message}
             </div>
         `;
@@ -1587,35 +1817,23 @@ Email: ${user.email}
         const tbody = document.getElementById('users-table-body');
         tbody.innerHTML = `
             <tr>
-                <td colspan="6" style="text-align: center; padding: 40px;">
-                    <div class="loading" style="margin: 0 auto 15px;"></div>
-                    <div>Загрузка пользователей...</div>
+                <td colspan="6" style="text-align: center; padding: 60px;">
+                    <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
+                    <div style="color: var(--neon-blue); font-size: 16px; font-weight: 600;">
+                        Загрузка данных...
+                    </div>
                 </td>
             </tr>
         `;
     }
     
-    function hideLoading() {
-        // Автоматически скрывается при рендере
-    }
-    
-    function refreshUsers() {
-        loadUsers();
-        showAlert('Список пользователей обновлен', 'success');
-    }
-    
-    function exportUsers() {
-        const dataStr = JSON.stringify(users, null, 2);
-        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-        
-        const exportFileDefaultName = `users_export_${new Date().toISOString().slice(0,10)}.json`;
-        
-        const linkElement = document.createElement('a');
-        linkElement.setAttribute('href', dataUri);
-        linkElement.setAttribute('download', exportFileDefaultName);
-        linkElement.click();
-        
-        showAlert('Экспорт завершен. Файл скачан.', 'success');
+    function logout() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        showNotification('Вы вышли из системы', 'info');
+        setTimeout(() => {
+            window.location.href = 'register.html';
+        }, 1500);
     }
     
     function formatDate(dateString) {
@@ -1632,13 +1850,18 @@ Email: ${user.email}
     
     function getAvatarColor(id) {
         const colors = [
-            '#4f46e5', '#7c3aed', '#059669', '#dc2626',
-            '#ea580c', '#ca8a04', '#db2777', '#0891b2'
+            'linear-gradient(135deg, var(--neon-blue), var(--neon-purple))',
+            'linear-gradient(135deg, var(--neon-pink), var(--neon-purple))',
+            'linear-gradient(135deg, #4facfe, #00f2fe)',
+            'linear-gradient(135deg, #ff2e93, #9d4edd)',
+            'linear-gradient(135deg, #00ff9d, #00cc7a)',
+            'linear-gradient(135deg, #ffcc00, #ffaa00)'
         ];
         return colors[id % colors.length];
     }
     
     function escapeHtml(text) {
+        if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
@@ -1646,17 +1869,23 @@ Email: ${user.email}
     
     // Инициализация
     document.addEventListener('DOMContentLoaded', async function() {
-        console.log('Админ-панель инициализируется...');
+        console.log('✨ Неоновая админ-панель инициализируется...');
         
-        const isAdmin = await checkAdminAccess();
-        if (isAdmin) {
+        // Создаем частицы
+        createParticles();
+        
+        // Проверяем доступ
+        const hasAccess = await checkAdminAccess();
+        
+        if (hasAccess) {
+            // Загружаем данные
             loadUsers();
             
-            // Назначаем обработчики форм
+            // Назначаем обработчики
             document.getElementById('create-form').addEventListener('submit', createUser);
             document.getElementById('edit-form').addEventListener('submit', updateUser);
             
-            // Закрытие модальных окон по клику на overlay
+            // Закрытие модальных окон
             document.querySelectorAll('.modal-overlay').forEach(modal => {
                 modal.addEventListener('click', function(e) {
                     if (e.target === this) {
@@ -1664,6 +1893,11 @@ Email: ${user.email}
                     }
                 });
             });
+            
+            // Автоматическое обновление каждые 30 секунд
+            setInterval(loadUsers, 30000);
+            
+            showNotification('Админ-панель загружена успешно!', 'success');
         }
     });
     </script>
