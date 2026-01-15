@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Профиль - Zeeptook</title>
+    <title>Профиль - FULLSTACK DEV</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <style>
         /* Telegram-подобные стили */
@@ -11,7 +11,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             -webkit-tap-highlight-color: transparent;
         }
         
@@ -50,7 +50,7 @@
             padding-bottom: 70px;
         }
 
-        /* Header с кнопками справа */
+        /* Header */
         .header {
             background: var(--nav-bg);
             color: var(--white);
@@ -120,39 +120,48 @@
         .header-btn:active {
             background: rgba(255, 255, 255, 0.05);
         }
-        
-        .logout-btn {
-            color: var(--accent);
-        }
 
         /* Profile Header */
         .profile-header {
             background: linear-gradient(135deg, #18222d 0%, #1c2836 100%);
-            padding: 25px 20px 20px;
+            padding: 40px 20px 30px;
             text-align: center;
             border-bottom: 1px solid var(--gray-dark);
+            position: relative;
             margin-bottom: 0;
         }
         
+        .edit-profile-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--white);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .edit-profile-btn:active {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
         .profile-avatar {
-            width: 90px;
-            height: 90px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 15px;
-            font-size: 36px;
-            border: 3px solid rgba(255, 255, 255, 0.2);
+            margin: 0 auto 20px;
+            font-size: 48px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
             overflow: hidden;
-            cursor: pointer;
             position: relative;
-            transition: transform 0.2s ease;
-        }
-        
-        .profile-avatar:active {
-            transform: scale(0.98);
         }
         
         .profile-avatar img {
@@ -162,143 +171,183 @@
         }
         
         .profile-name {
-            font-size: 20px;
+            font-size: 22px;
             font-weight: 600;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
             color: var(--white);
+            letter-spacing: 0.5px;
         }
         
-        .profile-username {
-            font-size: 14px;
-            color: var(--gray-light);
-            margin-bottom: 8px;
-        }
-        
-        .profile-rating {
+        .profile-status {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 6px;
-            font-size: 13px;
-            color: #ffd700;
+            font-size: 15px;
+            color: #4caf50;
+            margin-bottom: 8px;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background: #4caf50;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
 
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1px;
-            background: var(--gray-dark);
-            margin: 0;
-            border-bottom: 1px solid var(--gray-dark);
-        }
-        
-        .stat-item {
-            text-align: center;
-            padding: 15px 8px;
+        /* Profile Info Section */
+        .profile-info-section {
             background: var(--nav-bg);
-            transition: background 0.2s ease;
+            margin-top: 0;
         }
         
-        .stat-item:active {
-            background: rgba(255, 255, 255, 0.05);
+        .info-section {
+            margin-bottom: 1px;
         }
         
-        .stat-value {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--primary);
-            margin-bottom: 4px;
-        }
-        
-        .stat-label {
-            font-size: 12px;
+        .section-title {
+            padding: 16px 20px 8px;
+            font-size: 14px;
             color: var(--gray-light);
-            font-weight: 500;
-        }
-
-        /* Profile Info */
-        .profile-info {
-            background: var(--nav-bg);
-            margin-top: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         
         .info-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 14px 16px;
+            padding: 16px 20px;
+            background: var(--nav-bg);
             border-bottom: 1px solid var(--gray-dark);
-            min-height: 48px;
-        }
-        
-        .info-item:last-child {
-            border-bottom: none;
+            min-height: 56px;
+            cursor: pointer;
+            transition: all 0.2s ease;
         }
         
         .info-item:active {
             background: rgba(255, 255, 255, 0.03);
         }
         
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
         .info-label {
-            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 16px;
+            color: var(--white);
+        }
+        
+        .info-label i {
             color: var(--gray-light);
+            width: 24px;
+            text-align: center;
         }
         
         .info-value {
-            font-size: 14px;
+            font-size: 15px;
             font-weight: 500;
-            color: var(--white);
+            color: var(--gray-light);
             text-align: right;
             max-width: 60%;
             word-break: break-word;
         }
-
-        /* Кнопка просмотра логина/пароля */
-        .view-credentials-btn {
-            background: var(--nav-bg);
-            border: none;
-            width: 100%;
-            padding: 14px 16px;
-            text-align: left;
-            color: var(--primary);
-            font-size: 14px;
+        
+        .phone-number {
+            color: var(--primary) !important;
+        }
+        
+        .username-value {
+            color: var(--primary) !important;
+        }
+        
+        .birthday-value {
+            color: var(--white) !important;
             font-weight: 500;
-            cursor: pointer;
+        }
+
+        /* Stats Cards */
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 20px;
+            background: var(--chat-bg);
+        }
+        
+        .stat-card {
+            background: var(--nav-bg);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--gray-dark);
+            transition: all 0.2s ease;
+        }
+        
+        .stat-card:active {
+            background: rgba(255, 255, 255, 0.03);
+            transform: translateY(-2px);
+        }
+        
+        .stat-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 136, 204, 0.15);
+            border-radius: 50%;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid var(--gray-dark);
-            transition: background 0.2s ease;
+            justify-content: center;
+            margin: 0 auto 12px;
+            color: var(--primary);
+            font-size: 18px;
         }
         
-        .view-credentials-btn:active {
-            background: rgba(0, 136, 204, 0.1);
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 4px;
         }
         
-        .view-credentials-btn i {
-            font-size: 12px;
-            opacity: 0.7;
+        .stat-label {
+            font-size: 13px;
+            color: var(--gray-light);
+            font-weight: 500;
         }
 
-        /* Menu Items */
-        .menu-list {
+        /* Settings Menu */
+        .settings-menu {
             background: var(--nav-bg);
             margin-top: 12px;
+        }
+        
+        .menu-section {
+            margin-bottom: 1px;
         }
         
         .menu-item {
             display: flex;
             align-items: center;
-            padding: 14px 16px;
+            padding: 16px 20px;
+            background: var(--nav-bg);
             border-bottom: 1px solid var(--gray-dark);
             cursor: pointer;
-            transition: background 0.2s ease;
-            min-height: 48px;
+            transition: all 0.2s ease;
+            min-height: 56px;
         }
         
         .menu-item:active {
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.03);
         }
         
         .menu-item:last-child {
@@ -306,16 +355,16 @@
         }
         
         .menu-icon {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             background: rgba(0, 136, 204, 0.15);
-            border-radius: 8px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-right: 12px;
+            margin-right: 16px;
             color: var(--primary);
-            font-size: 16px;
+            font-size: 18px;
         }
         
         .menu-content {
@@ -323,14 +372,14 @@
         }
         
         .menu-title {
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 500;
             margin-bottom: 2px;
             color: var(--white);
         }
         
         .menu-description {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--gray-light);
         }
         
@@ -338,85 +387,156 @@
             color: var(--gray-light);
             font-size: 14px;
         }
+        
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 28px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--gray-medium);
+            transition: .4s;
+            border-radius: 34px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: var(--white);
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: var(--primary);
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(22px);
+        }
 
-        /* Auth Required */
-        .auth-required {
-            text-align: center;
-            padding: 60px 20px;
+        /* Danger Zone */
+        .danger-zone {
             background: var(--nav-bg);
-            margin: 12px;
-            border-radius: var(--radius);
-            border: 1px solid var(--gray-dark);
+            margin-top: 12px;
+            margin-bottom: 80px;
         }
         
-        .auth-required i {
-            font-size: 64px;
-            color: var(--gray-light);
-            margin-bottom: 20px;
-            opacity: 0.6;
-        }
-        
-        .auth-required h3 {
-            font-size: 18px;
-            margin-bottom: 10px;
-            color: var(--white);
-            font-weight: 500;
-        }
-        
-        .auth-required p {
-            font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 25px;
-            max-width: 280px;
-            margin-left: auto;
-            margin-right: auto;
-            color: var(--gray-light);
-        }
-        
-        .auth-buttons {
+        .danger-item {
             display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-direction: column;
-            max-width: 280px;
-            margin: 0 auto;
-        }
-        
-        .btn {
-            padding: 14px 20px;
-            border: none;
-            border-radius: 25px;
-            font-size: 15px;
-            font-weight: 500;
+            align-items: center;
+            padding: 16px 20px;
+            background: var(--nav-bg);
+            border-bottom: 1px solid var(--gray-dark);
             cursor: pointer;
             transition: all 0.2s ease;
-            text-decoration: none;
+            min-height: 56px;
+        }
+        
+        .danger-item:active {
+            background: rgba(255, 107, 107, 0.1);
+        }
+        
+        .danger-item:last-child {
+            border-bottom: none;
+        }
+        
+        .danger-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 107, 107, 0.15);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            width: 100%;
+            margin-right: 16px;
+            color: var(--accent);
+            font-size: 18px;
         }
         
-        .btn:active {
-            transform: scale(0.97);
+        .danger-content {
+            flex: 1;
         }
         
-        .btn-primary {
-            background: var(--gradient);
-            color: white;
+        .danger-title {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--accent);
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--nav-bg);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 0 10px;
+            border-top: 1px solid var(--gray-dark);
+            z-index: 1000;
+            height: 60px;
         }
         
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--primary);
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: var(--gray-light);
+            font-size: 10px;
+            padding: 6px 4px;
+            transition: all 0.2s ease;
+            flex: 1;
+            position: relative;
+        }
+        
+        .nav-btn i {
+            font-size: 20px;
+            margin-bottom: 2px;
+            transition: all 0.2s ease;
+        }
+        
+        .nav-btn.active {
             color: var(--primary);
         }
         
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none !important;
+        .nav-btn.active i {
+            transform: translateY(-1px);
+        }
+        
+        .nav-btn.active::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 3px;
+            background: var(--primary);
+            border-radius: 2px;
+        }
+        
+        .nav-btn:active {
+            transform: scale(0.95);
         }
 
         /* Modal */
@@ -442,7 +562,7 @@
             background: var(--nav-bg);
             border-radius: var(--radius);
             width: 100%;
-            max-width: 350px;
+            max-width: 400px;
             max-height: 90vh;
             overflow-y: auto;
             animation: slideUp 0.3s ease-out;
@@ -522,164 +642,41 @@
         .form-actions .btn {
             flex: 1;
         }
-
-        /* Credentials Modal */
-        .credentials-item {
-            margin-bottom: 16px;
-        }
         
-        .credentials-label {
-            font-size: 12px;
-            color: var(--gray-light);
-            margin-bottom: 4px;
-        }
-        
-        .credentials-value {
-            background: var(--input-bg);
-            padding: 12px;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--gray-medium);
-            font-family: monospace;
-            font-size: 14px;
-            word-break: break-all;
-            color: var(--white);
-        }
-        
-        .partial-login {
-            letter-spacing: 1px;
-        }
-        
-        .password-placeholder {
-            color: var(--gray-light);
-            font-style: italic;
-        }
-
-        /* Change Password Form */
-        .change-password-form {
-            margin-top: 20px;
-        }
-        
-        .form-step {
-            display: none;
-        }
-        
-        .form-step.active {
-            display: block;
-            animation: fadeIn 0.3s ease-out;
-        }
-        
-        .form-description {
-            font-size: 13px;
-            color: var(--gray-light);
-            margin-bottom: 16px;
-            line-height: 1.4;
-        }
-        
-        .password-toggle {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
+        .btn {
+            padding: 14px 20px;
             border: none;
-            color: var(--gray-light);
+            border-radius: 25px;
+            font-size: 15px;
+            font-weight: 500;
             cursor: pointer;
-            font-size: 14px;
-        }
-        
-        .password-input-wrapper {
-            position: relative;
-        }
-        
-        .error-message {
-            color: var(--accent);
-            font-size: 13px;
-            margin-top: 5px;
-            display: none;
-        }
-        
-        .error-message.show {
-            display: block;
-        }
-
-        /* Loading */
-        .loading {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--gray-light);
-        }
-        
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 2px solid rgba(0, 136, 204, 0.2);
-            border-top: 2px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Bottom Navigation */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: var(--nav-bg);
-            display: flex;
-            justify-content: space-around;
-            padding: 8px 0 10px;
-            border-top: 1px solid var(--gray-dark);
-            z-index: 1000;
-            height: 60px;
-        }
-        
-        .nav-btn {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            transition: all 0.2s ease;
             text-decoration: none;
-            color: var(--gray-light);
-            font-size: 10px;
-            padding: 6px 4px;
-            transition: all 0.2s ease;
-            flex: 1;
-            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
         }
         
-        .nav-btn i {
-            font-size: 20px;
-            margin-bottom: 2px;
-            transition: all 0.2s ease;
+        .btn:active {
+            transform: scale(0.97);
         }
         
-        .nav-btn.active {
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--primary);
             color: var(--primary);
         }
         
-        .nav-btn.active i {
-            transform: translateY(-1px);
-        }
-        
-        .nav-btn.active::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 30px;
-            height: 3px;
-            background: var(--primary);
-            border-radius: 2px;
-        }
-        
-        .nav-btn:active {
-            transform: scale(0.95);
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+            color: white;
         }
 
         /* Animations */
@@ -693,46 +690,6 @@
                 transform: translateY(0);
             }
         }
-        
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-
-        /* Tooltip for avatar */
-        .avatar-tooltip {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.9);
-            color: white;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 13px;
-            max-width: 280px;
-            width: max-content;
-            text-align: center;
-            z-index: 1000;
-            margin-top: 10px;
-            white-space: normal;
-            line-height: 1.4;
-        }
-        
-        .avatar-tooltip::before {
-            content: '';
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            border: 6px solid transparent;
-            border-bottom-color: rgba(0, 0, 0, 0.9);
-        }
 
         /* Responsive */
         @media (max-width: 360px) {
@@ -741,17 +698,21 @@
             }
             
             .profile-header {
-                padding: 20px 16px 16px;
+                padding: 30px 16px 20px;
             }
             
             .profile-avatar {
-                width: 80px;
-                height: 80px;
-                font-size: 32px;
+                width: 100px;
+                height: 100px;
+                font-size: 40px;
             }
             
             .info-item {
-                padding: 12px 16px;
+                padding: 14px 16px;
+            }
+            
+            .stat-card {
+                padding: 16px;
             }
         }
         
@@ -763,7 +724,7 @@
             }
             
             .modal-content {
-                max-width: 380px;
+                max-width: 450px;
             }
             
             .bottom-nav {
@@ -776,7 +737,7 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Header с кнопками справа -->
+        <!-- Header -->
         <div class="header">
             <div class="header-left">
                 <a href="index.html" class="back-btn">
@@ -785,104 +746,159 @@
                 <div class="page-title">Профиль</div>
             </div>
             
-            <div class="header-right" id="header-right" style="display: none;">
-                <button class="header-btn" onclick="showSettings()" title="Настройки">
-                    <i class="fa fa-cog"></i>
+            <div class="header-right">
+                <button class="header-btn" onclick="showSearch()" title="Поиск">
+                    <i class="fa fa-search"></i>
                 </button>
-                <button class="header-btn logout-btn" onclick="logout()" title="Выйти">
-                    <i class="fa fa-sign-out"></i>
+                <button class="header-btn" onclick="showMoreOptions()" title="Еще">
+                    <i class="fa fa-ellipsis-v"></i>
                 </button>
             </div>
         </div>
         
-        <!-- Контент для неавторизованных пользователей -->
-        <div id="auth-required-section" style="display: none;">
-            <div class="auth-required">
-                <i class="fa fa-user-circle"></i>
-                <h3>Войдите в аккаунт</h3>
-                <p>Чтобы просматривать профиль, управлять объявлениями и получать персональные рекомендации</p>
-                <div class="auth-buttons">
-                    <a href="register.html" class="btn btn-primary">
-                        <i class="fa fa-user-plus"></i>
-                        Зарегистрироваться
-                    </a>
-                    <button class="btn btn-outline" onclick="openLoginModal()">
-                        <i class="fa fa-sign-in"></i>
-                        Войти
-                    </button>
-                </div>
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <button class="edit-profile-btn" onclick="editProfile()">Редактировать</button>
+            <div class="profile-avatar">
+                <i class="fa fa-user"></i>
+            </div>
+            <div class="profile-name">FULLSTACK DEV</div>
+            <div class="profile-status">
+                <div class="status-indicator"></div>
+                <span>в сети</span>
             </div>
         </div>
         
-        <!-- Контент для авторизованных пользователей -->
-        <div id="profile-section" style="display: none;">
-            <!-- Заголовок профиля -->
-            <div class="profile-header">
-                <div class="profile-avatar" id="profile-avatar" onclick="showAvatarTooltip()">
-                    <i class="fa fa-user"></i>
-                    <div class="avatar-tooltip" id="avatar-tooltip">
-                        В настоящее время загрузка фотографий напрямую не поддерживается. Пожалуйста, установите фото в вашем профиле Google, и оно будет синхронизировано автоматически
+        <!-- Profile Info -->
+        <div class="profile-info-section">
+            <div class="section-title">Основная информация</div>
+            <div class="info-section">
+                <div class="info-item" onclick="editPhone()">
+                    <div class="info-label">
+                        <i class="fa fa-mobile"></i>
+                        <span>мобильный</span>
                     </div>
+                    <div class="info-value phone-number">+992 00 066 2311</div>
                 </div>
-                <div class="profile-name" id="profile-name">Загрузка...</div>
-                <div class="profile-username" id="profile-username">@username</div>
-                <div class="profile-rating">
-                    <i class="fa fa-star"></i>
-                    <span id="profile-rating">5.0</span>
+                
+                <div class="info-item" onclick="editUsername()">
+                    <div class="info-label">
+                        <i class="fa fa-at"></i>
+                        <span>имя пользователя</span>
+                    </div>
+                    <div class="info-value username-value">@BEZ1MYA</div>
                 </div>
-            </div>
-            
-            <!-- Статистика -->
-            <div class="stats-grid">
-                <div class="stat-item">
-                    <div class="stat-value" id="stats-ads">0</div>
-                    <div class="stat-label">Объявления</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="stats-active">0</div>
-                    <div class="stat-label">Активные</div>
-                </div>
-                <div class="stat-item">
-                    <div class="stat-value" id="stats-favorites">0</div>
-                    <div class="stat-label">Избранное</div>
+                
+                <div class="info-item" onclick="editBirthday()">
+                    <div class="info-label">
+                        <i class="fa fa-birthday-cake"></i>
+                        <span>день рождения</span>
+                    </div>
+                    <div class="info-value birthday-value">31 дек</div>
                 </div>
             </div>
-            
-            <!-- Кнопка просмотра учетных данных -->
-            <button class="view-credentials-btn" onclick="showCredentials()">
-                <span>Показать логин и пароль</span>
-                <i class="fa fa-eye"></i>
-            </button>
-            
-            <!-- Информация профиля -->
-            <div class="profile-info">
-                <div class="info-item">
-                    <div class="info-label">Email</div>
-                    <div class="info-value" id="info-email">loading...</div>
+        </div>
+        
+        <!-- Stats Cards -->
+        <div class="stats-cards">
+            <div class="stat-card" onclick="viewProjects()">
+                <div class="stat-icon">
+                    <i class="fa fa-code"></i>
                 </div>
-                <div class="info-item">
-                    <div class="info-label">Имя пользователя</div>
-                    <div class="info-value" id="info-username">loading...</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Полное имя</div>
-                    <div class="info-value" id="info-fullname">loading...</div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">Дата регистрации</div>
-                    <div class="info-value" id="info-joined">loading...</div>
-                </div>
+                <div class="stat-number">47</div>
+                <div class="stat-label">Проекты</div>
             </div>
             
-            <!-- Меню профиля -->
-            <div class="menu-list">
-                <div class="menu-item" onclick="openChangePasswordModal()">
+            <div class="stat-card" onclick="viewContacts()">
+                <div class="stat-icon">
+                    <i class="fa fa-users"></i>
+                </div>
+                <div class="stat-number">128</div>
+                <div class="stat-label">Контакты</div>
+            </div>
+        </div>
+        
+        <!-- Settings Menu -->
+        <div class="settings-menu">
+            <div class="section-title">Настройки</div>
+            
+            <div class="menu-section">
+                <div class="menu-item" onclick="notificationsSettings()">
                     <div class="menu-icon">
-                        <i class="fa fa-key"></i>
+                        <i class="fa fa-bell"></i>
                     </div>
                     <div class="menu-content">
-                        <div class="menu-title">Сменить пароль</div>
-                        <div class="menu-description">Обновите пароль вашего аккаунта</div>
+                        <div class="menu-title">Уведомления и звуки</div>
+                        <div class="menu-description">Настройка уведомлений и звуковых оповещений</div>
+                    </div>
+                    <div class="menu-arrow">
+                        <i class="fa fa-chevron-right"></i>
+                    </div>
+                </div>
+                
+                <div class="menu-item" onclick="privacySettings()">
+                    <div class="menu-icon">
+                        <i class="fa fa-lock"></i>
+                    </div>
+                    <div class="menu-content">
+                        <div class="menu-title">Конфиденциальность</div>
+                        <div class="menu-description">Настройки приватности и безопасности</div>
+                    </div>
+                    <div class="menu-arrow">
+                        <i class="fa fa-chevron-right"></i>
+                    </div>
+                </div>
+                
+                <div class="menu-item" onclick="dataStorage()">
+                    <div class="menu-icon">
+                        <i class="fa fa-database"></i>
+                    </div>
+                    <div class="menu-content">
+                        <div class="menu-title">Данные и память</div>
+                        <div class="menu-description">Управление использованием памяти</div>
+                    </div>
+                    <div class="menu-arrow">
+                        <i class="fa fa-chevron-right"></i>
+                    </div>
+                </div>
+                
+                <div class="menu-item" onclick="appearanceSettings()">
+                    <div class="menu-icon">
+                        <i class="fa fa-paint-brush"></i>
+                    </div>
+                    <div class="menu-content">
+                        <div class="menu-title">Внешний вид</div>
+                        <div class="menu-description">Темы, оформление, шрифты</div>
+                    </div>
+                    <div class="menu-arrow">
+                        <i class="fa fa-chevron-right"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-title">Дополнительно</div>
+            
+            <div class="menu-section">
+                <div class="menu-item" onclick="help()">
+                    <div class="menu-icon">
+                        <i class="fa fa-question-circle"></i>
+                    </div>
+                    <div class="menu-content">
+                        <div class="menu-title">Помощь</div>
+                        <div class="menu-description">FAQ, поддержка, руководства</div>
+                    </div>
+                    <div class="menu-arrow">
+                        <i class="fa fa-chevron-right"></i>
+                    </div>
+                </div>
+                
+                <div class="menu-item" onclick="aboutApp()">
+                    <div class="menu-icon">
+                        <i class="fa fa-info-circle"></i>
+                    </div>
+                    <div class="menu-content">
+                        <div class="menu-title">О приложении</div>
+                        <div class="menu-description">Версия, обновления, контакты</div>
                     </div>
                     <div class="menu-arrow">
                         <i class="fa fa-chevron-right"></i>
@@ -890,173 +906,100 @@
                 </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Модальное окно входа -->
-    <div class="modal" id="login-modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">Вход в аккаунт</div>
-                <button class="modal-close" onclick="closeLoginModal()">
-                    <i class="fa fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label class="form-label">Email или имя пользователя</label>
-                    <input type="text" class="form-input" id="login-username" placeholder="Введите email или username">
+        
+        <!-- Danger Zone -->
+        <div class="danger-zone">
+            <div class="section-title">Опасная зона</div>
+            <div class="menu-section">
+                <div class="danger-item" onclick="clearCache()">
+                    <div class="danger-icon">
+                        <i class="fa fa-trash"></i>
+                    </div>
+                    <div class="danger-content">
+                        <div class="danger-title">Очистить кэш</div>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">Пароль</label>
-                    <input type="password" class="form-input" id="login-password" placeholder="Введите пароль">
-                </div>
-                <div class="form-actions">
-                    <button class="btn btn-outline" onclick="closeLoginModal()" style="flex: 1;">Отмена</button>
-                    <button class="btn btn-primary" onclick="login()" style="flex: 1;">Войти</button>
-                </div>
-                <div style="text-align: center; margin-top: 20px;">
-                    <p style="color: var(--gray-light); font-size: 14px;">Нет аккаунта?</p>
-                    <a href="register.html" style="color: var(--primary); font-weight: 600; text-decoration: none;">
-                        Зарегистрироваться
-                    </a>
+                
+                <div class="danger-item" onclick="logout()">
+                    <div class="danger-icon">
+                        <i class="fa fa-sign-out"></i>
+                    </div>
+                    <div class="danger-content">
+                        <div class="danger-title">Выйти</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Модальное окно смены пароля -->
-    <div class="modal" id="changePasswordModal">
+    <!-- Edit Phone Modal -->
+    <div class="modal" id="editPhoneModal">
         <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-title">Смена пароля</div>
-                <button class="modal-close" onclick="closeChangePasswordModal()">
+                <div class="modal-title">Изменение номера телефона</div>
+                <button class="modal-close" onclick="closeEditPhoneModal()">
                     <i class="fa fa-times"></i>
                 </button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label class="form-label">Текущий пароль</label>
-                    <div class="password-input-wrapper">
-                        <input type="password" class="form-input" id="current-password-input" placeholder="Введите текущий пароль">
-                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('current-password-input')">
-                            <i class="fa fa-eye"></i>
-                        </button>
-                    </div>
-                    <div class="error-message" id="current-password-error"></div>
+                    <label class="form-label">Новый номер телефона</label>
+                    <input type="tel" class="form-input" id="new-phone" placeholder="+992 XX XXX XXXX" value="+992 00 066 2311">
                 </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Новый пароль</label>
-                    <div class="password-input-wrapper">
-                        <input type="password" class="form-input" id="new-password-input" placeholder="Введите новый пароль">
-                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('new-password-input')">
-                            <i class="fa fa-eye"></i>
-                        </button>
-                    </div>
-                    <div class="error-message" id="new-password-error"></div>
+                <div class="form-description" style="font-size: 13px; color: var(--gray-light); margin-bottom: 20px;">
+                    На этот номер будет отправлен код подтверждения
                 </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Подтверждение пароля</label>
-                    <div class="password-input-wrapper">
-                        <input type="password" class="form-input" id="confirm-password-input" placeholder="Повторите новый пароль">
-                        <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirm-password-input')">
-                            <i class="fa fa-eye"></i>
-                        </button>
-                    </div>
-                    <div class="error-message" id="confirm-password-error"></div>
-                </div>
-                
                 <div class="form-actions">
-                    <button class="btn btn-outline" onclick="closeChangePasswordModal()" style="flex: 1;">Отмена</button>
-                    <button class="btn btn-primary" id="change-password-btn" onclick="changePassword()" style="flex: 1;">Сохранить</button>
+                    <button class="btn btn-outline" onclick="closeEditPhoneModal()" style="flex: 1;">Отмена</button>
+                    <button class="btn btn-primary" onclick="savePhone()" style="flex: 1;">Сохранить</button>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Модальное окно с учетными данными -->
-    <div class="modal" id="credentials-modal">
+    <!-- Edit Username Modal -->
+    <div class="modal" id="editUsernameModal">
         <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-title">Ваши учетные данные</div>
-                <button class="modal-close" onclick="closeCredentialsModal()">
+                <div class="modal-title">Изменение имени пользователя</div>
+                <button class="modal-close" onclick="closeEditUsernameModal()">
                     <i class="fa fa-times"></i>
                 </button>
             </div>
             <div class="modal-body">
-                <!-- Шаг 1: Проверка пароля -->
-                <div class="form-step active" id="password-check-step">
-                    <div class="form-description">
-                        Для просмотра полных учетных данных необходимо подтвердить ваш текущий пароль.
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Текущий пароль</label>
-                        <div class="password-input-wrapper">
-                            <input type="password" class="form-input" id="current-password" placeholder="Введите текущий пароль">
-                            <button type="button" class="password-toggle" onclick="togglePassword('current-password')">
-                                <i class="fa fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="form-actions">
-                        <button class="btn btn-outline" onclick="closeCredentialsModal()" style="flex: 1;">Отмена</button>
-                        <button class="btn btn-primary" onclick="verifyPassword()" style="flex: 1;">Проверить</button>
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">Новое имя пользователя</label>
+                    <input type="text" class="form-input" id="new-username" placeholder="@username" value="@BEZ1MYA">
                 </div>
-                
-                <!-- Шаг 2: Просмотр учетных данных -->
-                <div class="form-step" id="view-credentials-step">
-                    <div class="credentials-item">
-                        <div class="credentials-label">Логин (Email):</div>
-                        <div class="credentials-value" id="credentials-login">faridun.exam@gmail.com</div>
-                    </div>
-                    <div class="credentials-item">
-                        <div class="credentials-label">Пароль:</div>
-                        <div class="credentials-value password-placeholder" id="credentials-password">
-                            [скрыто] 
-                            <span style="color: var(--primary); margin-left: 10px; cursor: pointer;" onclick="showChangePasswordForm()">
-                                <i class="fa fa-edit"></i> Изменить пароль
-                            </span>
-                        </div>
-                    </div>
-                    <div style="margin-top: 20px; padding: 12px; background: rgba(255, 193, 7, 0.1); border-radius: var(--radius-sm); border-left: 3px solid #ffc107;">
-                        <p style="font-size: 13px; color: #ffc107; margin: 0;">
-                            <i class="fa fa-exclamation-triangle"></i> Храните эти данные в безопасном месте
-                        </p>
-                    </div>
-                    <div class="form-actions">
-                        <button class="btn btn-primary" onclick="closeCredentialsModal()" style="flex: 1;">Закрыть</button>
-                    </div>
+                <div class="form-description" style="font-size: 13px; color: var(--gray-light); margin-bottom: 20px;">
+                    Имя пользователя может содержать буквы, цифры и символы _
                 </div>
-                
-                <!-- Шаг 3: Изменение пароля -->
-                <div class="form-step" id="change-password-step">
-                    <div class="form-description">
-                        Введите новый пароль и подтвердите его.
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Новый пароль</label>
-                        <div class="password-input-wrapper">
-                            <input type="password" class="form-input" id="new-password" placeholder="Введите новый пароль">
-                            <button type="button" class="password-toggle" onclick="togglePassword('new-password')">
-                                <i class="fa fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Подтвердите новый пароль</label>
-                        <div class="password-input-wrapper">
-                            <input type="password" class="form-input" id="confirm-password" placeholder="Повторите новый пароль">
-                            <button type="button" class="password-toggle" onclick="togglePassword('confirm-password')">
-                                <i class="fa fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="form-actions">
-                        <button class="btn btn-outline" onclick="backToCredentials()" style="flex: 1;">Назад</button>
-                        <button class="btn btn-primary" onclick="changePasswordInCredentials()" style="flex: 1;">Изменить пароль</button>
-                    </div>
+                <div class="form-actions">
+                    <button class="btn btn-outline" onclick="closeEditUsernameModal()" style="flex: 1;">Отмена</button>
+                    <button class="btn btn-primary" onclick="saveUsername()" style="flex: 1;">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Logout Modal -->
+    <div class="modal" id="logoutModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Выход из аккаунта</div>
+                <button class="modal-close" onclick="closeLogoutModal()">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <i class="fa fa-sign-out" style="font-size: 48px; color: var(--accent); margin-bottom: 16px;"></i>
+                    <p style="color: var(--white); font-size: 16px; margin-bottom: 8px;">Вы уверены, что хотите выйти?</p>
+                    <p style="color: var(--gray-light); font-size: 14px;">Вы сможете войти снова в любое время</p>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-outline" onclick="closeLogoutModal()" style="flex: 1;">Отмена</button>
+                    <button class="btn btn-danger" onclick="confirmLogout()" style="flex: 1;">Выйти</button>
                 </div>
             </div>
         </div>
@@ -1076,9 +1019,9 @@
             <span>Добавить</span>
         </a>
         <a href="server-page.html" class="nav-btn">
-                <i class="fa fa-gamepad"></i>
-                <span>Серверы</span>
-            </a>
+            <i class="fa fa-gamepad"></i>
+            <span>Серверы</span>
+        </a>
         <a href="profile.html" class="nav-btn active">
             <i class="fa fa-user"></i>
             <span>Профиль</span>
@@ -1086,459 +1029,131 @@
     </div>
 
     <script>
-        const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
-        let currentUser = null;
-        let userCredentials = null;
+        // Основные данные пользователя
+        const userData = {
+            name: "FULLSTACK DEV",
+            phone: "+992 00 066 2311",
+            username: "@BEZ1MYA",
+            birthday: "31 дек",
+            status: "в сети",
+            projects: 47,
+            contacts: 128
+        };
 
-        // Проверка авторизации при загрузке
-        function checkAuth() {
-            const token = localStorage.getItem('token');
-            const authSection = document.getElementById('auth-required-section');
-            const profileSection = document.getElementById('profile-section');
-            const headerRight = document.getElementById('header-right');
-            
-            if (token) {
-                authSection.style.display = 'none';
-                profileSection.style.display = 'block';
-                headerRight.style.display = 'flex';
-                loadProfile();
-            } else {
-                authSection.style.display = 'block';
-                profileSection.style.display = 'none';
-                headerRight.style.display = 'none';
-            }
+        // Функции редактирования профиля
+        function editProfile() {
+            showNotification('Редактирование профиля будет доступно в следующем обновлении', 'info');
         }
 
-        // Загрузка профиля
-        async function loadProfile() {
-            const token = localStorage.getItem('token');
-            
-            if (!token) {
-                throw new Error('No token found');
-            }
-
-            try {
-                const response = await fetch(`${API_BASE}/profile`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (response.status === 401 || response.status === 403) {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
-                    throw new Error('Session expired');
-                }
-                
-                if (!response.ok) {
-                    throw new Error(`Failed to load profile: ${response.status}`);
-                }
-
-                const data = await response.json();
-                currentUser = data.user;
-                updateProfileUI(data);
-                
-            } catch (error) {
-                console.error('Error loading profile:', error);
-                showNotification('Ошибка загрузки профиля', 'error');
-                logout();
-            }
+        function editPhone() {
+            document.getElementById('editPhoneModal').classList.add('active');
         }
 
-        // Обновление интерфейса
-        function updateProfileUI(data) {
-            const user = data.user;
-            const stats = data.stats;
-            
-            document.getElementById('profile-name').textContent = user.full_name || user.username || 'Пользователь';
-            document.getElementById('profile-username').textContent = `@${user.username || 'username'}`;
-            document.getElementById('profile-rating').textContent = user.rating || '5.0';
-            
-            document.getElementById('stats-ads').textContent = stats.total_ads || 0;
-            document.getElementById('stats-active').textContent = stats.active_ads || 0;
-            document.getElementById('stats-favorites').textContent = stats.total_favorites || 0;
-            
-            document.getElementById('info-email').textContent = user.email || 'Не указан';
-            document.getElementById('info-username').textContent = user.username || 'Не указан';
-            document.getElementById('info-fullname').textContent = user.full_name || 'Не указано';
-            document.getElementById('info-joined').textContent = formatDate(user.created_at) || 'Не указана';
-            
-            // Сохраняем учетные данные для отображения
-            userCredentials = {
-                login: user.email || user.username,
-                password_hint: user.password_hint || '********'
-            };
-            
-            const avatarElement = document.getElementById('profile-avatar');
-            if (user.avatar_url) {
-                avatarElement.innerHTML = `
-                    <img src="${user.avatar_url}" alt="Avatar" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                    <div class="avatar-tooltip" id="avatar-tooltip">
-                        В настоящее время загрузка фотографий напрямую не поддерживается. Пожалуйста, установите фото в вашем профиле Google, и оно будет синхронизировано автоматически
-                    </div>
-                `;
-            }
+        function closeEditPhoneModal() {
+            document.getElementById('editPhoneModal').classList.remove('active');
         }
 
-        // Показать подсказку для аватара
-        function showAvatarTooltip() {
-            const tooltip = document.getElementById('avatar-tooltip');
-            if (tooltip) {
-                tooltip.style.display = 'block';
+        function savePhone() {
+            const newPhone = document.getElementById('new-phone').value;
+            if (newPhone && newPhone !== userData.phone) {
+                userData.phone = newPhone;
+                document.querySelector('.phone-number').textContent = newPhone;
+                showNotification('Номер телефона успешно обновлен', 'success');
+            }
+            closeEditPhoneModal();
+        }
+
+        function editUsername() {
+            document.getElementById('editUsernameModal').classList.add('active');
+        }
+
+        function closeEditUsernameModal() {
+            document.getElementById('editUsernameModal').classList.remove('active');
+        }
+
+        function saveUsername() {
+            const newUsername = document.getElementById('new-username').value;
+            if (newUsername && newUsername !== userData.username) {
+                userData.username = newUsername;
+                document.querySelector('.username-value').textContent = newUsername;
+                showNotification('Имя пользователя успешно обновлено', 'success');
+            }
+            closeEditUsernameModal();
+        }
+
+        function editBirthday() {
+            showNotification('Изменение даты рождения будет доступно в следующем обновлении', 'info');
+        }
+
+        // Функции навигации
+        function viewProjects() {
+            showNotification('Просмотр проектов будет доступен в следующем обновлении', 'info');
+        }
+
+        function viewContacts() {
+            showNotification('Просмотр контактов будет доступен в следующем обновлении', 'info');
+        }
+
+        // Функции настроек
+        function notificationsSettings() {
+            showNotification('Настройки уведомлений будут доступны в следующем обновлении', 'info');
+        }
+
+        function privacySettings() {
+            showNotification('Настройки конфиденциальности будут доступны в следующем обновлении', 'info');
+        }
+
+        function dataStorage() {
+            showNotification('Настройки данных и памяти будут доступны в следующем обновлении', 'info');
+        }
+
+        function appearanceSettings() {
+            showNotification('Настройки внешнего вида будут доступны в следующем обновлении', 'info');
+        }
+
+        function help() {
+            showNotification('Раздел помощи будет доступен в следующем обновлении', 'info');
+        }
+
+        function aboutApp() {
+            showNotification('Информация о приложении будет доступна в следующем обновлении', 'info');
+        }
+
+        function clearCache() {
+            if (confirm('Вы уверены, что хотите очистить кэш?')) {
+                // Симуляция очистки кэша
                 setTimeout(() => {
-                    tooltip.style.display = 'none';
-                }, 3000);
+                    showNotification('Кэш успешно очищен', 'success');
+                }, 500);
             }
         }
 
-        // Показать модальное окно с учетными данными
-        function showCredentials() {
-            // Сбрасываем форму при каждом открытии
-            resetCredentialsModal();
-            document.getElementById('credentials-modal').classList.add('active');
-        }
-
-        // Сброс модального окна учетных данных
-        function resetCredentialsModal() {
-            document.getElementById('current-password').value = '';
-            document.getElementById('new-password').value = '';
-            document.getElementById('confirm-password').value = '';
-            
-            // Показываем первый шаг
-            document.getElementById('password-check-step').classList.add('active');
-            document.getElementById('view-credentials-step').classList.remove('active');
-            document.getElementById('change-password-step').classList.remove('active');
-        }
-
-        // Переключение между шагами
-        function showStep(stepId) {
-            document.querySelectorAll('.form-step').forEach(step => {
-                step.classList.remove('active');
-            });
-            document.getElementById(stepId).classList.add('active');
-        }
-
-        // Проверка пароля
-        async function verifyPassword() {
-            const currentPassword = document.getElementById('current-password').value;
-            
-            if (!currentPassword) {
-                showNotification('Введите текущий пароль', 'error');
-                return;
-            }
-            
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${API_BASE}/verify-password`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        current_password: currentPassword
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Password verification failed');
-                }
-                
-                // Показываем учетные данные
-                showNotification('Пароль подтвержден', 'success');
-                showStep('view-credentials-step');
-                
-                // Устанавливаем логин в форме
-                if (currentUser) {
-                    document.getElementById('credentials-login').textContent = currentUser.email || currentUser.username;
-                }
-                
-            } catch (error) {
-                console.error('Password verification error:', error);
-                showNotification('Неверный пароль', 'error');
-            }
-        }
-
-        // Показать форму изменения пароля
-        function showChangePasswordForm() {
-            showStep('change-password-step');
-        }
-
-        // Вернуться к просмотру учетных данных
-        function backToCredentials() {
-            showStep('view-credentials-step');
-        }
-
-        // Изменить пароль (в форме учетных данных)
-        async function changePasswordInCredentials() {
-            const newPassword = document.getElementById('new-password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
-            
-            if (!newPassword || !confirmPassword) {
-                showNotification('Заполните все поля', 'error');
-                return;
-            }
-            
-            if (newPassword !== confirmPassword) {
-                showNotification('Пароли не совпадают', 'error');
-                return;
-            }
-            
-            if (newPassword.length < 6) {
-                showNotification('Пароль должен содержать минимум 6 символов', 'error');
-                return;
-            }
-            
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${API_BASE}/change-password`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        new_password: newPassword
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Password change failed');
-                }
-                
-                showNotification('Пароль успешно изменен', 'success');
-                closeCredentialsModal();
-                
-            } catch (error) {
-                console.error('Password change error:', error);
-                showNotification('Ошибка при изменении пароля', 'error');
-            }
-        }
-
-        // Закрыть модальное окно с учетными данными
-        function closeCredentialsModal() {
-            document.getElementById('credentials-modal').classList.remove('active');
-            resetCredentialsModal();
-        }
-
-        // Функции для модального окна смены пароля
-        function openChangePasswordModal() {
-            clearPasswordErrors();
-            resetChangePasswordForm();
-            document.getElementById('changePasswordModal').classList.add('active');
-        }
-
-        function closeChangePasswordModal() {
-            document.getElementById('changePasswordModal').classList.remove('active');
-            resetChangePasswordForm();
-        }
-
-        function resetChangePasswordForm() {
-            document.getElementById('current-password-input').value = '';
-            document.getElementById('new-password-input').value = '';
-            document.getElementById('confirm-password-input').value = '';
-            document.getElementById('change-password-btn').disabled = false;
-            clearPasswordErrors();
-        }
-
-        function clearPasswordErrors() {
-            document.getElementById('current-password-error').classList.remove('show');
-            document.getElementById('new-password-error').classList.remove('show');
-            document.getElementById('confirm-password-error').classList.remove('show');
-        }
-
-        function showPasswordError(elementId, message) {
-            const errorElement = document.getElementById(elementId);
-            errorElement.textContent = message;
-            errorElement.classList.add('show');
-        }
-
-        // Функция смены пароля
-        async function changePassword() {
-            const currentPassword = document.getElementById('current-password-input').value;
-            const newPassword = document.getElementById('new-password-input').value;
-            const confirmPassword = document.getElementById('confirm-password-input').value;
-            const changePasswordBtn = document.getElementById('change-password-btn');
-            
-            // Очищаем предыдущие ошибки
-            clearPasswordErrors();
-            
-            // Валидация на клиенте
-            if (!currentPassword || !newPassword || !confirmPassword) {
-                showNotification('Заполните все поля', 'error');
-                return;
-            }
-            
-            if (newPassword.length < 6) {
-                showPasswordError('new-password-error', 'Пароль должен содержать минимум 6 символов');
-                return;
-            }
-            
-            if (newPassword !== confirmPassword) {
-                showPasswordError('confirm-password-error', 'Пароли не совпадают');
-                return;
-            }
-            
-            // Блокируем кнопку
-            changePasswordBtn.disabled = true;
-            changePasswordBtn.textContent = 'Сохранение...';
-            
-            try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${API_BASE}/auth/change-password`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        current_password: currentPassword,
-                        new_password: newPassword,
-                        confirm_password: confirmPassword
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    if (response.status === 401) {
-                        showPasswordError('current-password-error', 'Неверный текущий пароль');
-                    } else {
-                        throw new Error(data.error || data.message || 'Ошибка смены пароля');
-                    }
-                    return;
-                }
-                
-                // Успешная смена пароля
-                showNotification('Пароль успешно изменен!', 'success');
-                closeChangePasswordModal();
-                
-            } catch (error) {
-                console.error('Change password error:', error);
-                showNotification(error.message || 'Ошибка при смене пароля', 'error');
-            } finally {
-                // Восстанавливаем кнопку
-                changePasswordBtn.disabled = false;
-                changePasswordBtn.textContent = 'Сохранить';
-            }
-        }
-
-        // Переключение видимости пароля
-        function togglePassword(inputId) {
-            const input = document.getElementById(inputId);
-            const toggle = input.parentNode.querySelector('.password-toggle i');
-            
-            if (input.type === 'password') {
-                input.type = 'text';
-                toggle.classList.remove('fa-eye');
-                toggle.classList.add('fa-eye-slash');
-            } else {
-                input.type = 'password';
-                toggle.classList.remove('fa-eye-slash');
-                toggle.classList.add('fa-eye');
-            }
-        }
-
-        function togglePasswordVisibility(inputId) {
-            const input = document.getElementById(inputId);
-            const toggle = input.parentNode.querySelector('.password-toggle i');
-            
-            if (input.type === 'password') {
-                input.type = 'text';
-                toggle.classList.remove('fa-eye');
-                toggle.classList.add('fa-eye-slash');
-            } else {
-                input.type = 'password';
-                toggle.classList.remove('fa-eye-slash');
-                toggle.classList.add('fa-eye');
-            }
-        }
-
-        // Функции модальных окон
-        function openLoginModal() {
-            document.getElementById('login-modal').classList.add('active');
-        }
-
-        function closeLoginModal() {
-            document.getElementById('login-modal').classList.remove('active');
-        }
-
-        // Вход
-        async function login() {
-            const username = document.getElementById('login-username').value;
-            const password = document.getElementById('login-password').value;
-            
-            if (!username || !password) {
-                showNotification('Заполните все поля', 'error');
-                return;
-            }
-            
-            try {
-                const response = await fetch(`${API_BASE}/login`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        username: username,
-                        password: password
-                    })
-                });
-
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error || 'Login failed');
-                }
-                
-                localStorage.setItem('token', data.token);
-                localStorage.setItem('user', JSON.stringify(data.user));
-                
-                showNotification('Успешный вход!');
-                closeLoginModal();
-                checkAuth();
-                
-            } catch (error) {
-                console.error('Login error:', error);
-                showNotification(error.message || 'Ошибка входа', 'error');
-            }
-        }
-
-        // Выход
+        // Функции выхода
         function logout() {
-            if (confirm('Вы уверены, что хотите выйти?')) {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                currentUser = null;
-                userCredentials = null;
-                showNotification('Вы вышли из аккаунта');
-                checkAuth();
-            }
+            document.getElementById('logoutModal').classList.add('active');
         }
 
-        // Настройки
-        function showSettings() {
-            showNotification('Настройки будут доступны в следующем обновлении', 'info');
+        function closeLogoutModal() {
+            document.getElementById('logoutModal').classList.remove('active');
+        }
+
+        function confirmLogout() {
+            // Симуляция выхода
+            setTimeout(() => {
+                showNotification('Вы успешно вышли из аккаунта', 'success');
+                closeLogoutModal();
+                // В реальном приложении здесь была бы переадресация
+                // window.location.href = 'login.html';
+            }, 500);
         }
 
         // Вспомогательные функции
-        function formatDate(dateString) {
-            if (!dateString) return '';
-            try {
-                const date = new Date(dateString);
-                return date.toLocaleDateString('ru-RU', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-            } catch (e) {
-                return '';
-            }
+        function showSearch() {
+            showNotification('Поиск будет доступен в следующем обновлении', 'info');
+        }
+
+        function showMoreOptions() {
+            showNotification('Дополнительные опции будут доступны в следующем обновлении', 'info');
         }
 
         function showNotification(message, type = 'success') {
@@ -1575,8 +1190,6 @@
 
         // Инициализация
         document.addEventListener('DOMContentLoaded', function() {
-            checkAuth();
-            
             // Закрытие модальных окон при клике вне контента
             document.addEventListener('click', function(e) {
                 if (e.target.classList.contains('modal')) {
@@ -1585,29 +1198,12 @@
             });
             
             // Обработка нажатия Enter в формах
-            document.getElementById('current-password')?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') verifyPassword();
+            document.getElementById('new-phone')?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') savePhone();
             });
             
-            document.getElementById('new-password')?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') changePasswordInCredentials();
-            });
-            
-            document.getElementById('login-password')?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') login();
-            });
-            
-            // Обработка Enter в форме смены пароля
-            document.getElementById('current-password-input')?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') changePassword();
-            });
-            
-            document.getElementById('new-password-input')?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') changePassword();
-            });
-            
-            document.getElementById('confirm-password-input')?.addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') changePassword();
+            document.getElementById('new-username')?.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') saveUsername();
             });
         });
 
