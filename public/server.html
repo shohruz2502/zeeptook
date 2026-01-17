@@ -214,16 +214,6 @@
             margin-top: 2px;
         }
 
-        /* Статус рандом чата */
-        .random-chat-status {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            font-size: 10px;
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-left: 5px;
-        }
-
         /* Информация о сервере */
         .server-header {
             background: var(--nav-bg);
@@ -367,26 +357,6 @@
             line-height: 1.5;
             margin-bottom: 30px;
             max-width: 300px;
-        }
-        
-        .attempts-counter {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(102, 126, 234, 0.3);
-            border-radius: 16px;
-            padding: 12px 20px;
-            margin-top: 20px;
-            text-align: center;
-        }
-        
-        .attempts-text {
-            color: var(--gray-light);
-            font-size: 14px;
-        }
-        
-        .attempts-number {
-            color: #667eea;
-            font-weight: 700;
-            font-size: 18px;
         }
         
         .cancel-search-btn {
@@ -918,6 +888,42 @@
             display: none !important;
         }
         
+        /* Улучшения - анимированные элементы */
+        .chat-avatar.pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        .chat-item.new {
+            background: rgba(0, 136, 204, 0.05);
+        }
+        
+        .message.selected {
+            background: rgba(0, 136, 204, 0.1);
+            border: 1px solid var(--primary);
+        }
+        
+        /* Иконка рандом чата */
+        .random-icon {
+            animation: rotate 10s linear infinite;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Badge для новых сообщений */
+        .new-badge {
+            background: var(--accent);
+            color: white;
+            font-size: 9px;
+            padding: 1px 4px;
+            border-radius: 8px;
+            position: absolute;
+            top: 8px;
+            right: 8px;
+        }
+        
         /* Responsive для телефонов */
         @media (max-width: 480px) {
             .header {
@@ -1088,10 +1094,13 @@
                         <div class="server-name-compact" id="serverName">Сервер</div>
                         <div class="server-meta-compact" id="serverMeta">
                             <div class="meta-item-compact">
-                                👥 <span id="memberCount">0</span>
+                                <i class="fa fa-users"></i> <span id="memberCount">0</span>
                             </div>
                             <div class="meta-item-compact">
-                                💬 <span id="messageCount">0</span>
+                                <i class="fa fa-comment"></i> <span id="messageCount">0</span>
+                            </div>
+                            <div class="meta-item-compact">
+                                <i class="fa fa-circle" style="color:#4caf50; font-size: 8px;"></i> <span id="onlineCount">0</span>
                             </div>
                         </div>
                     </div>
@@ -1101,7 +1110,7 @@
             <!-- Кнопка подписки (показывается если не подписан) -->
             <div class="subscribe-container" id="subscribeContainer" style="display: none;">
                 <button class="subscribe-button" id="subscribeButton" onclick="subscribeToServer()">
-                    Подписаться на сервер
+                    <i class="fa fa-plus-circle"></i> Подписаться на сервер
                 </button>
             </div>
 
@@ -1109,7 +1118,7 @@
             <div id="chatsList">
                 <!-- Чат обмена -->
                 <div class="chat-item" id="exchangeChatItem" onclick="openExchangeChat()" style="display: none;">
-                    <div class="chat-avatar online" style="background: linear-gradient(135deg, #ff9800 0%, #ff5722 100%);">
+                    <div class="chat-avatar online pulse" style="background: linear-gradient(135deg, #ff9800 0%, #ff5722 100%);">
                         <i class="fa fa-exchange"></i>
                     </div>
                     <div class="chat-info">
@@ -1123,7 +1132,7 @@
                         </div>
                         <div class="chat-status">
                             <i class="fa fa-circle" style="color:#ff9800; font-size:6px;"></i>
-                            <span>Обсуждайте обмены</span>
+                            <span id="exchangeOnlineStatus">Обсуждайте обмены</span>
                         </div>
                     </div>
                 </div>
@@ -1152,7 +1161,7 @@
                 <!-- Рандом чат -->
                 <div class="chat-item" id="randomChatItem" onclick="openRandomSearch()" style="display: none;">
                     <div class="chat-avatar online" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-                        <i class="fa fa-random"></i>
+                        <i class="fa fa-random random-icon"></i>
                     </div>
                     <div class="chat-info">
                         <div class="chat-header">
@@ -1161,7 +1170,6 @@
                         </div>
                         <div class="chat-preview">
                             <div class="chat-message" id="randomPreview">Найдите случайного собеседника</div>
-                            <span class="random-chat-status" id="randomAttemptsStatus">10/10</span>
                         </div>
                         <div class="chat-status">
                             <i class="fa fa-circle" style="color:#667eea; font-size:6px;"></i>
@@ -1173,7 +1181,25 @@
 
             <!-- Сообщение если забанены -->
             <div class="error-message" id="bannedMessage" style="display: none; margin: 20px;">
-                ⚠️ Вы забанены на этом сервере и не можете присоединиться
+                <i class="fa fa-ban"></i> Вы забанены на этом сервере и не можете присоединиться
+            </div>
+            
+            <!-- Улучшение: Статистика сервера -->
+            <div id="serverStats" style="display: none; padding: 16px; border-top: 1px solid var(--gray-dark); margin-top: 20px;">
+                <div style="display: flex; justify-content: space-around; text-align: center;">
+                    <div>
+                        <div style="font-size: 18px; font-weight: bold; color: var(--primary);" id="activeUsers">0</div>
+                        <div style="font-size: 12px; color: var(--gray-light);">Активных</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 18px; font-weight: bold; color: #4caf50;" id="newMessages">0</div>
+                        <div style="font-size: 12px; color: var(--gray-light);">Сообщений/час</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 18px; font-weight: bold; color: #ff9800;" id="exchangeCount">0</div>
+                        <div style="font-size: 12px; color: var(--gray-light);">Обменов</div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1181,18 +1207,26 @@
         <div class="random-search-screen" id="randomSearchScreen">
             <div class="searching-animation">
                 <div class="search-spinner"></div>
-                <h2 class="searching-title">Поиск собеседника...</h2>
+                <h2 class="searching-title">Ищем собеседника...</h2>
                 <p class="searching-description" id="searchingDescription">
-                    Ищем случайного участника сервера для вас
+                    Соединяем с интересным участником сервера
                 </p>
                 
-                <div class="attempts-counter">
-                    <div class="attempts-text">Попыток сегодня:</div>
-                    <div class="attempts-number" id="attemptsCounter">10/10</div>
+                <div style="margin-top: 30px; text-align: center;">
+                    <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 15px;">
+                        <div style="width: 8px; height: 8px; background: #667eea; border-radius: 50%; opacity: 0.6;"></div>
+                        <div style="width: 8px; height: 8px; background: #667eea; border-radius: 50%; opacity: 0.8;"></div>
+                        <div style="width: 8px; height: 8px; background: #667eea; border-radius: 50%; opacity: 1;"></div>
+                        <div style="width: 8px; height: 8px; background: #667eea; border-radius: 50%; opacity: 0.8;"></div>
+                        <div style="width: 8px; height: 8px; background: #667eea; border-radius: 50%; opacity: 0.6;"></div>
+                    </div>
+                    <div style="color: var(--gray-light); font-size: 13px;">
+                        <i class="fa fa-shield"></i> Бесплатно • <i class="fa fa-clock-o"></i> Быстро • <i class="fa fa-user-secret"></i> Анонимно
+                    </div>
                 </div>
                 
                 <button class="cancel-search-btn" onclick="cancelRandomSearch()">
-                    Отменить поиск
+                    <i class="fa fa-times"></i> Отменить поиск
                 </button>
             </div>
         </div>
@@ -1208,7 +1242,13 @@
                     <div class="chat-contact-status">
                         <i class="fa fa-circle" style="color:#4caf50; font-size:8px;"></i>
                         <span id="generalOnlineCount">0 онлайн</span>
+                        <span style="margin-left: 10px; font-size: 11px; color: var(--gray-light);" id="generalMemberCount">0 участников</span>
                     </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="chat-action-btn" onclick="showChatInfo('general')">
+                        <i class="fa fa-info-circle"></i>
+                    </button>
                 </div>
             </div>
             
@@ -1237,6 +1277,9 @@
                         <div class="input-action-btn" onclick="showEmojiNotice()">
                             <i class="fa fa-smile-o"></i>
                         </div>
+                        <div class="input-action-btn" onclick="showFormattingNotice()">
+                            <i class="fa fa-font"></i>
+                        </div>
                     </div>
                 </div>
                 <button class="send-btn" id="sendGeneralMessage" onclick="sendMessage('general')">
@@ -1255,8 +1298,14 @@
                     <div class="chat-contact-name" id="exchangeChatTitle">Чат обмена</div>
                     <div class="chat-contact-status">
                         <i class="fa fa-circle" style="color:#ff9500; font-size:8px;"></i>
-                        <span>Договаривайтесь о сделках</span>
+                        <span>Только обмены</span>
+                        <span style="margin-left: 10px; font-size: 11px; color: #ff9800;" id="exchangeActiveCount">0 активных сделок</span>
                     </div>
+                </div>
+                <div class="chat-actions">
+                    <button class="chat-action-btn" onclick="showExchangeRules()">
+                        <i class="fa fa-gavel"></i>
+                    </button>
                 </div>
             </div>
             
@@ -1276,14 +1325,14 @@
             
             <div class="message-input-container">
                 <div class="message-input-wrapper">
-                    <textarea class="message-input" id="exchangeMessageInput" placeholder="Предложить обмен..." rows="1" 
+                    <textarea class="message-input" id="exchangeMessageInput" placeholder="Предложить обмен (что предлагаете / что хотите)..." rows="1" 
                         oninput="autoResize(this)" onkeypress="handleExchangeEnterKey(event)"></textarea>
                     <div class="input-actions">
                         <div class="input-action-btn" onclick="showFileNotice()">
                             <i class="fa fa-paperclip"></i>
                         </div>
-                        <div class="input-action-btn" onclick="showEmojiNotice()">
-                            <i class="fa fa-smile-o"></i>
+                        <div class="input-action-btn" onclick="showTradeTemplate()">
+                            <i class="fa fa-clone"></i>
                         </div>
                     </div>
                 </div>
@@ -1306,16 +1355,23 @@
                     <div class="chat-contact-status">
                         <i class="fa fa-circle" style="color:#667eea; font-size:8px;"></i>
                         <span id="randomPartnerStatus">Случайный собеседник</span>
+                        <span style="margin-left: 10px; font-size: 11px; color: #667eea;" id="randomConnectionTime">только что</span>
                     </div>
                 </div>
                 <div class="chat-actions">
                     <button class="chat-action-btn" id="nextRandomBtn" onclick="skipRandomPartner()" style="display: none;">
                         <i class="fa fa-refresh"></i>
                     </button>
+                    <button class="chat-action-btn" onclick="reportRandomPartner()" style="display: none;">
+                        <i class="fa fa-flag"></i>
+                    </button>
                 </div>
             </div>
             
             <div class="messages-container" id="randomMessagesContainer">
+                <div class="date-divider" id="randomChatWelcome" style="display: none;">
+                    <span>Соединение установлено</span>
+                </div>
                 <div class="typing-indicator" id="randomTypingIndicator">
                     <div class="typing-dots">
                         <span></span>
@@ -1337,8 +1393,8 @@
                         <div class="input-action-btn" onclick="showFileNotice()">
                             <i class="fa fa-paperclip"></i>
                         </div>
-                        <div class="input-action-btn" onclick="showEmojiNotice()">
-                            <i class="fa fa-smile-o"></i>
+                        <div class="input-action-btn" onclick="showIceBreakers()">
+                            <i class="fa fa-lightbulb-o"></i>
                         </div>
                     </div>
                 </div>
@@ -1364,8 +1420,9 @@
     let randomSearchTimer = null;
     let randomPartner = null;
     let isSearching = false;
+    let chatConnectionTime = null;
     
-    // Лимит попыток рандом чата (10 в день)
+    // Лимит попыток рандом чата (10 в день, но не показывается)
     const MAX_DAILY_ATTEMPTS = 10;
     let dailyAttempts = {
         count: MAX_DAILY_ATTEMPTS,
@@ -1513,7 +1570,7 @@
                     isBanned
                 });
 
-                // Загружаем попытки рандом чата
+                // Загружаем попытки рандом чата (скрыто)
                 loadRandomAttempts();
 
                 // Скрываем экран загрузки
@@ -1522,6 +1579,7 @@
 
                 renderServerInfo();
                 setupChats();
+                loadServerStats();
 
             } else {
                 const error = await response.json().catch(() => ({ error: 'Ошибка сервера' }));
@@ -1541,6 +1599,7 @@
             const serverAvatarEl = document.getElementById('serverAvatar');
             const memberCountEl = document.getElementById('memberCount');
             const messageCountEl = document.getElementById('messageCount');
+            const onlineCountEl = document.getElementById('onlineCount');
 
             if (!currentServer) {
                 console.error('❌ currentServer не определен');
@@ -1563,16 +1622,49 @@
             }
 
             if (memberCountEl) {
-                memberCountEl.textContent = currentServer.member_count || 0;
+                memberCountEl.textContent = currentServer.member_count || '0';
             }
 
             if (messageCountEl) {
-                messageCountEl.textContent = currentServer.message_count || 0;
+                messageCountEl.textContent = currentServer.message_count || '0';
+            }
+
+            if (onlineCountEl) {
+                onlineCountEl.textContent = currentServer.online_count || '0';
             }
 
             console.log('✅ Информация о сервере отрендерена');
         } catch (error) {
             console.error('❌ Ошибка в renderServerInfo:', error);
+        }
+    }
+
+    // Загрузка статистики сервера
+    async function loadServerStats() {
+        try {
+            if (!isSubscribed) return;
+            
+            const response = await fetch(`${API_BASE}/server/${serverId}/stats`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const statsEl = document.getElementById('serverStats');
+                const activeUsersEl = document.getElementById('activeUsers');
+                const newMessagesEl = document.getElementById('newMessages');
+                const exchangeCountEl = document.getElementById('exchangeCount');
+                
+                if (statsEl) statsEl.style.display = 'block';
+                if (activeUsersEl) activeUsersEl.textContent = data.active_users || '0';
+                if (newMessagesEl) newMessagesEl.textContent = data.messages_per_hour || '0';
+                if (exchangeCountEl) exchangeCountEl.textContent = data.exchange_count || '0';
+            }
+        } catch (error) {
+            console.error('❌ Ошибка загрузки статистики:', error);
         }
     }
 
@@ -1607,11 +1699,25 @@
         exchangeChatItemEl.style.display = 'flex';
         randomChatItemEl.style.display = 'flex';
 
-        // Обновляем статус попыток рандом чата
-        updateRandomAttemptsStatus();
+        // Обновляем время последней активности
+        updateChatTimes();
     }
 
-    // Загрузка попыток рандом чата
+    // Обновление времени в чатах
+    function updateChatTimes() {
+        const now = new Date();
+        const generalTime = formatTime(now.toISOString());
+        const exchangeTime = formatTime(now.toISOString());
+        
+        document.getElementById('generalChatTime').textContent = generalTime;
+        document.getElementById('exchangeChatTime').textContent = exchangeTime;
+        
+        // Обновляем онлайн статус
+        const onlineCount = currentServer?.online_count || 0;
+        document.getElementById('generalOnlineStatus').textContent = `${onlineCount} онлайн`;
+    }
+
+    // Загрузка попыток рандом чата (скрыто)
     function loadRandomAttempts() {
         try {
             const saved = localStorage.getItem(STORAGE_KEY);
@@ -1651,7 +1757,7 @@
         }
     }
 
-    // Сохранение попыток
+    // Сохранение попыток (скрыто)
     function saveRandomAttempts() {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(dailyAttempts));
@@ -1660,34 +1766,10 @@
         }
     }
 
-    // Обновление статуса попыток
-    function updateRandomAttemptsStatus() {
-        const attemptsStatusEl = document.getElementById('randomAttemptsStatus');
-        const attemptsCounterEl = document.getElementById('attemptsCounter');
-        const remaining = Math.max(0, dailyAttempts.count - dailyAttempts.usedToday);
-        
-        if (attemptsStatusEl) {
-            attemptsStatusEl.textContent = `${remaining}/${MAX_DAILY_ATTEMPTS}`;
-            if (remaining === 0) {
-                attemptsStatusEl.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%)';
-            } else {
-                attemptsStatusEl.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-            }
-        }
-        
-        if (attemptsCounterEl) {
-            attemptsCounterEl.textContent = `${remaining}/${MAX_DAILY_ATTEMPTS}`;
-        }
-        
-        // Обновляем описание поиска
-        const searchingDescEl = document.getElementById('searchingDescription');
-        if (searchingDescEl) {
-            if (remaining <= 0) {
-                searchingDescEl.textContent = 'Вы использовали все попытки на сегодня. Попробуйте завтра!';
-            } else {
-                searchingDescEl.textContent = `Ищем случайного участника сервера для вас. Осталось попыток: ${remaining}`;
-            }
-        }
+    // Проверка доступности рандом чата
+    function checkRandomChatAvailable() {
+        const remaining = dailyAttempts.count - dailyAttempts.usedToday;
+        return remaining > 0;
     }
 
     // Подписка на сервер
@@ -1719,6 +1801,7 @@
 
                 isSubscribed = true;
                 setupChats();
+                loadServerStats();
 
                 // Показываем уведомление
                 showNotification('🎉 Вы успешно подписались на сервер!', 'success');
@@ -1744,6 +1827,12 @@
             document.getElementById('chatsScreen').style.display = 'none';
             document.getElementById('generalChatScreen').classList.add('active');
             
+            // Обновляем информацию в заголовке
+            const onlineCount = currentServer?.online_count || 0;
+            const memberCount = currentServer?.member_count || 0;
+            document.getElementById('generalOnlineCount').textContent = `${onlineCount} онлайн`;
+            document.getElementById('generalMemberCount').textContent = `${memberCount} участников`;
+            
             // Загружаем сообщения
             await loadChatMessages('general');
             
@@ -1757,6 +1846,13 @@
             console.error('❌ Ошибка открытия чата:', error);
             showNotification('❌ Не удалось открыть чат', 'error');
             closeChat('general');
+        }
+    }
+
+    // Показать информацию о чате
+    function showChatInfo(type) {
+        if (type === 'general') {
+            showNotification('💬 Общий чат сервера. Здесь можно общаться со всеми участниками.', 'info');
         }
     }
 
@@ -1783,12 +1879,25 @@
         }
     }
 
+    // Показать правила обмена
+    function showExchangeRules() {
+        showNotification('📋 В чате обмена можно предлагать обмены предметов, аккаунтов или услуг. Будьте внимательны при сделках!', 'info');
+    }
+
+    // Показать шаблон для обмена
+    function showTradeTemplate() {
+        const input = document.getElementById('exchangeMessageInput');
+        if (input) {
+            input.value = 'Предлагаю: [ваш предмет]\nХочу получить: [желаемый предмет]';
+            autoResize(input);
+            input.focus();
+        }
+    }
+
     // Открытие поиска рандом собеседника
     function openRandomSearch() {
-        const remaining = dailyAttempts.count - dailyAttempts.usedToday;
-        
-        if (remaining <= 0) {
-            showNotification('🎲 Вы использовали все попытки на сегодня. Попробуйте завтра!', 'info');
+        if (!checkRandomChatAvailable()) {
+            showNotification('🎲 На сегодня поиск завершен. Заходите завтра!', 'info');
             return;
         }
         
@@ -1800,9 +1909,6 @@
         // Показываем экран поиска
         document.getElementById('chatsScreen').style.display = 'none';
         document.getElementById('randomSearchScreen').classList.remove('hidden');
-        
-        // Обновляем счетчик
-        updateRandomAttemptsStatus();
         
         // Начинаем поиск
         startRandomSearch();
@@ -1831,7 +1937,7 @@
                         const data = await response.json();
                         console.log('✅ Найден рандом собеседник:', data.user);
                         
-                        // Уменьшаем счетчик попыток
+                        // Уменьшаем счетчик попыток (скрыто)
                         dailyAttempts.usedToday++;
                         saveRandomAttempts();
                         
@@ -1845,7 +1951,7 @@
                         // Если не нашли, создаем имитацию
                         console.log('⚠️ Не удалось найти реального собеседника, создаем имитацию');
                         
-                        // Уменьшаем счетчик попыток
+                        // Уменьшаем счетчик попыток (скрыто)
                         dailyAttempts.usedToday++;
                         saveRandomAttempts();
                         
@@ -1858,7 +1964,7 @@
                 } catch (error) {
                     console.error('❌ Ошибка поиска рандом собеседника:', error);
                     
-                    // Уменьшаем счетчик попыток
+                    // Уменьшаем счетчик попыток (скрыто)
                     dailyAttempts.usedToday++;
                     saveRandomAttempts();
                     
@@ -1882,15 +1988,18 @@
         // Список возможных имен
         const names = ['Алексей', 'Мария', 'Дмитрий', 'Анна', 'Иван', 'Елена', 'Сергей', 'Ольга', 'Максим', 'Наталья'];
         const roles = ['Игрок CS:GO', 'Трейдер', 'Геймер', 'Коллекционер', 'Стример', 'Киберспортсмен'];
+        const games = ['CS2', 'Dota 2', 'Rust', 'GTA V', 'Valorant', 'Apex Legends'];
         
         const randomName = names[Math.floor(Math.random() * names.length)];
         const randomRole = roles[Math.floor(Math.random() * roles.length)];
+        const randomGame = games[Math.floor(Math.random() * games.length)];
         
         const mockPartner = {
             id: `mock_${Date.now()}`,
             username: randomName,
             avatar_url: null,
             role: randomRole,
+            game: randomGame,
             mock: true
         };
         
@@ -1901,6 +2010,7 @@
     // Открыть чат с рандом собеседником
     function openRandomChat(partner) {
         randomPartner = partner;
+        chatConnectionTime = new Date();
         
         // Скрываем экран поиска
         document.getElementById('randomSearchScreen').classList.add('hidden');
@@ -1911,35 +2021,28 @@
         // Обновляем заголовок
         document.getElementById('randomPartnerName').textContent = partner.username;
         document.getElementById('randomPartnerStatus').textContent = partner.role || 'Случайный собеседник';
+        document.getElementById('randomConnectionTime').textContent = 'только что';
         
-        // Активируем поле ввода
-        const input = document.getElementById('randomMessageInput');
-        const sendBtn = document.getElementById('sendRandomMessage');
-        if (input) input.disabled = false;
-        if (sendBtn) sendBtn.disabled = false;
-        
-        // Показываем кнопку "Следующий" (только если остались попытки)
-        const remaining = dailyAttempts.count - dailyAttempts.usedToday;
-        const nextBtn = document.getElementById('nextRandomBtn');
-        if (nextBtn) {
-            if (remaining > 0) {
-                nextBtn.style.display = 'block';
-            } else {
-                nextBtn.style.display = 'none';
-            }
-        }
+        // Показываем кнопки действий
+        document.querySelectorAll('.chat-actions .chat-action-btn').forEach(btn => {
+            btn.style.display = 'block';
+        });
         
         // Очищаем сообщения
         const container = document.getElementById('randomMessagesContainer');
         if (container) {
             container.innerHTML = '';
             
-            // Добавляем приветственное сообщение
+            // Показываем приветствие
+            document.getElementById('randomChatWelcome').style.display = 'block';
+            container.appendChild(document.getElementById('randomChatWelcome'));
+            
+            // Добавляем приветственное сообщение от собеседника
             const welcomeMessage = {
                 id: `welcome_${Date.now()}`,
                 user_id: partner.id,
                 username: partner.username,
-                content: `Привет! Я ${partner.username}. Рад познакомиться!`,
+                content: `Привет! Я ${partner.username} (${partner.game || 'Игрок'}). Рад познакомиться!`,
                 created_at: new Date().toISOString(),
                 incoming: true
             };
@@ -1951,25 +2054,62 @@
             setTimeout(() => scrollToBottom('random'), 100);
         }
         
+        // Обновляем таймер соединения
+        updateConnectionTimer();
+        
         // Автофокус на поле ввода
         setTimeout(() => {
+            const input = document.getElementById('randomMessageInput');
             if (input) input.focus();
         }, 300);
     }
 
+    // Обновление таймера соединения
+    function updateConnectionTimer() {
+        if (!chatConnectionTime) return;
+        
+        const now = new Date();
+        const diff = Math.floor((now - chatConnectionTime) / 1000);
+        const minutes = Math.floor(diff / 60);
+        const seconds = diff % 60;
+        
+        let timeText = 'только что';
+        if (minutes > 0) {
+            timeText = `${minutes} мин`;
+        } else if (seconds > 30) {
+            timeText = `${seconds} сек`;
+        }
+        
+        const timeEl = document.getElementById('randomConnectionTime');
+        if (timeEl) {
+            timeEl.textContent = timeText;
+        }
+        
+        // Обновляем каждые 10 секунд
+        setTimeout(updateConnectionTimer, 10000);
+    }
+
     // Пропустить текущего собеседника
     function skipRandomPartner() {
-        const remaining = dailyAttempts.count - dailyAttempts.usedToday;
-        
-        if (remaining <= 0) {
-            showNotification('🎲 Вы использовали все попытки на сегодня', 'info');
+        if (!checkRandomChatAvailable()) {
+            showNotification('🎲 На сегодня поиск завершен. Заходите завтра!', 'info');
             closeChat('random');
             return;
         }
         
-        if (confirm('Перейти к следующему собеседнику? Использовать еще одну попытку?')) {
+        if (confirm('Найти другого собеседника?')) {
             closeChat('random');
             openRandomSearch();
+        }
+    }
+
+    // Пожаловаться на собеседника
+    function reportRandomPartner() {
+        if (!randomPartner) return;
+        
+        const reason = prompt('Укажите причину жалобы на пользователя ' + randomPartner.username + ':');
+        if (reason && reason.trim()) {
+            showNotification('✅ Жалоба отправлена. Спасибо за бдительность!', 'success');
         }
     }
 
@@ -1987,11 +2127,31 @@
         console.log('❌ Поиск отменен пользователем');
     }
 
+    // Показать темы для разговора
+    function showIceBreakers() {
+        const topics = [
+            "Какие игры тебе нравятся?",
+            "Есть что предложить для обмена?",
+            "Как давно играешь?",
+            "Какая твоя лучшая игра?",
+            "Ищешь тиммейтов?"
+        ];
+        
+        const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+        const input = document.getElementById('randomMessageInput');
+        if (input) {
+            input.value = randomTopic;
+            autoResize(input);
+            input.focus();
+        }
+    }
+
     // Закрытие чата
     function closeChat(chatType) {
         if (chatType === 'random') {
             document.getElementById('randomChatScreen').classList.remove('active');
             randomPartner = null;
+            chatConnectionTime = null;
         } else if (chatType === 'exchange') {
             document.getElementById('exchangeChatScreen').classList.remove('active');
         } else if (chatType === 'general') {
@@ -2077,8 +2237,6 @@
         if (!messages || messages.length === 0) {
             const emptyMessage = type === 'exchange' ?
                 '💼 Здесь пока нет сообщений обмена. Будьте первым, кто предложит сделку!' :
-                type === 'random' ?
-                '🎲 Начните общение со случайным собеседником!' :
                 '💬 Здесь пока нет сообщений. Будьте первым, кто напишет в этом чате!';
                 
             container.innerHTML = `
@@ -2490,11 +2648,15 @@
     }
 
     function showFileNotice() {
-        showNotification('Отправка файлов временно недоступна', 'info');
+        showNotification('📎 Отправка файлов скоро будет доступна', 'info');
     }
 
     function showEmojiNotice() {
-        showNotification('Выбор эмодзи скоро будет доступен', 'info');
+        showNotification('😊 Эмодзи и стикеры в разработке', 'info');
+    }
+
+    function showFormattingNotice() {
+        showNotification('✨ Форматирование текста (жирный, курсив) скоро появится', 'info');
     }
 
     // Инициализация
