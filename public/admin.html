@@ -140,58 +140,6 @@
             font-size: 32px;
         }
         
-        /* Табы */
-        .tabs {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 30px;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 5px;
-            border-radius: var(--radius-sm);
-            overflow-x: auto;
-        }
-        
-        .tab-btn {
-            padding: 14px 24px;
-            background: transparent;
-            border: none;
-            color: var(--text-secondary);
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            border-radius: var(--radius-sm);
-            transition: var(--transition);
-            white-space: nowrap;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .tab-btn:hover {
-            color: var(--text-primary);
-            background: rgba(255, 255, 255, 0.05);
-        }
-        
-        .tab-btn.active {
-            background: var(--gradient-primary);
-            color: white;
-            box-shadow: 0 5px 15px rgba(0, 242, 254, 0.3);
-        }
-        
-        .tab-content {
-            display: none;
-            animation: fadeIn 0.3s ease-out;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
         /* Статистика */
         .stats-grid {
             display: grid;
@@ -382,13 +330,7 @@
             gap: 15px;
         }
         
-        .ad-cell {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .user-avatar, .ad-image {
+        .user-avatar {
             width: 45px;
             height: 45px;
             border-radius: 50%;
@@ -402,17 +344,6 @@
             box-shadow: var(--shadow-neon);
         }
         
-        .ad-image {
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        
-        .ad-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
         .user-info .name {
             font-weight: 600;
             margin-bottom: 5px;
@@ -421,24 +352,6 @@
         .user-info .email {
             font-size: 13px;
             color: var(--text-secondary);
-        }
-        
-        .ad-info .title {
-            font-weight: 600;
-            margin-bottom: 5px;
-            font-size: 15px;
-        }
-        
-        .ad-info .price {
-            color: var(--success);
-            font-weight: 700;
-            font-size: 16px;
-        }
-        
-        .ad-info .category {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-top: 3px;
         }
         
         /* Бейджи */
@@ -474,12 +387,6 @@
             background: rgba(255, 77, 125, 0.2);
             color: var(--danger);
             border: 1px solid rgba(255, 77, 125, 0.4);
-        }
-        
-        .badge-urgent {
-            background: rgba(255, 46, 147, 0.2);
-            color: var(--neon-pink);
-            border: 1px solid rgba(255, 46, 147, 0.4);
         }
         
         .badge-google {
@@ -807,16 +714,6 @@
             .user-cell {
                 min-width: 200px;
             }
-            
-            .tabs {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-            
-            .tab-btn {
-                padding: 10px 15px;
-                font-size: 14px;
-            }
         }
         
         @media (max-width: 480px) {
@@ -916,8 +813,11 @@
             <div class="user-info">
                 <span id="admin-greeting">Добро пожаловать</span>
             </div>
-            <button class="btn btn-primary" onclick="refreshCurrentTab()">
+            <button class="btn btn-primary" onclick="loadUsers()">
                 <i class="fas fa-sync-alt"></i> Обновить
+            </button>
+            <button class="btn btn-success" onclick="showCreateModal()">
+                <i class="fas fa-plus"></i> Новый
             </button>
             <button class="btn btn-warning" onclick="logout()">
                 <i class="fas fa-sign-out-alt"></i> Выход
@@ -928,7 +828,7 @@
     <!-- Основной контент -->
     <div class="container">
         <h1 class="page-title">
-            <i class="fas fa-users-cog"></i> Панель управления Zeeptook
+            <i class="fas fa-users-cog"></i> Панель управления пользователями
         </h1>
         
         <!-- Статистика -->
@@ -945,11 +845,11 @@
             
             <div class="card stat-card">
                 <div class="stat-icon floating">
-                    <i class="fas fa-ad"></i>
+                    <i class="fas fa-user-check"></i>
                 </div>
                 <div class="stat-info">
-                    <h3 id="total-ads">0</h3>
-                    <p>Всего объявлений</p>
+                    <h3 id="active-users">0</h3>
+                    <p>Активных</p>
                 </div>
             </div>
             
@@ -965,177 +865,100 @@
             
             <div class="card stat-card">
                 <div class="stat-icon floating">
-                    <i class="fas fa-chart-line"></i>
+                    <i class="fab fa-google"></i>
                 </div>
                 <div class="stat-info">
-                    <h3 id="active-ads">0</h3>
-                    <p>Активных объявлений</p>
+                    <h3 id="google-users">0</h3>
+                    <p>Через Google</p>
                 </div>
             </div>
         </div>
         
-        <!-- Табы -->
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="users" onclick="switchTab('users')">
-                <i class="fas fa-users"></i> Пользователи
-            </button>
-            <button class="tab-btn" data-tab="ads" onclick="switchTab('ads')">
-                <i class="fas fa-ad"></i> Объявления
-            </button>
-            <button class="tab-btn" data-tab="create-user" onclick="switchTab('create-user')">
-                <i class="fas fa-user-plus"></i> Создать пользователя
-            </button>
-        </div>
-        
-        <!-- Вкладка пользователей -->
-        <div id="users-tab" class="tab-content active">
-            <div class="card table-container">
-                <div class="table-header">
-                    <div class="search-box">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="search-users" placeholder="Поиск по email, имени или username..." 
-                               onkeyup="searchUsers()">
-                    </div>
+        <!-- Панель управления -->
+        <div class="card table-container">
+            <div class="table-header">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="search-input" placeholder="Поиск по email, имени или username..." 
+                           onkeyup="searchUsers()">
+                </div>
+                
+                <div class="filters">
+                    <select class="filter-select" id="filter-role" onchange="filterUsers()">
+                        <option value="">Все роли</option>
+                        <option value="admin">Администраторы</option>
+                        <option value="user">Пользователи</option>
+                    </select>
                     
-                    <div class="filters">
-                        <select class="filter-select" id="filter-role" onchange="filterUsers()">
-                            <option value="">Все роли</option>
-                            <option value="admin">Администраторы</option>
-                            <option value="user">Пользователи</option>
-                        </select>
-                        
-                        <select class="filter-select" id="filter-status" onchange="filterUsers()">
-                            <option value="">Все статусы</option>
-                            <option value="active">Активные</option>
-                            <option value="inactive">Неактивные</option>
-                        </select>
-                        
-                        <select class="filter-select" id="filter-auth" onchange="filterUsers()">
-                            <option value="">Все методы</option>
-                            <option value="google">Google</option>
-                            <option value="email">Email</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <!-- Таблица пользователей -->
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Пользователь</th>
-                            <th>Объявления</th>
-                            <th>Статус</th>
-                            <th>Роль</th>
-                            <th>Метод</th>
-                            <th>Дата регистрации</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody id="users-table-body">
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 60px;">
-                                <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
-                                <div style="color: var(--neon-blue); font-size: 16px; font-weight: 600;">
-                                    Загрузка пользователей...
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-                
-                <div class="pagination">
-                    <div style="color: var(--text-secondary);">
-                        Показано <span id="users-shown-count" style="color: var(--neon-blue); font-weight: 600;">0</span> 
-                        из <span id="users-total-count" style="color: var(--neon-purple); font-weight: 600;">0</span> пользователей
-                    </div>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <button class="page-btn" onclick="changePage('users', -1)">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <span class="page-btn active" id="users-current-page">1</span>
-                        <button class="page-btn" onclick="changePage('users', 1)">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Вкладка объявлений -->
-        <div id="ads-tab" class="tab-content">
-            <div class="card table-container">
-                <div class="table-header">
-                    <div class="search-box">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="search-ads" placeholder="Поиск по названию, описанию..." 
-                               onkeyup="searchAds()">
-                    </div>
+                    <select class="filter-select" id="filter-status" onchange="filterUsers()">
+                        <option value="">Все статусы</option>
+                        <option value="active">Активные</option>
+                        <option value="inactive">Неактивные</option>
+                    </select>
                     
-                    <div class="filters">
-                        <select class="filter-select" id="filter-ads-status" onchange="filterAds()">
-                            <option value="">Все статусы</option>
-                            <option value="active">Активные</option>
-                            <option value="inactive">Неактивные</option>
-                        </select>
-                        
-                        <select class="filter-select" id="filter-ads-urgent" onchange="filterAds()">
-                            <option value="">Все объявления</option>
-                            <option value="urgent">Срочные</option>
-                            <option value="normal">Обычные</option>
-                        </select>
-                    </div>
+                    <select class="filter-select" id="filter-auth" onchange="filterUsers()">
+                        <option value="">Все методы</option>
+                        <option value="google">Google</option>
+                        <option value="email">Email</option>
+                    </select>
                 </div>
-                
-                <!-- Таблица объявлений -->
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Объявление</th>
-                            <th>Пользователь</th>
-                            <th>Цена</th>
-                            <th>Статус</th>
-                            <th>Просмотры</th>
-                            <th>Дата создания</th>
-                            <th>Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ads-table-body">
-                        <tr>
-                            <td colspan="7" style="text-align: center; padding: 60px;">
-                                <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
-                                <div style="color: var(--neon-blue); font-size: 16px; font-weight: 600;">
-                                    Загрузка объявлений...
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-                
-                <div class="pagination">
-                    <div style="color: var(--text-secondary);">
-                        Показано <span id="ads-shown-count" style="color: var(--neon-blue); font-weight: 600;">0</span> 
-                        из <span id="ads-total-count" style="color: var(--neon-purple); font-weight: 600;">0</span> объявлений
-                    </div>
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <button class="page-btn" onclick="changePage('ads', -1)">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
-                        <span class="page-btn active" id="ads-current-page">1</span>
-                        <button class="page-btn" onclick="changePage('ads', 1)">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
-                    </div>
+            </div>
+            
+            <!-- Таблица пользователей -->
+            <table>
+                <thead>
+                    <tr>
+                        <th>Пользователь</th>
+                        <th>Статус</th>
+                        <th>Роль</th>
+                        <th>Метод</th>
+                        <th>Дата регистрации</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="users-table-body">
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 60px;">
+                            <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
+                            <div style="color: var(--neon-blue); font-size: 16px; font-weight: 600;">
+                                Загрузка пользователей...
+                            </div>
+                            <div style="color: var(--text-secondary); margin-top: 10px;">
+                                Проверка прав доступа...
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div class="pagination">
+                <div style="color: var(--text-secondary);">
+                    Показано <span id="shown-count" style="color: var(--neon-blue); font-weight: 600;">0</span> 
+                    из <span id="total-count" style="color: var(--neon-purple); font-weight: 600;">0</span> пользователей
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button class="page-btn" onclick="changePage(-1)">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <span class="page-btn active">1</span>
+                    <button class="page-btn" onclick="changePage(1)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
                 </div>
             </div>
         </div>
-        
-        <!-- Вкладка создания пользователя -->
-        <div id="create-user-tab" class="tab-content">
-            <div class="card" style="padding: 30px;">
-                <h2 style="margin-bottom: 25px; color: var(--neon-blue); display: flex; align-items: center; gap: 10px;">
-                    <i class="fas fa-user-plus"></i> Создание нового пользователя
+    </div>
+    
+    <!-- Модальное окно создания пользователя -->
+    <div id="create-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    <i class="fas fa-user-plus"></i> Создание пользователя
                 </h2>
-                
+                <button class="close-modal" onclick="closeModal('create-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
                 <div id="create-alert"></div>
                 <form id="create-form">
                     <div class="form-row">
@@ -1197,9 +1020,10 @@
                     </div>
                     
                     <div class="form-actions">
-                        <button type="button" class="btn" onclick="switchTab('users')"
+                        <button type="button" class="btn" 
+                                onclick="closeModal('create-modal')"
                                 style="background: rgba(255,255,255,0.05);">
-                            <i class="fas fa-arrow-left"></i> Назад
+                            Отмена
                         </button>
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-plus"></i> Создать пользователя
@@ -1210,7 +1034,7 @@
         </div>
     </div>
     
-    <!-- Модальное окно редактирования пользователя -->
+    <!-- Модальное окно редактирования -->
     <div id="edit-modal" class="modal-overlay">
         <div class="modal">
             <div class="modal-header">
@@ -1287,7 +1111,7 @@
         </div>
     </div>
     
-    <!-- Модальное окно удаления пользователя -->
+    <!-- Модальное окно удаления -->
     <div id="delete-modal" class="modal-overlay">
         <div class="modal" style="max-width: 500px;">
             <div class="modal-header">
@@ -1310,33 +1134,6 @@
                         Удалить пользователя <span id="delete-user-name" style="color: var(--neon-blue);"></span>?
                     </h3>
                     
-                    <div id="user-dependencies" style="display: none; background: rgba(255,204,0,0.1); 
-                                border-radius: 10px; padding: 15px; margin: 15px 0; border: 1px solid rgba(255,204,0,0.3);">
-                        <div style="color: var(--warning); margin-bottom: 10px;">
-                            <i class="fas fa-exclamation-circle"></i> У пользователя есть объявления!
-                        </div>
-                        <div style="color: var(--text-secondary); font-size: 14px;">
-                            • Объявлений: <span id="delete-ads-count" style="color: var(--neon-blue); font-weight: 600;">0</span><br>
-                            • Активных: <span id="delete-active-ads" style="color: var(--success); font-weight: 600;">0</span>
-                        </div>
-                    </div>
-                    
-                    <div id="delete-options" style="text-align: left; margin: 20px 0; display: none;">
-                        <div style="color: var(--text-primary); margin-bottom: 10px; font-weight: 600;">
-                            Выберите действие с объявлениями:
-                        </div>
-                        <div style="display: flex; flex-direction: column; gap: 10px;">
-                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                                <input type="radio" name="delete-option" value="delete_all" checked>
-                                <span style="color: var(--danger); font-weight: 600;">Удалить все объявления</span>
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                                <input type="radio" name="delete-option" value="deactivate_only">
-                                <span style="color: var(--warning);">Только деактивировать пользователя</span>
-                            </label>
-                        </div>
-                    </div>
-                    
                     <p style="color: var(--text-secondary); line-height: 1.6;">
                         Это действие <span style="color: var(--danger); font-weight: 600;">нельзя отменить</span>. 
                         Все данные пользователя будут безвозвратно удалены из системы.
@@ -1350,102 +1147,69 @@
                         Отмена
                     </button>
                     <button type="button" class="btn btn-danger" onclick="confirmDelete()">
-                        <i class="fas fa-trash"></i> Подтвердить удаление
+                        <i class="fas fa-trash"></i> Удалить пользователя
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Модальное окно удаления объявления -->
-    <div id="delete-ad-modal" class="modal-overlay">
-        <div class="modal" style="max-width: 500px;">
-            <div class="modal-header">
-                <h2 class="modal-title">
-                    <i class="fas fa-exclamation-triangle"></i> Удаление объявления
-                </h2>
-                <button class="close-modal" onclick="closeModal('delete-ad-modal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div id="delete-ad-alert"></div>
-                
-                <div style="text-align: center; margin: 30px 0;">
-                    <div style="width: 80px; height: 80px; background: rgba(255,77,125,0.2); 
-                                border-radius: 50%; display: flex; align-items: center; 
-                                justify-content: center; margin: 0 auto 20px; border: 2px solid var(--danger);">
-                        <i class="fas fa-ad" style="font-size: 32px; color: var(--danger);"></i>
-                    </div>
-                    
-                    <h3 style="color: var(--text-primary); margin-bottom: 15px;">
-                        Удалить объявление <span id="delete-ad-title" style="color: var(--neon-blue);"></span>?
-                    </h3>
-                    
-                    <div style="color: var(--text-secondary); background: rgba(255,255,255,0.05); 
-                                padding: 15px; border-radius: 10px; margin: 15px 0;">
-                        <div style="margin-bottom: 5px;">
-                            <span style="color: var(--text-secondary);">Автор:</span>
-                            <span id="delete-ad-author" style="color: var(--neon-purple); font-weight: 600;"></span>
-                        </div>
-                        <div style="margin-bottom: 5px;">
-                            <span style="color: var(--text-secondary);">Цена:</span>
-                            <span id="delete-ad-price" style="color: var(--success); font-weight: 600;"></span>
-                        </div>
-                        <div>
-                            <span style="color: var(--text-secondary);">Просмотры:</span>
-                            <span id="delete-ad-views" style="color: var(--neon-blue); font-weight: 600;"></span>
-                        </div>
-                    </div>
-                    
-                    <p style="color: var(--text-secondary); line-height: 1.6;">
-                        Это действие <span style="color: var(--danger); font-weight: 600;">нельзя отменить</span>. 
-                        Все фотографии и данные объявления будут удалены.
-                    </p>
-                </div>
-                
-                <div class="form-actions">
-                    <button type="button" class="btn" 
-                            onclick="closeModal('delete-ad-modal')"
-                            style="background: rgba(255,255,255,0.05);">
-                        Отмена
-                    </button>
-                    <button type="button" class="btn btn-danger" onclick="confirmDeleteAd()">
-                        <i class="fas fa-trash"></i> Удалить объявление
-                    </button>
-                </div>
-            </div>
-        </div>
+    <div id="delete-options" style="text-align: left; margin: 20px 0; display: none;">
+    <div style="color: var(--text-primary); margin-bottom: 10px; font-weight: 600;">
+        Выберите действие с данными пользователя:
     </div>
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; padding: 10px; border-radius: 8px; background: rgba(255, 77, 125, 0.05); border: 1px solid rgba(255, 77, 125, 0.2);">
+            <input type="radio" name="delete-option" value="force_delete_all">
+            <div>
+                <div style="color: var(--danger); font-weight: 600; margin-bottom: 5px;">
+                    <i class="fas fa-bomb" style="margin-right: 8px;"></i>
+                    УДАЛИТЬ ВСЕ ДАННЫЕ ПОЛЬЗОВАТЕЛЯ
+                </div>
+                <div style="color: var(--text-secondary); font-size: 12px;">
+                    Удалит пользователя и все связанные данные: объявления, сообщения, чаты, избранное, отзывы и т.д.
+                    <span style="color: var(--danger); font-weight: 600;"> ВНИМАНИЕ: Это действие НЕЛЬЗЯ отменить!</span>
+                </div>
+            </div>
+        </label>
+        
+        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; padding: 10px; border-radius: 8px; background: rgba(255, 204, 0, 0.05); border: 1px solid rgba(255, 204, 0, 0.2);">
+            <input type="radio" name="delete-option" value="delete_ads_only">
+            <div>
+                <div style="color: var(--warning); font-weight: 600; margin-bottom: 5px;">
+                    <i class="fas fa-trash-alt" style="margin-right: 8px;"></i>
+                    Удалить только объявления
+                </div>
+                <div style="color: var(--text-secondary); font-size: 12px;">
+                    Удалит только объявления пользователя, остальные данные останутся. Пользователь будет удален только если нет других зависимостей.
+                </div>
+            </div>
+        </label>
+        
+        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; padding: 10px; border-radius: 8px; background: rgba(0, 242, 254, 0.05); border: 1px solid rgba(0, 242, 254, 0.2);">
+            <input type="radio" name="delete-option" value="deactivate_only">
+            <div>
+                <div style="color: var(--info); font-weight: 600; margin-bottom: 5px;">
+                    <i class="fas fa-ban" style="margin-right: 8px;"></i>
+                    Только деактивировать
+                </div>
+                <div style="color: var(--text-secondary); font-size: 12px;">
+                    Деактивирует пользователя и его объявления. Данные сохранятся, но будут скрыты от других пользователей.
+                </div>
+            </div>
+        </label>
+    </div>
+</div>
 
-    <!-- Модальное окно просмотра объявления -->
-    <div id="view-ad-modal" class="modal-overlay">
-        <div class="modal" style="max-width: 700px;">
-            <div class="modal-header">
-                <h2 class="modal-title">
-                    <i class="fas fa-eye"></i> Просмотр объявления
-                </h2>
-                <button class="close-modal" onclick="closeModal('view-ad-modal')">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div id="view-ad-content">
-                    <!-- Контент будет загружен динамически -->
-                </div>
-            </div>
-        </div>
-    </div>
 
     <script>
     const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:3000/api' : '/api';
     let users = [];
-    let ads = [];
     let filteredUsers = [];
-    let filteredAds = [];
-    let currentUsersPage = 1;
-    let currentAdsPage = 1;
-    const itemsPerPage = 15;
+    let currentPage = 1;
+    const usersPerPage = 15;
     let userToDelete = null;
-    let adToDelete = null;
     let currentAdmin = null;
-    let currentTab = 'users';
     
     // Создание частиц фона
     function createParticles() {
@@ -1460,45 +1224,6 @@
             particle.style.opacity = Math.random() * 0.5 + 0.2;
             particle.style.background = Math.random() > 0.5 ? 'var(--neon-blue)' : 'var(--neon-purple)';
             particlesContainer.appendChild(particle);
-        }
-    }
-    
-    // Переключение вкладок
-    function switchTab(tabName) {
-        currentTab = tabName;
-        
-        // Обновляем активные кнопки
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.dataset.tab === tabName) {
-                btn.classList.add('active');
-            }
-        });
-        
-        // Обновляем активные вкладки
-        document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.remove('active');
-        });
-        
-        document.getElementById(`${tabName}-tab`).classList.add('active');
-        
-        // Загружаем данные для вкладки
-        if (tabName === 'users') {
-            loadUsers();
-        } else if (tabName === 'ads') {
-            loadAds();
-        }
-    }
-    
-    // Обновление текущей вкладки
-    function refreshCurrentTab() {
-        if (currentTab === 'users') {
-            loadUsers();
-        } else if (currentTab === 'ads') {
-            loadAds();
-        } else if (currentTab === 'create-user') {
-            // Сброс формы создания
-            resetCreateForm();
         }
     }
     
@@ -1548,7 +1273,7 @@
         if (!token) return;
         
         try {
-            showLoading('users');
+            showLoading();
             
             // Загружаем статистику
             const statsResponse = await fetch(`${API_BASE}/admin/stats`, {
@@ -1596,79 +1321,25 @@
         }
     }
     
-    // Загрузка объявлений
-    async function loadAds() {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        
-        try {
-            showLoading('ads');
-            
-            // Загружаем статистику
-            const statsResponse = await fetch(`${API_BASE}/admin/stats`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            if (statsResponse.ok) {
-                const statsData = await statsResponse.json();
-                if (statsData.success) {
-                    updateStats(statsData.stats);
-                }
-            }
-            
-            // Загружаем объявления
-            const adsResponse = await fetch(`${API_BASE}/admin/ads`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            if (!adsResponse.ok) {
-                if (adsResponse.status === 403) {
-                    showNotification('Доступ запрещен', 'error');
-                    return;
-                }
-                throw new Error('Ошибка загрузки объявлений');
-            }
-            
-            const data = await adsResponse.json();
-            
-            if (data.success) {
-                ads = data.ads || [];
-                filteredAds = [...ads];
-                renderAdsTable();
-                showNotification(`Загружено ${ads.length} объявлений`, 'success');
-            } else {
-                throw new Error(data.error || 'Ошибка загрузки данных');
-            }
-            
-        } catch (error) {
-            console.error('Load ads error:', error);
-            showNotification('Ошибка загрузки объявлений: ' + error.message, 'error');
-        }
-    }
-    
     // Обновление статистики
     function updateStats(stats) {
-        document.getElementById('total-users').textContent = stats.total || 0;
-        document.getElementById('total-ads').textContent = stats.ads_total || 0;
-        document.getElementById('admin-users').textContent = stats.admins || 0;
-        document.getElementById('active-ads').textContent = stats.active_ads || 0;
+        document.getElementById('total-users').textContent = stats.total;
+        document.getElementById('active-users').textContent = stats.active;
+        document.getElementById('admin-users').textContent = stats.admins;
+        document.getElementById('google-users').textContent = stats.google;
     }
     
-    // Рендер таблицы пользователей
+    // Рендер таблицы
     function renderUsersTable() {
         const tbody = document.getElementById('users-table-body');
-        const startIndex = (currentUsersPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
+        const startIndex = (currentPage - 1) * usersPerPage;
+        const endIndex = startIndex + usersPerPage;
         const pageUsers = filteredUsers.slice(startIndex, endIndex);
         
         if (pageUsers.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" style="text-align: center; padding: 60px;">
+                    <td colspan="6" style="text-align: center; padding: 60px;">
                         <i class="fas fa-users" style="font-size: 48px; color: var(--text-muted); margin-bottom: 20px;"></i>
                         <div style="font-size: 18px; color: var(--text-secondary); margin-bottom: 10px;">
                             Пользователи не найдены
@@ -1679,7 +1350,6 @@
                     </td>
                 </tr>
             `;
-            updatePagination('users', 0);
             return;
         }
         
@@ -1696,16 +1366,6 @@
                             <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
                                 @${escapeHtml(user.username)} • ID: ${user.id}
                             </div>
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <div style="text-align: center;">
-                        <div style="font-size: 18px; font-weight: 700; color: ${user.ads_count > 0 ? 'var(--neon-blue)' : 'var(--text-muted)'}">
-                            ${user.ads_count || 0}
-                        </div>
-                        <div style="font-size: 11px; color: var(--text-secondary);">
-                            ${user.active_ads_count || 0} активных
                         </div>
                     </div>
                 </td>
@@ -1739,12 +1399,12 @@
                                 title="Редактировать">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="action-btn" onclick="viewUserAds(${user.id}, '${escapeHtml(user.username)}')" 
-                                title="Просмотреть объявления">
-                            <i class="fas fa-ad"></i>
+                        <button class="action-btn" onclick="viewUserDetails(${user.id})" 
+                                title="Подробнее">
+                            <i class="fas fa-eye"></i>
                         </button>
                         <button class="action-btn delete" 
-                                onclick="showDeleteConfirm(${user.id}, '${escapeHtml(user.full_name)}', ${user.ads_count || 0}, ${user.active_ads_count || 0})" 
+                                onclick="showDeleteConfirm(${user.id}, '${escapeHtml(user.full_name)}')" 
                                 title="Удалить"
                                 ${user.id === 1 ? 'disabled style="opacity: 0.3;"' : ''}>
                             <i class="fas fa-trash"></i>
@@ -1754,109 +1414,15 @@
             </tr>
         `).join('');
         
-        updatePagination('users', filteredUsers.length);
+        // Обновляем информацию о пагинации
+        document.getElementById('shown-count').textContent = 
+            `${startIndex + 1}-${Math.min(endIndex, filteredUsers.length)}`;
+        document.getElementById('total-count').textContent = filteredUsers.length;
     }
     
-    // Рендер таблицы объявлений
-    function renderAdsTable() {
-        const tbody = document.getElementById('ads-table-body');
-        const startIndex = (currentAdsPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        const pageAds = filteredAds.slice(startIndex, endIndex);
-        
-        if (pageAds.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 60px;">
-                        <i class="fas fa-ad" style="font-size: 48px; color: var(--text-muted); margin-bottom: 20px;"></i>
-                        <div style="font-size: 18px; color: var(--text-secondary); margin-bottom: 10px;">
-                            Объявления не найдены
-                        </div>
-                        <div style="color: var(--text-muted); font-size: 14px;">
-                            Попробуйте изменить параметры поиска
-                        </div>
-                    </td>
-                </tr>
-            `;
-            updatePagination('ads', 0);
-            return;
-        }
-        
-        tbody.innerHTML = pageAds.map(ad => `
-            <tr>
-                <td>
-                    <div class="ad-cell">
-                        <div class="ad-image">
-                            ${ad.image_urls && ad.image_urls.length > 0 ? 
-                              `<img src="${escapeHtml(ad.image_urls[0])}" alt="${escapeHtml(ad.title)}" 
-                                    onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\\'fas fa-ad\\'></i>';"
-                                    style="width: 100%; height: 100%; object-fit: cover;">` : 
-                              `<i class="fas fa-ad"></i>`}
-                        </div>
-                        <div class="ad-info">
-                            <div class="title">${escapeHtml(ad.title)}</div>
-                            <div class="price">${formatPrice(ad.price)}</div>
-                            <div class="category">${escapeHtml(ad.category_name || 'Без категории')}</div>
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <div style="font-size: 14px; color: var(--text-primary);">
-                        ${escapeHtml(ad.user_name || 'Неизвестно')}
-                    </div>
-                    <div style="font-size: 12px; color: var(--text-secondary); margin-top: 3px;">
-                        ${ad.user_email ? escapeHtml(ad.user_email) : 'ID: ' + ad.user_id}
-                    </div>
-                </td>
-                <td>
-                    <div style="font-size: 18px; font-weight: 700; color: var(--success);">
-                        ${formatPrice(ad.price)}
-                    </div>
-                </td>
-                <td>
-                    <span class="badge ${ad.is_active ? 'badge-active' : 'badge-inactive'}">
-                        ${ad.is_active ? 'Активно' : 'Неактивно'}
-                    </span>
-                    ${ad.is_urgent ? `<span class="badge badge-urgent" style="margin-top: 5px; display: block;">Срочное</span>` : ''}
-                </td>
-                <td>
-                    <div style="text-align: center;">
-                        <div style="font-size: 18px; font-weight: 700; color: var(--neon-blue);">
-                            ${ad.views || 0}
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <div style="font-size: 14px; color: var(--text-primary);">
-                        ${formatDate(ad.created_at)}
-                    </div>
-                </td>
-                <td>
-                    <div class="actions">
-                        <button class="action-btn" onclick="viewAdDetails(${ad.id})" 
-                                title="Просмотреть">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="action-btn" onclick="toggleAdStatus(${ad.id}, ${ad.is_active})" 
-                                title="${ad.is_active ? 'Деактивировать' : 'Активировать'}">
-                            <i class="fas ${ad.is_active ? 'fa-ban' : 'fa-check'}"></i>
-                        </button>
-                        <button class="action-btn delete" 
-                                onclick="showDeleteAdConfirm(${ad.id}, '${escapeHtml(ad.title)}', '${escapeHtml(ad.user_name || 'Неизвестно')}', ${ad.price}, ${ad.views || 0})" 
-                                title="Удалить">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `).join('');
-        
-        updatePagination('ads', filteredAds.length);
-    }
-    
-    // Поиск пользователей
+    // Поиск
     function searchUsers() {
-        const searchTerm = document.getElementById('search-users').value.toLowerCase();
+        const searchTerm = document.getElementById('search-input').value.toLowerCase();
         const roleFilter = document.getElementById('filter-role').value;
         const statusFilter = document.getElementById('filter-status').value;
         const authFilter = document.getElementById('filter-auth').value;
@@ -1876,35 +1442,8 @@
             return matchesSearch && matchesRole && matchesStatus && matchesAuth;
         });
         
-        currentUsersPage = 1;
+        currentPage = 1;
         renderUsersTable();
-    }
-    
-    // Поиск объявлений
-    function searchAds() {
-        const searchTerm = document.getElementById('search-ads').value.toLowerCase();
-        const statusFilter = document.getElementById('filter-ads-status').value;
-        const urgentFilter = document.getElementById('filter-ads-urgent').value;
-        
-        filteredAds = ads.filter(ad => {
-            const matchesSearch = 
-                ad.title.toLowerCase().includes(searchTerm) ||
-                (ad.description && ad.description.toLowerCase().includes(searchTerm)) ||
-                (ad.user_name && ad.user_name.toLowerCase().includes(searchTerm));
-            
-            const matchesStatus = !statusFilter || 
-                (statusFilter === 'active' && ad.is_active) ||
-                (statusFilter === 'inactive' && !ad.is_active);
-            
-            const matchesUrgent = !urgentFilter || 
-                (urgentFilter === 'urgent' && ad.is_urgent) ||
-                (urgentFilter === 'normal' && !ad.is_urgent);
-            
-            return matchesSearch && matchesStatus && matchesUrgent;
-        });
-        
-        currentAdsPage = 1;
-        renderAdsTable();
     }
     
     // Функции фильтрации
@@ -1912,50 +1451,15 @@
         searchUsers();
     }
     
-    function filterAds() {
-        searchAds();
-    }
-    
     // Смена страницы
-    function changePage(type, direction) {
-        if (type === 'users') {
-            const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-            currentUsersPage += direction;
-            
-            if (currentUsersPage < 1) currentUsersPage = 1;
-            if (currentUsersPage > totalPages) currentUsersPage = totalPages;
-            
-            renderUsersTable();
-        } else if (type === 'ads') {
-            const totalPages = Math.ceil(filteredAds.length / itemsPerPage);
-            currentAdsPage += direction;
-            
-            if (currentAdsPage < 1) currentAdsPage = 1;
-            if (currentAdsPage > totalPages) currentAdsPage = totalPages;
-            
-            renderAdsTable();
-        }
-    }
-    
-    // Обновление пагинации
-    function updatePagination(type, total) {
-        if (type === 'users') {
-            const startIndex = (currentUsersPage - 1) * itemsPerPage + 1;
-            const endIndex = Math.min(currentUsersPage * itemsPerPage, total);
-            
-            document.getElementById('users-shown-count').textContent = 
-                `${startIndex}-${endIndex}`;
-            document.getElementById('users-total-count').textContent = total;
-            document.getElementById('users-current-page').textContent = currentUsersPage;
-        } else if (type === 'ads') {
-            const startIndex = (currentAdsPage - 1) * itemsPerPage + 1;
-            const endIndex = Math.min(currentAdsPage * itemsPerPage, total);
-            
-            document.getElementById('ads-shown-count').textContent = 
-                `${startIndex}-${endIndex}`;
-            document.getElementById('ads-total-count').textContent = total;
-            document.getElementById('ads-current-page').textContent = currentAdsPage;
-        }
+    function changePage(direction) {
+        const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+        currentPage += direction;
+        
+        if (currentPage < 1) currentPage = 1;
+        if (currentPage > totalPages) currentPage = totalPages;
+        
+        renderUsersTable();
     }
     
     // Создание пользователя
@@ -1973,24 +1477,24 @@
         
         // Валидация
         if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-            showAlert('create-alert', 'Имя пользователя может содержать только буквы, цифры и подчеркивания', 'error');
+            showAlertInModal('create-alert', 'Имя пользователя может содержать только буквы, цифры и подчеркивания', 'error');
             return;
         }
         
         if (password && password.length < 6) {
-            showAlert('create-alert', 'Пароль должен быть не менее 6 символов', 'error');
+            showAlertInModal('create-alert', 'Пароль должен быть не менее 6 символов', 'error');
             return;
         }
         
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            showAlert('create-alert', 'Введите корректный email', 'error');
+            showAlertInModal('create-alert', 'Введите корректный email', 'error');
             return;
         }
         
         const currentYear = new Date().getFullYear();
         if (birthyear < 1900 || birthyear > currentYear) {
-            showAlert('create-alert', 'Укажите корректный год рождения', 'error');
+            showAlertInModal('create-alert', 'Укажите корректный год рождения', 'error');
             return;
         }
         
@@ -2029,9 +1533,9 @@
             const data = await response.json();
             
             if (data.success) {
-                showAlert('create-alert', 'Пользователь успешно создан!', 'success');
+                showAlertInModal('create-alert', 'Пользователь успешно создан!', 'success');
                 setTimeout(() => {
-                    switchTab('users');
+                    closeModal('create-modal');
                     loadUsers();
                     resetCreateForm();
                 }, 1500);
@@ -2041,7 +1545,7 @@
             
         } catch (error) {
             console.error('Create user error:', error);
-            showAlert('create-alert', 'Ошибка: ' + error.message, 'error');
+            showAlertInModal('create-alert', 'Ошибка: ' + error.message, 'error');
         } finally {
             const submitBtn = event.target.querySelector('button[type="submit"]');
             submitBtn.innerHTML = '<i class="fas fa-plus"></i> Создать пользователя';
@@ -2175,13 +1679,13 @@
         }
     }
     
-    // Просмотр объявлений пользователя
-    async function viewUserAds(userId, username) {
+    // Просмотр деталей пользователя
+    async function viewUserDetails(userId) {
         const token = localStorage.getItem('token');
         if (!token) return;
         
         try {
-            const response = await fetch(`${API_BASE}/admin/users/${userId}/ads`, {
+            const response = await fetch(`${API_BASE}/admin/users/${userId}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -2190,303 +1694,273 @@
             const data = await response.json();
             
             if (data.success) {
-                if (data.ads && data.ads.length > 0) {
-                    const adsList = data.ads.map(ad => `
-                        <div style="background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 10px;">
-                            <div style="font-weight: 600; color: var(--neon-blue);">${escapeHtml(ad.title)}</div>
-                            <div style="font-size: 14px; color: var(--text-secondary); margin-top: 5px;">
-                                Цена: ${formatPrice(ad.price)} • Просмотры: ${ad.views}
-                            </div>
-                            <div style="font-size: 12px; color: var(--text-muted); margin-top: 3px;">
-                                ${formatDate(ad.created_at)}
-                            </div>
-                        </div>
-                    `).join('');
-                    
-                    alert(`Объявления пользователя @${username}:\n\n${adsList}`);
-                } else {
-                    alert(`У пользователя @${username} нет объявлений.`);
-                }
+                const user = data.user;
+                alert(`
+╔════════════════════════════════════╗
+║      ДЕТАЛИ ПОЛЬЗОВАТЕЛЯ           ║
+╚════════════════════════════════════╝
+
+👤 ИДЕНТИФИКАЦИЯ:
+   • ID: ${user.id}
+   • Username: @${user.username}
+   • Email: ${user.email}
+   • Полное имя: ${user.full_name}
+
+📅 ДЕМОГРАФИЯ:
+   • Год рождения: ${user.birth_year}
+   • Возраст: ${new Date().getFullYear() - user.birth_year}
+
+🔐 АККАУНТ:
+   • Роль: ${user.role === 'admin' ? '👑 Администратор' : '👤 Пользователь'}
+   • Статус: ${user.is_active ? '✅ Активен' : '❌ Неактивен'}
+   • Метод авторизации: ${user.auth_method === 'google' ? '🔵 Google' : '📧 Email'}
+   • Имеет пароль: ${user.has_password ? '✅ Да' : '❌ Нет'}
+
+📊 СТАТИСТИКА:
+   • Рейтинг: ${user.rating || '5.00'}/5.00
+   • Зарегистрирован: ${formatDate(user.created_at)}
+   • Последнее обновление: ${formatDate(user.updated_at)}
+${user.google_id ? `   • Google ID: ${user.google_id.substring(0, 20)}...` : ''}
+${user.avatar_url ? `   • Аватар: ${user.avatar_url}` : ''}
+
+═══════════════════════════════════════
+                `);
             }
             
         } catch (error) {
-            console.error('View user ads error:', error);
-            showNotification('Ошибка загрузки объявлений пользователя', 'error');
+            console.error('View user error:', error);
+            showNotification('Ошибка загрузки данных пользователя', 'error');
         }
     }
     
-    // Просмотр деталей объявления
-    async function viewAdDetails(adId) {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        
-        try {
-            const response = await fetch(`${API_BASE}/admin/ads/${adId}`, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                const ad = data.ad;
-                const content = document.getElementById('view-ad-content');
-                
-                let imagesHtml = '';
-                if (ad.image_urls && ad.image_urls.length > 0) {
-                    imagesHtml = `
-                        <div style="margin-bottom: 20px;">
-                            <h4 style="color: var(--neon-blue); margin-bottom: 10px;">Фотографии (${ad.image_urls.length}):</h4>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;">
-                                ${ad.image_urls.map(img => `
-                                    <img src="${escapeHtml(img)}" alt="Фото" 
-                                         style="width: 100%; height: 100px; object-fit: cover; border-radius: 8px; border: 1px solid var(--card-border);"
-                                         onerror="this.onerror=null; this.style.display='none';">
-                                `).join('')}
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                content.innerHTML = `
-                    <div style="margin-bottom: 20px;">
-                        <h3 style="color: var(--text-primary); margin-bottom: 10px;">${escapeHtml(ad.title)}</h3>
-                        <div style="font-size: 24px; font-weight: 700; color: var(--success); margin-bottom: 15px;">
-                            ${formatPrice(ad.price)}
-                        </div>
-                        <div style="color: var(--text-secondary); margin-bottom: 15px;">
-                            ${escapeHtml(ad.description || 'Нет описания')}
-                        </div>
-                    </div>
-                    
-                    ${imagesHtml}
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                        <div>
-                            <h4 style="color: var(--neon-blue); margin-bottom: 10px;">Информация:</h4>
-                            <div style="color: var(--text-secondary);">
-                                <div>Категория: ${escapeHtml(ad.category_name || 'Не указана')}</div>
-                                <div>Локация: ${escapeHtml(ad.location || 'Не указана')}</div>
-                                <div>Просмотры: ${ad.views || 0}</div>
-                                <div>Статус: ${ad.is_active ? 'Активно' : 'Неактивно'}</div>
-                                <div>Срочное: ${ad.is_urgent ? 'Да' : 'Нет'}</div>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <h4 style="color: var(--neon-blue); margin-bottom: 10px;">Автор:</h4>
-                            <div style="color: var(--text-secondary);">
-                                <div>Имя: ${escapeHtml(ad.user_name || 'Неизвестно')}</div>
-                                <div>Email: ${escapeHtml(ad.user_email || 'Не указан')}</div>
-                                <div>ID: ${ad.user_id}</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div style="color: var(--text-muted); font-size: 12px; border-top: 1px solid var(--card-border); padding-top: 15px;">
-                        Создано: ${formatDate(ad.created_at)}<br>
-                        Обновлено: ${formatDate(ad.updated_at)}
-                    </div>
-                `;
-                
-                showModal('view-ad-modal');
-            } else {
-                throw new Error(data.error || 'Ошибка загрузки данных объявления');
-            }
-            
-        } catch (error) {
-            console.error('View ad error:', error);
-            showNotification('Ошибка загрузки данных объявления', 'error');
-        }
-    }
-    
-    // Переключение статуса объявления
-    async function toggleAdStatus(adId, currentStatus) {
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        
-        if (!confirm(`Вы уверены, что хотите ${currentStatus ? 'деактивировать' : 'активировать'} это объявление?`)) {
-            return;
-        }
-        
-        try {
-            const response = await fetch(`${API_BASE}/admin/ads/${adId}/toggle`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    is_active: !currentStatus
-                })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                showNotification(`Объявление успешно ${currentStatus ? 'деактивировано' : 'активировано'}!`, 'success');
-                loadAds();
-            } else {
-                throw new Error(data.error || 'Ошибка обновления статуса');
-            }
-            
-        } catch (error) {
-            console.error('Toggle ad status error:', error);
-            showNotification('Ошибка обновления статуса объявления', 'error');
-        }
-    }
-    
-    // Подтверждение удаления пользователя
+    // Подтверждение удаления
     function showDeleteConfirm(userId, userName, adsCount, activeAdsCount) {
-        userToDelete = userId;
-        document.getElementById('delete-user-name').textContent = userName;
-        
+    userToDelete = userId;
+    document.getElementById('delete-user-name').textContent = userName;
+    
+    // Сначала проверяем все зависимости
+    checkUserDependenciesDetailed(userId, userName).then(dependencies => {
         const dependenciesDiv = document.getElementById('user-dependencies');
         const optionsDiv = document.getElementById('delete-options');
         
-        if (adsCount > 0) {
-            document.getElementById('delete-ads-count').textContent = adsCount;
-            document.getElementById('delete-active-ads').textContent = activeAdsCount;
+        if (dependencies.hasAnyDependencies) {
+            let dependenciesHtml = `
+                <div style="color: var(--warning); margin-bottom: 10px;">
+                    <i class="fas fa-exclamation-circle"></i> У пользователя есть связанные данные!
+                </div>
+                <div style="color: var(--text-secondary); font-size: 14px;">
+                    <div style="margin-bottom: 8px;">
+                        <i class="fas fa-ad" style="color: ${dependencies.ads.total > 0 ? 'var(--neon-blue)' : 'var(--text-muted)'}; width: 20px;"></i>
+                        Объявления: <span style="color: ${dependencies.ads.total > 0 ? 'var(--neon-blue)' : 'var(--text-secondary)'}; font-weight: 600;">${dependencies.ads.total}</span>
+                        ${dependencies.ads.active > 0 ? `(<span style="color: var(--success);">${dependencies.ads.active} активных</span>)` : ''}
+                    </div>
+            `;
+            
+            if (dependencies.messages.total > 0) {
+                dependenciesHtml += `
+                    <div style="margin-bottom: 8px;">
+                        <i class="fas fa-comment" style="color: var(--neon-purple); width: 20px;"></i>
+                        Сообщения: <span style="color: var(--neon-purple); font-weight: 600;">${dependencies.messages.total}</span>
+                        (${dependencies.messages.sent} отправленных, ${dependencies.messages.received} полученных)
+                    </div>
+                `;
+            }
+            
+            if (dependencies.favorites > 0) {
+                dependenciesHtml += `
+                    <div style="margin-bottom: 8px;">
+                        <i class="fas fa-heart" style="color: var(--danger); width: 20px;"></i>
+                        Избранное: <span style="color: var(--danger); font-weight: 600;">${dependencies.favorites}</span>
+                    </div>
+                `;
+            }
+            
+            if (dependencies.reviews.total > 0) {
+                dependenciesHtml += `
+                    <div style="margin-bottom: 8px;">
+                        <i class="fas fa-star" style="color: var(--warning); width: 20px;"></i>
+                        Отзывы: <span style="color: var(--warning); font-weight: 600;">${dependencies.reviews.total}</span>
+                        (${dependencies.reviews.as_author} написанных, ${dependencies.reviews.as_target} полученных)
+                    </div>
+                `;
+            }
+            
+            if (dependencies.sessions > 0) {
+                dependenciesHtml += `
+                    <div style="margin-bottom: 8px;">
+                        <i class="fas fa-sign-in-alt" style="color: var(--text-secondary); width: 20px;"></i>
+                        Сессии: <span style="color: var(--text-secondary); font-weight: 600;">${dependencies.sessions}</span>
+                    </div>
+                `;
+            }
+            
+            if (dependencies.chats > 0) {
+                dependenciesHtml += `
+                    <div style="margin-bottom: 8px;">
+                        <i class="fas fa-comment-dots" style="color: var(--neon-pink); width: 20px;"></i>
+                        Чаты: <span style="color: var(--neon-pink); font-weight: 600;">${dependencies.chats}</span>
+                    </div>
+                `;
+            }
+            
+            dependenciesHtml += `
+                    <div style="margin-top: 15px; padding: 10px; background: rgba(255,204,0,0.1); border-radius: 8px; border-left: 3px solid var(--warning);">
+                        <div style="font-weight: 600; color: var(--warning); font-size: 13px;">
+                            <i class="fas fa-info-circle"></i> Внимание!
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 12px; margin-top: 5px;">
+                            Для удаления пользователя необходимо удалить все связанные данные.
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('user-dependencies').innerHTML = dependenciesHtml;
             dependenciesDiv.style.display = 'block';
             optionsDiv.style.display = 'block';
-            document.querySelector('input[name="delete-option"][value="delete_all"]').checked = true;
+            document.querySelector('input[name="delete-option"][value="force_delete_all"]').checked = true;
         } else {
             dependenciesDiv.style.display = 'none';
             optionsDiv.style.display = 'none';
         }
         
         showModal('delete-modal');
+    }).catch(error => {
+        console.error('Error checking dependencies:', error);
+        showNotification('Ошибка проверки зависимостей пользователя', 'error');
+    });
+}
+
+// Функция для проверки всех зависимостей
+async function checkUserDependenciesDetailed(userId, userName) {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_BASE}/admin/users/${userId}/dependencies-detailed`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                return data.dependencies;
+            }
+        }
+        
+        // Если endpoint не работает, возвращаем базовые данные
+        return {
+            hasAnyDependencies: true,
+            ads: { total: 0, active: 0 },
+            messages: { total: 0, sent: 0, received: 0 },
+            favorites: 0,
+            conversations: 0,
+            reviews: { total: 0, as_author: 0, as_target: 0 },
+            sessions: 0,
+            chats: 0,
+            summary: 'Требуется проверка зависимостей'
+        };
+    } catch (error) {
+        console.error('Check dependencies error:', error);
+        return {
+            hasAnyDependencies: true,
+            ads: { total: 0, active: 0 },
+            messages: { total: 0, sent: 0, received: 0 },
+            favorites: 0,
+            conversations: 0,
+            reviews: { total: 0, as_author: 0, as_target: 0 },
+            sessions: 0,
+            chats: 0,
+            summary: 'Ошибка при проверке зависимостей'
+        };
     }
+}
     
     // Удаление пользователя
     async function confirmDelete() {
-        if (!userToDelete) return;
+    if (!userToDelete) return;
+    
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    const deleteOption = document.querySelector('input[name="delete-option"]:checked')?.value;
+    
+    try {
+        const deleteBtn = document.querySelector('#delete-modal .btn-danger');
+        const originalText = deleteBtn.innerHTML;
+        deleteBtn.innerHTML = '<span class="loading-spinner"></span> Обработка...';
+        deleteBtn.disabled = true;
         
-        const token = localStorage.getItem('token');
-        if (!token) return;
+        let url = `${API_BASE}/admin/users/${userToDelete}`;
         
-        const deleteOption = document.querySelector('input[name="delete-option"]:checked')?.value;
-        
-        try {
-            const deleteBtn = document.querySelector('#delete-modal .btn-danger');
-            const originalText = deleteBtn.innerHTML;
-            deleteBtn.innerHTML = '<span class="loading-spinner"></span> Удаление...';
-            deleteBtn.disabled = true;
-            
-            let url = `${API_BASE}/admin/users/${userToDelete}`;
-            if (deleteOption === 'delete_all') {
-                url += '?force=true&delete_ads=true';
-            } else if (deleteOption === 'deactivate_only') {
-                // Используем endpoint деактивации
-                const response = await fetch(`${API_BASE}/admin/users/${userToDelete}/deactivate`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        deactivate_ads: true
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    showAlertInModal('delete-alert', 'Пользователь и его объявления деактивированы!', 'success');
-                    setTimeout(() => {
-                        closeModal('delete-modal');
-                        loadUsers();
-                        userToDelete = null;
-                    }, 1500);
-                    return;
-                } else {
-                    throw new Error(data.error || 'Ошибка деактивации пользователя');
-                }
-            }
-            
-            const response = await fetch(url, {
-                method: 'DELETE',
+        if (deleteOption === 'force_delete_all') {
+            url += '?force=true&delete_ads=true';
+        } else if (deleteOption === 'delete_ads_only') {
+            url += '?delete_ads=true';
+        } else if (deleteOption === 'deactivate_only') {
+            // Используем endpoint деактивации
+            const response = await fetch(`${API_BASE}/admin/users/${userToDelete}/deactivate`, {
+                method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    deactivate_ads: true
+                })
             });
             
             const data = await response.json();
             
             if (data.success) {
-                showAlertInModal('delete-alert', 'Пользователь успешно удален!', 'success');
+                showAlertInModal('delete-alert', 'Пользователь и его объявления деактивированы!', 'success');
                 setTimeout(() => {
                     closeModal('delete-modal');
                     loadUsers();
                     userToDelete = null;
                 }, 1500);
+                return;
+            } else {
+                throw new Error(data.error || 'Ошибка деактивации пользователя');
+            }
+        }
+        
+        const response = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlertInModal('delete-alert', 'Пользователь успешно удален!', 'success');
+            setTimeout(() => {
+                closeModal('delete-modal');
+                loadUsers();
+                userToDelete = null;
+            }, 1500);
+        } else {
+            // Если все еще есть ошибка с зависимостями
+            if (response.status === 409 && data.requires_action) {
+                showAlertInModal('delete-alert', 
+                    `Ошибка: ${data.error}<br><br>Детали: ${data.message || 'Неизвестная ошибка'}`, 
+                    'error');
             } else {
                 throw new Error(data.error || 'Ошибка удаления пользователя');
             }
-            
-        } catch (error) {
-            console.error('Delete user error:', error);
-            showAlertInModal('delete-alert', 'Ошибка: ' + error.message, 'error');
-        } finally {
-            const deleteBtn = document.querySelector('#delete-modal .btn-danger');
-            deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Подтвердить удаление';
-            deleteBtn.disabled = false;
         }
-    }
-    
-    // Подтверждение удаления объявления
-    function showDeleteAdConfirm(adId, adTitle, author, price, views) {
-        adToDelete = adId;
-        document.getElementById('delete-ad-title').textContent = adTitle;
-        document.getElementById('delete-ad-author').textContent = author;
-        document.getElementById('delete-ad-price').textContent = formatPrice(price);
-        document.getElementById('delete-ad-views').textContent = views;
-        showModal('delete-ad-modal');
-    }
-    
-    // Удаление объявления
-    async function confirmDeleteAd() {
-        if (!adToDelete) return;
         
-        const token = localStorage.getItem('token');
-        if (!token) return;
-        
-        try {
-            const deleteBtn = document.querySelector('#delete-ad-modal .btn-danger');
-            const originalText = deleteBtn.innerHTML;
-            deleteBtn.innerHTML = '<span class="loading-spinner"></span> Удаление...';
-            deleteBtn.disabled = true;
-            
-            const response = await fetch(`${API_BASE}/admin/ads/${adToDelete}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                showAlertInModal('delete-ad-alert', 'Объявление успешно удалено!', 'success');
-                setTimeout(() => {
-                    closeModal('delete-ad-modal');
-                    loadAds();
-                    adToDelete = null;
-                }, 1500);
-            } else {
-                throw new Error(data.error || 'Ошибка удаления объявления');
-            }
-            
-        } catch (error) {
-            console.error('Delete ad error:', error);
-            showAlertInModal('delete-ad-alert', 'Ошибка: ' + error.message, 'error');
-        } finally {
-            const deleteBtn = document.querySelector('#delete-ad-modal .btn-danger');
-            deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Удалить объявление';
-            deleteBtn.disabled = false;
-        }
+    } catch (error) {
+        console.error('Delete user error:', error);
+        showAlertInModal('delete-alert', 'Ошибка: ' + error.message, 'error');
+    } finally {
+        const deleteBtn = document.querySelector('#delete-modal .btn-danger');
+        deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Подтвердить удаление';
+        deleteBtn.disabled = false;
     }
+}
     
     // Вспомогательные функции
     function showModal(modalId) {
@@ -2495,10 +1969,15 @@
     
     function closeModal(modalId) {
         document.getElementById(modalId).style.display = 'none';
-        const alertId = modalId.replace('-modal', '-alert');
+        const alertId = modalId.replace('modal', 'alert');
         if (document.getElementById(alertId)) {
             document.getElementById(alertId).innerHTML = '';
         }
+    }
+    
+    function showCreateModal() {
+        resetCreateForm();
+        showModal('create-modal');
     }
     
     function resetCreateForm() {
@@ -2507,7 +1986,6 @@
         document.getElementById('create-role').value = 'user';
         document.getElementById('create-status').value = 'true';
         document.getElementById('create-auth').value = 'email';
-        document.getElementById('create-alert').innerHTML = '';
     }
     
     function showNotification(message, type = 'info') {
@@ -2539,29 +2017,6 @@
         }, 5000);
     }
     
-    function showAlert(containerId, message, type = 'info') {
-        const container = document.getElementById(containerId);
-        const colors = {
-            success: 'var(--success)',
-            error: 'var(--danger)',
-            warning: 'var(--warning)',
-            info: 'var(--neon-blue)'
-        };
-        
-        container.innerHTML = `
-            <div style="padding: 15px; background: ${colors[type]}20; 
-                        border: 1px solid ${colors[type]}40; border-radius: 8px; 
-                        color: ${colors[type]}; font-size: 14px; margin-bottom: 20px;">
-                <i class="fas ${type === 'success' ? 'fa-check-circle' : 
-                               type === 'error' ? 'fa-exclamation-circle' : 
-                               type === 'warning' ? 'fa-exclamation-triangle' : 
-                               'fa-info-circle'}" 
-                   style="margin-right: 10px;"></i>
-                ${message}
-            </div>
-        `;
-    }
-    
     function showAlertInModal(containerId, message, type = 'info') {
         const container = document.getElementById(containerId);
         const colors = {
@@ -2574,7 +2029,7 @@
         container.innerHTML = `
             <div style="padding: 15px; background: ${colors[type]}20; 
                         border: 1px solid ${colors[type]}40; border-radius: 8px; 
-                        color: ${colors[type]}; font-size: 14px; margin-bottom: 20px;">
+                        color: ${colors[type]}; font-size: 14px;">
                 <i class="fas ${type === 'success' ? 'fa-check-circle' : 
                                type === 'error' ? 'fa-exclamation-circle' : 
                                type === 'warning' ? 'fa-exclamation-triangle' : 
@@ -2585,32 +2040,18 @@
         `;
     }
     
-    function showLoading(type) {
-        if (type === 'users') {
-            const tbody = document.getElementById('users-table-body');
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 60px;">
-                        <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
-                        <div style="color: var(--neon-blue); font-size: 16px; font-weight: 600;">
-                            Загрузка пользователей...
-                        </div>
-                    </td>
-                </tr>
-            `;
-        } else if (type === 'ads') {
-            const tbody = document.getElementById('ads-table-body');
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 60px;">
-                        <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
-                        <div style="color: var(--neon-blue); font-size: 16px; font-weight: 600;">
-                            Загрузка объявлений...
-                        </div>
-                    </td>
-                </tr>
-            `;
-        }
+    function showLoading() {
+        const tbody = document.getElementById('users-table-body');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 60px;">
+                    <div class="loading-spinner" style="margin: 0 auto 20px;"></div>
+                    <div style="color: var(--neon-blue); font-size: 16px; font-weight: 600;">
+                        Загрузка данных...
+                    </div>
+                </td>
+            </tr>
+        `;
     }
     
     function logout() {
@@ -2632,15 +2073,6 @@
             hour: '2-digit',
             minute: '2-digit'
         });
-    }
-    
-    function formatPrice(price) {
-        if (!price) return '0 ₽';
-        return new Intl.NumberFormat('ru-RU', {
-            style: 'currency',
-            currency: 'RUB',
-            minimumFractionDigits: 0
-        }).format(price);
     }
     
     function getAvatarColor(id) {
@@ -2690,7 +2122,7 @@
             });
             
             // Автоматическое обновление каждые 30 секунд
-            setInterval(refreshCurrentTab, 30000);
+            setInterval(loadUsers, 30000);
             
             showNotification('Админ-панель загружена успешно!', 'success');
         }
