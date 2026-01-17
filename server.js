@@ -3654,6 +3654,102 @@ app.get('/api/admin/check-access', async (req, res) => {
     }
 });
 
+// Проверить зависимости пользователя (объявления и другие связи)
+app.get('/api/admin/users/:id/dependencies', checkAdminSimple, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        console.log(`🔐 Checking dependencies for user ID: ${id}`);
+        
+        // Проверяем существование пользователя
+        const userExists = await pool.query(
+            'SELECT id, username, email FROM users WHERE id = $1',
+            [id]
+        );
+
+        if (userExists.rows.length === 0) {
+            return res.status(404).json({ 
+                success: false,
+                error: 'Пользователь не найден' 
+            });
+        }
+
+        // Считаем зависимости
+        const adsCount = await pool.query(
+            'SELECT COUNT(*) as count FROM ads WHERE user_id = $1',
+            [id]
+        );
+
+        const favoritesCount = await pool.query(
+            'SELECT COUNT(*) as count FROM favorites WHERE user_id = $1',
+            [id]
+        );
+
+        const conversationsCount = await pool.query(
+            'SELECT COUNT(*) as count FROM conversations WHERE sender_id = $1 OR receiver_id = $1',
+            [id]
+        );
+
+        const messagesCount = await pool.query(
+            'SELECT COUNT(*) as count FROM messages WHERE sender_id = $1',
+            [id]
+        );
+
+        const reviewsCount = await pool.query(
+            'SELECT COUNT(*) as count FROM reviews WHERE author_id = $1 OR target_user_id = $1',
+            [id]
+        );
+
+        const activeAdsCount = await pool.query(
+            'SELECT COUNT(*) as count FROM ads WHERE user_id = $1 AND is_active = true',
+            [id]
+        );
+
+        const totalAds = parseInt(adsCount.rows[0].count);
+        const hasDependencies = totalAds > 0 || 
+                               parseInt(favoritesCount.rows[0].count) > 0 ||
+                               parseInt(conversationsCount.rows[0].count) > 0 ||
+                               parseInt(messagesCount.rows[0].count) > 0 ||
+                               parseInt(reviewsCount.rows[0].count) > 0;
+
+        // Получаем список активных объявлений (первые 5)
+        let recentAds = [];
+        if (totalAds > 0) {
+            const recentAdsResult = await pool.query(
+                `SELECT id, title, price, is_active, created_at 
+                 FROM ads 
+                 WHERE user_id = $1 
+                 ORDER BY created_at DESC 
+                 LIMIT 5`,
+                [id]
+            );
+            recentAds = recentAdsResult.rows;
+        }
+
+        res.json({
+            success: true,
+            has_dependencies: hasDependencies,
+            dependencies: {
+                ads: totalAds,
+                active_ads: parseInt(activeAdsCount.rows[0].count),
+                favorites: parseInt(favoritesCount.rows[0].count),
+                conversations: parseInt(conversationsCount.rows[0].count),
+                messages: parseInt(messagesCount.rows[0].count),
+                reviews: parseInt(reviewsCount.rows[0].count)
+            },
+            recent_ads: recentAds,
+            user_info: userExists.rows[0]
+        });
+
+    } catch (error) {
+        console.error('❌ Check dependencies error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка проверки зависимостей' 
+        });
+    }
+});
+
 // Получить всех пользователей
 app.get('/api/admin/users', checkAdminSimple, async (req, res) => {
     try {
@@ -3661,13 +3757,22 @@ app.get('/api/admin/users', checkAdminSimple, async (req, res) => {
         
         const result = await pool.query(
             `SELECT 
-                id, username, email, full_name, avatar_url, 
-                google_id, rating, created_at, updated_at,
-                role, is_active, birth_year, auth_method,
-                CASE WHEN password IS NOT NULL THEN '••••••••' ELSE NULL END as password_display,
-                password IS NOT NULL as has_password
-             FROM users 
-             ORDER BY created_at DESC`
+                u.id, u.username, u.email, u.full_name, u.avatar_url, 
+                u.google_id, u.rating, u.created_at, u.updated_at,
+                u.role, u.is_active, u.birth_year, u.auth_method,
+                CASE WHEN u.password IS NOT NULL THEN '••••••••' ELSE NULL END as password_display,
+                u.password IS NOT NULL as has_password,
+                COALESCE(a.ads_count, 0) as ads_count,
+                COALESCE(a.active_ads_count, 0) as active_ads_count
+             FROM users u
+             LEFT JOIN (
+                SELECT user_id, 
+                       COUNT(*) as ads_count,
+                       SUM(CASE WHEN is_active = true THEN 1 ELSE 0 END) as active_ads_count
+                FROM ads 
+                GROUP BY user_id
+             ) a ON u.id = a.user_id
+             ORDER BY u.created_at DESC`
         );
 
         res.json({
@@ -3694,13 +3799,22 @@ app.get('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
         
         const result = await pool.query(
             `SELECT 
-                id, username, email, full_name, avatar_url, 
-                google_id, rating, created_at, updated_at,
-                role, is_active, birth_year, auth_method,
-                CASE WHEN password IS NOT NULL THEN '••••••••' ELSE NULL END as password_display,
-                password IS NOT NULL as has_password
-             FROM users 
-             WHERE id = $1`,
+                u.id, u.username, u.email, u.full_name, u.avatar_url, 
+                u.google_id, u.rating, u.created_at, u.updated_at,
+                u.role, u.is_active, u.birth_year, u.auth_method,
+                CASE WHEN u.password IS NOT NULL THEN '••••••••' ELSE NULL END as password_display,
+                u.password IS NOT NULL as has_password,
+                COALESCE(a.ads_count, 0) as ads_count,
+                COALESCE(a.active_ads_count, 0) as active_ads_count
+             FROM users u
+             LEFT JOIN (
+                SELECT user_id, 
+                       COUNT(*) as ads_count,
+                       SUM(CASE WHEN is_active = true THEN 1 ELSE 0 END) as active_ads_count
+                FROM ads 
+                GROUP BY user_id
+             ) a ON u.id = a.user_id
+             WHERE u.id = $1`,
             [id]
         );
 
@@ -3864,8 +3978,9 @@ app.put('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
 app.delete('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
     try {
         const { id } = req.params;
+        const { force = false, delete_ads = false } = req.query;
 
-        console.log(`🔐 Admin deleting user ID: ${id}`);
+        console.log(`🔐 Admin deleting user ID: ${id}, force: ${force}, delete_ads: ${delete_ads}`);
 
         // Не даем удалить пользователя с ID 1 (главный админ)
         if (parseInt(id) === 1) {
@@ -3875,30 +3990,247 @@ app.delete('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
             });
         }
 
-        const result = await pool.query(
-            'DELETE FROM users WHERE id = $1 RETURNING id, email, username',
+        // Проверяем существование пользователя
+        const userExists = await pool.query(
+            'SELECT id, username, email FROM users WHERE id = $1',
             [id]
         );
 
-        if (result.rows.length === 0) {
+        if (userExists.rows.length === 0) {
             return res.status(404).json({ 
                 success: false,
                 error: 'Пользователь не найден' 
             });
         }
 
-        console.log('✅ User deleted:', result.rows[0].email);
+        // Проверяем наличие объявлений у пользователя
+        const adsCount = await pool.query(
+            'SELECT COUNT(*) as count FROM ads WHERE user_id = $1',
+            [id]
+        );
 
-        res.json({
-            success: true,
-            message: 'Пользователь удален',
-            deleted_user: result.rows[0]
-        });
+        const hasAds = parseInt(adsCount.rows[0].count) > 0;
+
+        // Если есть объявления и не указан параметр force
+        if (hasAds && !force && !delete_ads) {
+            // Получаем информацию об объявлениях
+            const activeAdsResult = await pool.query(
+                'SELECT COUNT(*) as count FROM ads WHERE user_id = $1 AND is_active = true',
+                [id]
+            );
+            
+            const activeAdsCount = parseInt(activeAdsResult.rows[0].count);
+            
+            return res.status(409).json({
+                success: false,
+                error: 'У пользователя есть объявления',
+                requires_action: true,
+                dependencies: {
+                    total_ads: parseInt(adsCount.rows[0].count),
+                    active_ads: activeAdsCount,
+                    user: userExists.rows[0]
+                },
+                message: `У пользователя ${userExists.rows[0].email} найдено ${parseInt(adsCount.rows[0].count)} объявлений (${activeAdsCount} активных).`
+            });
+        }
+
+        // Начинаем транзакцию
+        await pool.query('BEGIN');
+
+        try {
+            const user = userExists.rows[0];
+            let deletedAdsCount = 0;
+            let deactivatedAdsCount = 0;
+
+            // Если есть объявления и нужно удалить их
+            if (hasAds && (force || delete_ads)) {
+                console.log(`🗑️ Deleting ads for user ${user.email}`);
+                
+                // Сначала удаляем фотографии объявлений (cascade должно сработать)
+                // Затем удаляем сами объявления
+                const deleteAdsResult = await pool.query(
+                    'DELETE FROM ads WHERE user_id = $1 RETURNING id',
+                    [id]
+                );
+                
+                deletedAdsCount = deleteAdsResult.rowCount;
+                console.log(`✅ Deleted ${deletedAdsCount} ads`);
+            }
+            // Если есть объявления и НЕ нужно удалять, но force = true
+            else if (hasAds && force) {
+                // Просто деактивируем пользователя вместо удаления
+                await pool.query(
+                    'UPDATE users SET is_active = false WHERE id = $1',
+                    [id]
+                );
+                
+                // Деактивируем все объявления пользователя
+                const deactivateResult = await pool.query(
+                    'UPDATE ads SET is_active = false WHERE user_id = $1 RETURNING id',
+                    [id]
+                );
+                
+                deactivatedAdsCount = deactivateResult.rowCount;
+                
+                await pool.query('COMMIT');
+                
+                return res.json({
+                    success: true,
+                    message: 'Пользователь и его объявления деактивированы',
+                    action: 'deactivated',
+                    user: {
+                        id: user.id,
+                        email: user.email,
+                        username: user.username
+                    },
+                    stats: {
+                        ads_deactivated: deactivatedAdsCount,
+                        user_deactivated: true
+                    }
+                });
+            }
+
+            // Удаляем пользователя
+            const deleteUserResult = await pool.query(
+                'DELETE FROM users WHERE id = $1 RETURNING id, email, username',
+                [id]
+            );
+
+            // Фиксируем транзакцию
+            await pool.query('COMMIT');
+
+            console.log('✅ User deleted:', deleteUserResult.rows[0].email);
+
+            res.json({
+                success: true,
+                message: 'Пользователь удален',
+                action: hasAds ? 'user_and_ads_deleted' : 'user_deleted',
+                deleted_user: deleteUserResult.rows[0],
+                stats: {
+                    ads_deleted: deletedAdsCount,
+                    user_deleted: true
+                }
+            });
+
+        } catch (error) {
+            // Откатываем транзакцию при ошибке
+            await pool.query('ROLLBACK');
+            throw error;
+        }
+
     } catch (error) {
         console.error('❌ Delete user error:', error);
+        
+        // Детальная обработка ошибок
+        let errorMessage = 'Ошибка удаления пользователя';
+        let statusCode = 500;
+        
+        if (error.code === '23503') { // foreign key violation
+            errorMessage = 'Невозможно удалить пользователя из-за связанных данных в других таблицах';
+            statusCode = 409;
+        } else if (error.code === '23505') { // unique violation
+            errorMessage = 'Нарушение уникальности';
+        }
+        
+        res.status(statusCode).json({ 
+            success: false,
+            error: errorMessage,
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+            requires_action: statusCode === 409
+        });
+    }
+});
+
+// Альтернативный метод: только деактивировать пользователя
+app.post('/api/admin/users/:id/deactivate', checkAdminSimple, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { deactivate_ads = true } = req.body;
+
+        console.log(`🔐 Admin deactivating user ID: ${id}`);
+
+        // Не даем деактивировать пользователя с ID 1 (главный админ)
+        if (parseInt(id) === 1) {
+            return res.status(400).json({ 
+                success: false,
+                error: 'Нельзя деактивировать главного администратора' 
+            });
+        }
+
+        // Проверяем существование пользователя
+        const userExists = await pool.query(
+            'SELECT id, username, email FROM users WHERE id = $1',
+            [id]
+        );
+
+        if (userExists.rows.length === 0) {
+            return res.status(404).json({ 
+                success: false,
+                error: 'Пользователь не найден' 
+            });
+        }
+
+        // Начинаем транзакцию
+        await pool.query('BEGIN');
+
+        try {
+            // Деактивируем пользователя
+            const deactivateUser = await pool.query(
+                `UPDATE users 
+                 SET is_active = false, updated_at = CURRENT_TIMESTAMP 
+                 WHERE id = $1 
+                 RETURNING id, email, username, is_active`,
+                [id]
+            );
+
+            let deactivatedAdsCount = 0;
+
+            // Деактивируем объявления, если нужно
+            if (deactivate_ads) {
+                const deactivateAds = await pool.query(
+                    `UPDATE ads 
+                     SET is_active = false, updated_at = CURRENT_TIMESTAMP 
+                     WHERE user_id = $1 
+                     RETURNING id`,
+                    [id]
+                );
+                
+                deactivatedAdsCount = deactivateAds.rowCount;
+            }
+
+            // Фиксируем транзакцию
+            await pool.query('COMMIT');
+
+            const user = deactivateUser.rows[0];
+
+            console.log('✅ User deactivated:', user.email);
+
+            res.json({
+                success: true,
+                message: 'Пользователь деактивирован',
+                user: {
+                    id: user.id,
+                    email: user.email,
+                    username: user.username,
+                    is_active: user.is_active
+                },
+                stats: {
+                    ads_deactivated: deactivatedAdsCount,
+                    user_deactivated: true
+                }
+            });
+
+        } catch (error) {
+            // Откатываем транзакцию при ошибке
+            await pool.query('ROLLBACK');
+            throw error;
+        }
+
+    } catch (error) {
+        console.error('❌ Deactivate user error:', error);
         res.status(500).json({ 
             success: false,
-            error: 'Ошибка удаления пользователя' 
+            error: 'Ошибка деактивации пользователя' 
         });
     }
 });
@@ -3908,7 +4240,7 @@ app.post('/api/admin/users', checkAdminSimple, async (req, res) => {
     try {
         const {
             username, email, password, full_name,
-            birth_year, role = 'user', is_active = true
+            birth_year, role = 'user', is_active = true, auth_method = 'email'
         } = req.body;
 
         console.log('🔐 Admin creating user:', { 
@@ -3970,7 +4302,7 @@ app.post('/api/admin/users', checkAdminSimple, async (req, res) => {
 
         // Хешируем пароль, если он есть
         let hashedPassword = null;
-        if (password) {
+        if (password && auth_method === 'email') {
             hashedPassword = await bcrypt.hash(password, 10);
         }
 
@@ -3980,11 +4312,11 @@ app.post('/api/admin/users', checkAdminSimple, async (req, res) => {
                 username, email, password, full_name,
                 birth_year, role, is_active, auth_method
             ) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, 'email')
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
              RETURNING id, username, email, full_name, role, 
                       is_active, birth_year, auth_method, created_at`,
             [username, email, hashedPassword, full_name, 
-             birth_year, role, is_active]
+             birth_year, role, is_active, auth_method]
         );
 
         const user = result.rows[0];
@@ -4022,6 +4354,11 @@ app.get('/api/admin/stats', checkAdminSimple, async (req, res) => {
         const adminUsers = await pool.query('SELECT COUNT(*) as count FROM users WHERE role = \'admin\'');
         const googleUsers = await pool.query('SELECT COUNT(*) as count FROM users WHERE auth_method = \'google\'');
         const emailUsers = await pool.query('SELECT COUNT(*) as count FROM users WHERE auth_method = \'email\'');
+        const usersWithAds = await pool.query(`
+            SELECT COUNT(DISTINCT user_id) as count 
+            FROM ads 
+            WHERE user_id IN (SELECT id FROM users)
+        `);
 
         res.json({
             success: true,
@@ -4031,7 +4368,8 @@ app.get('/api/admin/stats', checkAdminSimple, async (req, res) => {
                 admins: parseInt(adminUsers.rows[0].count),
                 google: parseInt(googleUsers.rows[0].count),
                 email: parseInt(emailUsers.rows[0].count),
-                inactive: parseInt(totalUsers.rows[0].count) - parseInt(activeUsers.rows[0].count)
+                inactive: parseInt(totalUsers.rows[0].count) - parseInt(activeUsers.rows[0].count),
+                with_ads: parseInt(usersWithAds.rows[0].count)
             }
         });
     } catch (error) {
@@ -4039,6 +4377,64 @@ app.get('/api/admin/stats', checkAdminSimple, async (req, res) => {
         res.status(500).json({ 
             success: false,
             error: 'Ошибка получения статистики' 
+        });
+    }
+});
+
+// Получить объявления пользователя
+app.get('/api/admin/users/:id/ads', checkAdminSimple, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { limit = 20, offset = 0, active_only = false } = req.query;
+        
+        console.log(`🔐 Getting ads for user ID: ${id}`);
+
+        let query = `
+            SELECT a.id, a.title, a.price, a.category_id, 
+                   a.is_active, a.views, a.created_at, a.updated_at,
+                   c.name as category_name,
+                   (SELECT COUNT(*) FROM ad_photos ap WHERE ap.ad_id = a.id) as photos_count
+            FROM ads a
+            LEFT JOIN categories c ON a.category_id = c.id
+            WHERE a.user_id = $1
+        `;
+        
+        const queryParams = [id];
+        let paramIndex = 2;
+        
+        if (active_only === 'true') {
+            query += ` AND a.is_active = true`;
+        }
+        
+        query += ` ORDER BY a.created_at DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
+        queryParams.push(parseInt(limit), parseInt(offset));
+        
+        const result = await pool.query(query, queryParams);
+        
+        // Получаем общее количество
+        const countQuery = `
+            SELECT COUNT(*) as total 
+            FROM ads 
+            WHERE user_id = $1 ${active_only === 'true' ? 'AND is_active = true' : ''}
+        `;
+        const countResult = await pool.query(countQuery, [id]);
+        
+        res.json({
+            success: true,
+            ads: result.rows,
+            pagination: {
+                total: parseInt(countResult.rows[0].total),
+                limit: parseInt(limit),
+                offset: parseInt(offset),
+                has_more: (parseInt(offset) + result.rows.length) < parseInt(countResult.rows[0].total)
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ Get user ads error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка получения объявлений пользователя' 
         });
     }
 });
