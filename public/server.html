@@ -312,7 +312,7 @@
             transform: none;
         }
 
-        /* Окно поиска рандом собеседника */
+        /* Окно поиска рандом собеседника - НОВАЯ ВЕРСИЯ */
         .random-search-screen {
             position: absolute;
             top: 0;
@@ -369,26 +369,6 @@
             max-width: 300px;
         }
         
-        .attempts-counter {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(102, 126, 234, 0.3);
-            border-radius: 16px;
-            padding: 12px 20px;
-            margin-top: 20px;
-            text-align: center;
-        }
-        
-        .attempts-text {
-            color: var(--gray-light);
-            font-size: 14px;
-        }
-        
-        .attempts-number {
-            color: #667eea;
-            font-weight: 700;
-            font-size: 18px;
-        }
-        
         .cancel-search-btn {
             background: rgba(255, 255, 255, 0.1);
             color: var(--white);
@@ -405,6 +385,150 @@
         .cancel-search-btn:active {
             background: rgba(255, 255, 255, 0.15);
             transform: scale(0.98);
+        }
+
+        /* Окно найденного собеседника - НОВОЕ */
+        .found-user-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--chat-bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 200;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .found-user-screen.hidden {
+            transform: translateY(100%);
+        }
+        
+        .found-user-card {
+            background: var(--random-bg);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+            max-width: 320px;
+            width: 100%;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: fadeInUp 0.5s ease-out;
+        }
+        
+        .found-user-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 36px;
+            margin: 0 auto 20px;
+            overflow: hidden;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .found-user-name {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--white);
+        }
+        
+        .found-user-role {
+            color: #667eea;
+            font-size: 14px;
+            margin-bottom: 20px;
+            padding: 4px 12px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 12px;
+            display: inline-block;
+        }
+        
+        .found-user-stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            padding: 15px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--white);
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--gray-light);
+            margin-top: 4px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 14px 20px;
+            border-radius: 14px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .chat-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .chat-btn:active {
+            transform: scale(0.98);
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a3f9a 100%);
+        }
+        
+        .search-again-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--white);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .search-again-btn:active {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(0.98);
+        }
+        
+        .attempts-info {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 12px;
+            padding: 8px 16px;
+            margin-top: 15px;
+            font-size: 12px;
+            color: var(--gray-light);
         }
 
         /* Чат окна */
@@ -1005,6 +1129,21 @@
             .searching-description {
                 font-size: 14px;
             }
+            
+            .found-user-card {
+                padding: 20px;
+                max-width: 280px;
+            }
+            
+            .found-user-avatar {
+                width: 80px;
+                height: 80px;
+                font-size: 28px;
+            }
+            
+            .found-user-name {
+                font-size: 18px;
+            }
         }
         
         @media (max-width: 360px) {
@@ -1029,6 +1168,10 @@
             .subscribe-button {
                 padding: 14px 16px;
                 font-size: 15px;
+            }
+            
+            .found-user-card {
+                padding: 16px;
             }
         }
         
@@ -1058,6 +1201,16 @@
             
             .random-search-screen.hidden {
                 transform: translateX(-50%) translateY(-100%);
+            }
+            
+            .found-user-screen {
+                left: 50%;
+                transform: translateX(-50%);
+                max-width: 500px;
+            }
+            
+            .found-user-screen.hidden {
+                transform: translateX(-50%) translateY(100%);
             }
         }
     </style>
@@ -1156,12 +1309,11 @@
                     </div>
                     <div class="chat-info">
                         <div class="chat-header">
-                            <div class="chat-name">Рандом чат</div>
+                            <div class="chat-name">Найти друга</div>
                             <div class="chat-time" id="randomChatTime"></div>
                         </div>
                         <div class="chat-preview">
                             <div class="chat-message" id="randomPreview">Найдите случайного собеседника</div>
-                            <span class="random-chat-status" id="randomAttemptsStatus">3/3</span>
                         </div>
                         <div class="chat-status">
                             <i class="fa fa-circle" style="color:#667eea; font-size:6px;"></i>
@@ -1178,23 +1330,63 @@
         </div>
 
         <!-- Окно поиска рандом собеседника -->
-        <div class="random-search-screen hidden" id="randomSearchScreen">
+        <div class="random-search-screen" id="randomSearchScreen">
             <div class="searching-animation">
                 <div class="search-spinner"></div>
-                <h2 class="searching-title">Поиск собеседника...</h2>
+                <h2 class="searching-title">Ищем друга...</h2>
                 <p class="searching-description" id="searchingDescription">
                     Ищем случайного участника сервера для вас
                 </p>
-                
-                <div class="attempts-counter">
-                    <div class="attempts-text">Попыток сегодня:</div>
-                    <div class="attempts-number" id="attemptsCounter">3/3</div>
-                </div>
                 
                 <button class="cancel-search-btn" onclick="cancelRandomSearch()">
                     Отменить поиск
                 </button>
             </div>
+        </div>
+
+        <!-- Окно найденного собеседника -->
+        <div class="found-user-screen hidden" id="foundUserScreen">
+            <div class="found-user-card">
+                <div class="found-user-avatar" id="foundUserAvatar">
+                    <i class="fa fa-user"></i>
+                </div>
+                <div class="found-user-name" id="foundUserName">Алексей</div>
+                <div class="found-user-role" id="foundUserRole">Игрок CS:GO</div>
+                
+                <div class="found-user-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="foundUserRating">4.8</div>
+                        <div class="stat-label">Рейтинг</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="foundUserDeals">42</div>
+                        <div class="stat-label">Сделки</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="foundUserOnline">30м</div>
+                        <div class="stat-label">Онлайн</div>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button class="action-btn search-again-btn" onclick="searchAgain()">
+                        <i class="fa fa-refresh"></i>
+                        Искать еще
+                    </button>
+                    <button class="action-btn chat-btn" onclick="openFoundUserChat()">
+                        <i class="fa fa-comment"></i>
+                        Открыть чат
+                    </button>
+                </div>
+                
+                <div class="attempts-info" id="attemptsInfo" style="display: none;">
+                    <i class="fa fa-info-circle"></i> Осталось попыток: <span id="remainingAttempts">10</span>
+                </div>
+            </div>
+            
+            <button class="cancel-search-btn" onclick="closeFoundUserScreen()" style="margin-top: 20px;">
+                <i class="fa fa-times"></i> Закрыть
+            </button>
         </div>
 
         <!-- Экран общего чата -->
@@ -1308,11 +1500,6 @@
                         <span id="randomPartnerStatus">Случайный собеседник</span>
                     </div>
                 </div>
-                <div class="chat-actions">
-                    <button class="chat-action-btn" id="nextRandomBtn" onclick="skipRandomPartner()" style="display: none;">
-                        <i class="fa fa-refresh"></i>
-                    </button>
-                </div>
             </div>
             
             <div class="messages-container" id="randomMessagesContainer">
@@ -1332,7 +1519,7 @@
             <div class="message-input-container">
                 <div class="message-input-wrapper">
                     <textarea class="message-input" id="randomMessageInput" placeholder="Начните общение..." rows="1" 
-                        oninput="autoResize(this)" onkeypress="handleRandomEnterKey(event)" disabled></textarea>
+                        oninput="autoResize(this)" onkeypress="handleRandomEnterKey(event)"></textarea>
                     <div class="input-actions">
                         <div class="input-action-btn" onclick="showFileNotice()">
                             <i class="fa fa-paperclip"></i>
@@ -1342,7 +1529,7 @@
                         </div>
                     </div>
                 </div>
-                <button class="send-btn" id="sendRandomMessage" onclick="sendMessage('random')" disabled>
+                <button class="send-btn" id="sendRandomMessage" onclick="sendMessage('random')">
                     <i class="fa fa-paper-plane"></i>
                 </button>
             </div>
@@ -1352,10 +1539,7 @@
     <script>
     // Глобальные переменные
     const API_BASE = '/api';
-    
-    // Получаем ID сервера из URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const serverId = urlParams.get('id');
+    const RANDOM_CHAT_STORAGE_KEY = `zeeptook_random_attempts_${serverId}`;
     
     let currentServer = null;
     let currentUser = null;
@@ -1365,19 +1549,20 @@
     let currentChatType = null;
     let messageCount = 0;
     let randomSearchTimer = null;
-    let randomPartner = null;
+    let foundRandomUser = null;
     let isSearching = false;
     
-    // Лимит попыток рандом чата
-    const MAX_DAILY_ATTEMPTS = 3;
+    // Лимит попыток рандом чата (10 в день)
+    const MAX_DAILY_ATTEMPTS = 10;
     let dailyAttempts = {
         count: MAX_DAILY_ATTEMPTS,
         date: null,
         usedToday: 0
     };
-    
-    // Ключ для localStorage
-    let STORAGE_KEY = null;
+
+    // Получаем ID сервера из URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const serverId = urlParams.get('id');
 
     // Проверка авторизации
     const token = localStorage.getItem('token');
@@ -1387,11 +1572,6 @@
 
     if (!serverId) {
         window.location.href = '/server-page.html';
-    }
-
-    // Инициализация ключа хранилища
-    if (serverId) {
-        STORAGE_KEY = `zeeptook_random_attempts_${serverId}`;
     }
 
     // Назад к списку серверов
@@ -1463,16 +1643,6 @@
         const colors = ['#0088cc', '#0077b3', '#005580', '#2b5278', '#182533'];
         const num = (parseInt(userId) || 0) % colors.length;
         return colors[num];
-    }
-
-    function getPluralForm(number, forms) {
-        const n = Math.abs(number) % 100;
-        const n1 = n % 10;
-
-        if (n > 10 && n < 20) return forms[2];
-        if (n1 > 1 && n1 < 5) return forms[1];
-        if (n1 === 1) return forms[0];
-        return forms[2];
     }
 
     function getCurrentUserId() {
@@ -1623,19 +1793,12 @@
         generalChatItemEl.style.display = 'flex';
         exchangeChatItemEl.style.display = 'flex';
         randomChatItemEl.style.display = 'flex';
-
-        // Обновляем статус попыток рандом чата
-        updateRandomAttemptsStatus();
     }
 
     // Загрузка попыток рандом чата
     function loadRandomAttempts() {
         try {
-            if (!STORAGE_KEY) {
-                STORAGE_KEY = `zeeptook_random_attempts_${serverId}`;
-            }
-            
-            const saved = localStorage.getItem(STORAGE_KEY);
+            const saved = localStorage.getItem(RANDOM_CHAT_STORAGE_KEY);
             if (saved) {
                 const data = JSON.parse(saved);
                 const today = new Date().toDateString();
@@ -1675,10 +1838,7 @@
     // Сохранение попыток
     function saveRandomAttempts() {
         try {
-            if (!STORAGE_KEY) {
-                STORAGE_KEY = `zeeptook_random_attempts_${serverId}`;
-            }
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(dailyAttempts));
+            localStorage.setItem(RANDOM_CHAT_STORAGE_KEY, JSON.stringify(dailyAttempts));
         } catch (error) {
             console.error('❌ Ошибка сохранения попыток:', error);
         }
@@ -1686,31 +1846,15 @@
 
     // Обновление статуса попыток
     function updateRandomAttemptsStatus() {
-        const attemptsStatusEl = document.getElementById('randomAttemptsStatus');
-        const attemptsCounterEl = document.getElementById('attemptsCounter');
         const remaining = Math.max(0, dailyAttempts.count - dailyAttempts.usedToday);
+        const attemptsInfoEl = document.getElementById('attemptsInfo');
+        const remainingAttemptsEl = document.getElementById('remainingAttempts');
         
-        if (attemptsStatusEl) {
-            attemptsStatusEl.textContent = `${remaining}/${MAX_DAILY_ATTEMPTS}`;
-            if (remaining === 0) {
-                attemptsStatusEl.style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%)';
-            } else {
-                attemptsStatusEl.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-            }
-        }
-        
-        if (attemptsCounterEl) {
-            attemptsCounterEl.textContent = `${remaining}/${MAX_DAILY_ATTEMPTS}`;
-        }
-        
-        // Обновляем описание поиска
-        const searchingDescEl = document.getElementById('searchingDescription');
-        if (searchingDescEl) {
-            if (remaining <= 0) {
-                searchingDescEl.textContent = 'Вы использовали все попытки на сегодня. Попробуйте завтра!';
-            } else {
-                searchingDescEl.textContent = `Ищем случайного участника сервера для вас. Осталось попыток: ${remaining}`;
-            }
+        if (remaining > 0 && remaining < MAX_DAILY_ATTEMPTS) {
+            if (attemptsInfoEl) attemptsInfoEl.style.display = 'block';
+            if (remainingAttemptsEl) remainingAttemptsEl.textContent = remaining;
+        } else {
+            if (attemptsInfoEl) attemptsInfoEl.style.display = 'none';
         }
     }
 
@@ -1809,13 +1953,6 @@
 
     // Открытие поиска рандом собеседника
     function openRandomSearch() {
-        const remaining = dailyAttempts.count - dailyAttempts.usedToday;
-        
-        if (remaining <= 0) {
-            showNotification('🎲 Вы использовали все попытки на сегодня. Попробуйте завтра!', 'info');
-            return;
-        }
-        
         if (isSearching) {
             showNotification('🔍 Поиск уже идет...', 'info');
             return;
@@ -1825,7 +1962,7 @@
         document.getElementById('chatsScreen').style.display = 'none';
         document.getElementById('randomSearchScreen').classList.remove('hidden');
         
-        // Обновляем счетчик
+        // Обновляем счетчик попыток
         updateRandomAttemptsStatus();
         
         // Начинаем поиск
@@ -1838,8 +1975,8 @@
             console.log('🎲 Начало поиска рандом собеседника');
             isSearching = true;
             
-            // Имитация поиска (3-8 секунд)
-            const searchTime = 3000 + Math.random() * 5000;
+            // Имитация поиска (2-5 секунд)
+            const searchTime = 2000 + Math.random() * 3000;
             
             randomSearchTimer = setTimeout(async () => {
                 try {
@@ -1862,8 +1999,8 @@
                         // Останавливаем поиск
                         isSearching = false;
                         
-                        // Открываем чат с найденным собеседником
-                        openRandomChat(data.user);
+                        // Показываем найденного пользователя
+                        showFoundUser(data.user);
                         
                     } else {
                         // Если не нашли, создаем имитацию
@@ -1876,7 +2013,7 @@
                         // Останавливаем поиск
                         isSearching = false;
                         
-                        createMockRandomPartner();
+                        createMockRandomUser();
                     }
                     
                 } catch (error) {
@@ -1889,7 +2026,7 @@
                     // Останавливаем поиск
                     isSearching = false;
                     
-                    createMockRandomPartner();
+                    createMockRandomUser();
                 }
             }, searchTime);
             
@@ -1901,99 +2038,134 @@
         }
     }
 
-    // Создание имитации рандом собеседника
-    function createMockRandomPartner() {
+    // Создание имитации рандом пользователя
+    function createMockRandomUser() {
         // Список возможных имен
         const names = ['Алексей', 'Мария', 'Дмитрий', 'Анна', 'Иван', 'Елена', 'Сергей', 'Ольга', 'Максим', 'Наталья'];
         const roles = ['Игрок CS:GO', 'Трейдер', 'Геймер', 'Коллекционер', 'Стример', 'Киберспортсмен'];
+        const games = ['CS2', 'Dota 2', 'Rust', 'GTA V', 'Valorant', 'Apex Legends'];
         
         const randomName = names[Math.floor(Math.random() * names.length)];
         const randomRole = roles[Math.floor(Math.random() * roles.length)];
+        const randomGame = games[Math.floor(Math.random() * games.length)];
+        const randomRating = (4 + Math.random() * 1.5).toFixed(1);
+        const randomDeals = Math.floor(Math.random() * 100);
+        const randomOnline = Math.floor(Math.random() * 60) + 'м';
         
-        const mockPartner = {
+        const mockUser = {
             id: `mock_${Date.now()}`,
             username: randomName,
             avatar_url: null,
             role: randomRole,
+            game: randomGame,
+            rating: randomRating,
+            deals_count: randomDeals,
+            online_minutes: randomOnline,
             mock: true
         };
         
-        console.log('🤖 Создан имитированный собеседник:', mockPartner);
-        openRandomChat(mockPartner);
+        console.log('🤖 Создан имитированный пользователь:', mockUser);
+        showFoundUser(mockUser);
     }
 
-    // Открыть чат с рандом собеседником
-    function openRandomChat(partner) {
-        randomPartner = partner;
+    // Показать найденного пользователя
+    function showFoundUser(user) {
+        foundRandomUser = user;
         
         // Скрываем экран поиска
         document.getElementById('randomSearchScreen').classList.add('hidden');
         
-        // Показываем экран чата
-        document.getElementById('randomChatScreen').classList.add('active');
+        // Показываем экран найденного пользователя
+        document.getElementById('foundUserScreen').classList.remove('hidden');
         
-        // Обновляем заголовок
-        document.getElementById('randomPartnerName').textContent = partner.username;
-        document.getElementById('randomPartnerStatus').textContent = partner.role || 'Случайный собеседник';
+        // Заполняем данные пользователя
+        document.getElementById('foundUserName').textContent = user.username;
+        document.getElementById('foundUserRole').textContent = user.role || 'Игрок CS:GO';
+        document.getElementById('foundUserRating').textContent = user.rating || '4.8';
+        document.getElementById('foundUserDeals').textContent = user.deals_count || '42';
+        document.getElementById('foundUserOnline').textContent = user.online_minutes || '30м';
         
-        // Активируем поле ввода
-        const input = document.getElementById('randomMessageInput');
-        const sendBtn = document.getElementById('sendRandomMessage');
-        if (input) input.disabled = false;
-        if (sendBtn) sendBtn.disabled = false;
-        
-        // Показываем кнопку "Следующий" (только если остались попытки)
-        const remaining = dailyAttempts.count - dailyAttempts.usedToday;
-        const nextBtn = document.getElementById('nextRandomBtn');
-        if (nextBtn) {
-            if (remaining > 0) {
-                nextBtn.style.display = 'block';
-            } else {
-                nextBtn.style.display = 'none';
-            }
+        // Настройка аватара
+        const avatarEl = document.getElementById('foundUserAvatar');
+        if (user.avatar_url) {
+            avatarEl.innerHTML = `<img src="${escapeHtml(user.avatar_url)}" alt="${escapeHtml(user.username)}" 
+                style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+        } else {
+            avatarEl.innerHTML = `<i class="fa fa-user"></i>`;
+            avatarEl.style.background = getAvatarColor(user.id);
         }
         
-        // Очищаем сообщения
-        const container = document.getElementById('randomMessagesContainer');
-        if (container) {
-            container.innerHTML = '';
-            
-            // Добавляем приветственное сообщение
-            const welcomeMessage = {
-                id: `welcome_${Date.now()}`,
-                user_id: partner.id,
-                username: partner.username,
-                content: `Привет! Я ${partner.username}. Рад познакомиться!`,
-                created_at: new Date().toISOString(),
-                incoming: true
-            };
-            
-            const messageElement = createMessageElement(welcomeMessage, getCurrentUserId());
-            container.appendChild(messageElement);
-            
-            // Прокручиваем вниз
-            setTimeout(() => scrollToBottom('random'), 100);
-        }
+        // Обновляем информацию о попытках
+        updateRandomAttemptsStatus();
         
-        // Автофокус на поле ввода
-        setTimeout(() => {
-            if (input) input.focus();
-        }, 300);
+        console.log('✅ Пользователь показан:', user.username);
     }
 
-    // Пропустить текущего собеседника
-    function skipRandomPartner() {
+    // Закрыть экран найденного пользователя
+    function closeFoundUserScreen() {
+        document.getElementById('foundUserScreen').classList.add('hidden');
+        document.getElementById('chatsScreen').style.display = 'block';
+        foundRandomUser = null;
+    }
+
+    // Искать еще раз
+    function searchAgain() {
         const remaining = dailyAttempts.count - dailyAttempts.usedToday;
         
         if (remaining <= 0) {
-            showNotification('🎲 Вы использовали все попытки на сегодня', 'info');
-            closeChat('random');
+            showNotification('🎲 Вы использовали все попытки на сегодня. Попробуйте завтра!', 'info');
+            closeFoundUserScreen();
             return;
         }
         
-        if (confirm('Перейти к следующему собеседнику? Использовать еще одну попытку?')) {
-            closeChat('random');
-            openRandomSearch();
+        closeFoundUserScreen();
+        openRandomSearch();
+    }
+
+    // Открыть чат с найденным пользователем
+    async function openFoundUserChat() {
+        if (!foundRandomUser) {
+            showNotification('❌ Пользователь не найден', 'error');
+            return;
+        }
+
+        try {
+            // Сначала проверяем, есть ли уже чат с этим пользователем
+            const existingChat = await checkExistingChat(foundRandomUser.id);
+            
+            if (existingChat) {
+                // Если чат есть, открываем страницу сообщений с этим чатом
+                window.location.href = `messages.html?chat=${existingChat.id}`;
+            } else {
+                // Если чата нет, открываем страницу сообщений для создания нового чата
+                window.location.href = `messages.html?seller=${foundRandomUser.id}&ad=random&source=server&serverId=${serverId}`;
+            }
+            
+        } catch (error) {
+            console.error('❌ Ошибка открытия чата:', error);
+            showNotification('❌ Не удалось открыть чат', 'error');
+        }
+    }
+
+    // Проверить существующий чат
+    async function checkExistingChat(userId) {
+        try {
+            const response = await fetch(`${API_BASE}/chats/check/${userId}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                return data.chat || null;
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('❌ Ошибка проверки чата:', error);
+            return null;
         }
     }
 
@@ -2015,7 +2187,6 @@
     function closeChat(chatType) {
         if (chatType === 'random') {
             document.getElementById('randomChatScreen').classList.remove('active');
-            randomPartner = null;
         } else if (chatType === 'exchange') {
             document.getElementById('exchangeChatScreen').classList.remove('active');
         } else if (chatType === 'general') {
@@ -2040,12 +2211,6 @@
                     <div>Загрузка сообщений...</div>
                 </div>
             `;
-
-            if (type === 'random') {
-                // Для рандом чата не загружаем историю
-                container.innerHTML = '';
-                return;
-            }
 
             console.log(`📨 Загрузка сообщений ${type} для сервера:`, serverId);
 
@@ -2101,8 +2266,6 @@
         if (!messages || messages.length === 0) {
             const emptyMessage = type === 'exchange' ?
                 '💼 Здесь пока нет сообщений обмена. Будьте первым, кто предложит сделку!' :
-                type === 'random' ?
-                '🎲 Начните общение со случайным собеседником!' :
                 '💬 Здесь пока нет сообщений. Будьте первым, кто напишет в этом чате!';
                 
             container.innerHTML = `
@@ -2178,12 +2341,9 @@
 
     // Отправка сообщения
     async function sendMessage(type = 'general') {
-        const inputId = type === 'exchange' ? 'exchangeMessageInput' : 
-                       type === 'random' ? 'randomMessageInput' : 'generalMessageInput';
-        const buttonId = type === 'exchange' ? 'sendExchangeMessage' : 
-                        type === 'random' ? 'sendRandomMessage' : 'sendGeneralMessage';
-        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
-                           type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
+        const inputId = type === 'exchange' ? 'exchangeMessageInput' : 'generalMessageInput';
+        const buttonId = type === 'exchange' ? 'sendExchangeMessage' : 'sendGeneralMessage';
+        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 'generalMessagesContainer';
         
         const input = document.getElementById(inputId);
         const button = document.getElementById(buttonId);
@@ -2219,54 +2379,40 @@
             input.value = '';
             input.style.height = 'auto';
             
-            if (type === 'random') {
-                // Для рандом чата - имитация ответа
-                setTimeout(() => {
-                    // Обновляем статус на "отправлено"
-                    updateMessageStatus(tempId, 'sent', null, type);
-                    
-                    // Имитация ответа собеседника через 1-3 секунды
-                    setTimeout(() => {
-                        sendMockReply(type);
-                    }, 1000 + Math.random() * 2000);
-                }, 500);
+            // Отправляем на сервер для обычных чатов
+            console.log(`📤 Отправка сообщения ${type}:`, message.substring(0, 50) + '...');
+
+            const endpoint = type === 'exchange'
+                ? `${API_BASE}/server/${serverId}/exchange-messages`
+                : `${API_BASE}/server/${serverId}/general-messages`;
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    content: message,
+                    type: type
+                })
+            });
+
+            console.log(`📡 Ответ отправки ${type}:`, response.status);
+
+            if (response.ok) {
+                const result = await response.json();
+                
+                // Обновляем статус сообщения
+                updateMessageStatus(tempId, 'sent', result.messageId || result.id, type);
                 
             } else {
-                // Отправляем на сервер для обычных чатов
-                console.log(`📤 Отправка сообщения ${type}:`, message.substring(0, 50) + '...');
-
-                const endpoint = type === 'exchange'
-                    ? `${API_BASE}/server/${serverId}/exchange-messages`
-                    : `${API_BASE}/server/${serverId}/general-messages`;
-
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ 
-                        content: message,
-                        type: type
-                    })
-                });
-
-                console.log(`📡 Ответ отправки ${type}:`, response.status);
-
-                if (response.ok) {
-                    const result = await response.json();
-                    
-                    // Обновляем статус сообщения
-                    updateMessageStatus(tempId, 'sent', result.messageId || result.id, type);
-                    
-                } else {
-                    const error = await response.json().catch(() => ({ error: 'Ошибка отправки' }));
-                    console.error(`❌ Ошибка отправки ${type}:`, error);
-                    
-                    // Обновляем статус сообщения на "ошибка"
-                    updateMessageStatus(tempId, 'error', null, type);
-                    showNotification(error.error || '❌ Ошибка отправки сообщения', 'error');
-                }
+                const error = await response.json().catch(() => ({ error: 'Ошибка отправки' }));
+                console.error(`❌ Ошибка отправки ${type}:`, error);
+                
+                // Обновляем статус сообщения на "ошибка"
+                updateMessageStatus(tempId, 'error', null, type);
+                showNotification(error.error || '❌ Ошибка отправки сообщения', 'error');
             }
             
         } catch (error) {
@@ -2279,41 +2425,9 @@
         }
     }
 
-    // Отправка имитации ответа
-    function sendMockReply(type) {
-        if (!randomPartner || type !== 'random') return;
-        
-        const possibleReplies = [
-            "Интересно! Расскажи подробнее",
-            "У меня тоже есть что предложить",
-            "Давай обсудим это",
-            "Отличная идея!",
-            "Я думаю, мы можем договориться",
-            "Интересное предложение",
-            "А что ты хочешь получить взамен?",
-            "Может обсудим в голосовом чате?",
-            "У меня есть похожий предмет",
-            "Давай посмотрим варианты"
-        ];
-        
-        const reply = possibleReplies[Math.floor(Math.random() * possibleReplies.length)];
-        
-        const mockMessage = {
-            id: `mock_${Date.now()}`,
-            user_id: randomPartner.id,
-            username: randomPartner.username,
-            content: reply,
-            created_at: new Date().toISOString(),
-            incoming: true
-        };
-        
-        displayTempMessage(mockMessage, 'random');
-    }
-
     // Отображение временного сообщения
     function displayTempMessage(msg, type = 'general') {
-        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
-                           type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
+        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 'generalMessagesContainer';
         const container = document.getElementById(containerId);
         
         // Удаляем состояние "пусто", если присутствует
@@ -2332,8 +2446,7 @@
 
     // Обновление статуса сообщения
     function updateMessageStatus(tempId, status, newId = null, type = 'general') {
-        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
-                           type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
+        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 'generalMessagesContainer';
         const container = document.getElementById(containerId);
         const messageElement = container.querySelector(`[data-message-id="${tempId}"]`);
         
@@ -2377,16 +2490,8 @@
         }
     }
 
-    function handleRandomEnterKey(event) {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
-            sendMessage('random');
-        }
-    }
-
     function scrollToBottom(type = 'general') {
-        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
-                           type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
+        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 'generalMessagesContainer';
         const container = document.getElementById(containerId);
         if (container) {
             setTimeout(() => {
@@ -2397,8 +2502,7 @@
     }
 
     function showNewMessagesIndicator(type = 'general') {
-        const indicatorId = type === 'exchange' ? 'exchangeNewMessagesIndicator' : 
-                           type === 'random' ? 'randomNewMessagesIndicator' : 'generalNewMessagesIndicator';
+        const indicatorId = type === 'exchange' ? 'exchangeNewMessagesIndicator' : 'generalNewMessagesIndicator';
         const indicator = document.getElementById(indicatorId);
         if (indicator) {
             indicator.style.display = 'block';
@@ -2406,8 +2510,7 @@
     }
 
     function hideNewMessagesIndicator(type = 'general') {
-        const indicatorId = type === 'exchange' ? 'exchangeNewMessagesIndicator' : 
-                           type === 'random' ? 'randomNewMessagesIndicator' : 'generalNewMessagesIndicator';
+        const indicatorId = type === 'exchange' ? 'exchangeNewMessagesIndicator' : 'generalNewMessagesIndicator';
         const indicator = document.getElementById(indicatorId);
         if (indicator) {
             indicator.style.display = 'none';
@@ -2415,10 +2518,8 @@
     }
 
     function checkScrollPosition(type = 'general') {
-        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
-                           type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
-        const indicatorId = type === 'exchange' ? 'exchangeNewMessagesIndicator' : 
-                           type === 'random' ? 'randomNewMessagesIndicator' : 'generalNewMessagesIndicator';
+        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 'generalMessagesContainer';
+        const indicatorId = type === 'exchange' ? 'exchangeNewMessagesIndicator' : 'generalNewMessagesIndicator';
         
         const container = document.getElementById(containerId);
         const indicator = document.getElementById(indicatorId);
@@ -2447,8 +2548,7 @@
     }
 
     function showErrorInChat(message, type = 'general') {
-        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 
-                           type === 'random' ? 'randomMessagesContainer' : 'generalMessagesContainer';
+        const containerId = type === 'exchange' ? 'exchangeMessagesContainer' : 'generalMessagesContainer';
         const container = document.getElementById(containerId);
         if (container) {
             const errorElement = document.createElement('div');
@@ -2522,27 +2622,6 @@
             @keyframes slideUp {
                 from { transform: translateX(-50%) translateY(0); opacity: 1; }
                 to { transform: translateX(-50%) translateY(-100%); opacity: 0; }
-            }
-            .chat-action-btn {
-                color: var(--gray-light);
-                font-size: 20px;
-                cursor: pointer;
-                width: 36px;
-                height: 36px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 50%;
-                transition: all 0.2s ease;
-                background: none;
-                border: none;
-            }
-            .chat-action-btn:active {
-                background: rgba(255, 255, 255, 0.1);
-            }
-            .chat-actions {
-                display: flex;
-                gap: 8px;
             }
         `;
         document.head.appendChild(style);
