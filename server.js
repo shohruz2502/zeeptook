@@ -3976,6 +3976,8 @@ app.put('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
 
 // Удалить пользователя (обновленная версия с обработкой всех зависимостей)
 app.delete('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
+    const client = await pool.connect();
+    
     try {
         const { id } = req.params;
         const { force = false, delete_ads = false } = req.query;
@@ -3991,7 +3993,7 @@ app.delete('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
         }
 
         // Проверяем существование пользователя
-        const userExists = await pool.query(
+        const userExists = await client.query(
             'SELECT id, username, email FROM users WHERE id = $1',
             [id]
         );
@@ -4020,26 +4022,18 @@ app.delete('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
         }
 
         // Начинаем транзакцию
-        await pool.query('BEGIN');
+        await client.query('BEGIN');
 
         try {
             const user = userExists.rows[0];
-            let deletedData = {
-                ads: 0,
-                messages: 0,
-                chats: 0,
-                favorites: 0,
-                conversations: 0,
-                reviews: 0,
-                sessions: 0
-            };
+            let deletedData = {};
 
             // Если нужно удалить все данные пользователя
             if (force) {
                 console.log(`🗑️ Force deleting all data for user ${user.email}`);
                 
-                // 1. Удаляем сообщения пользователя (и как отправителя, и как получателя)
-                const messagesResult = await pool.query(
+                // 1. Удаляем сообщения
+                const messagesResult = await client.query(
                     `DELETE FROM messages 
                      WHERE sender_id = $1 OR receiver_id = $1 
                      RETURNING id`,
@@ -4048,74 +4042,112 @@ app.delete('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
                 deletedData.messages = messagesResult.rowCount;
                 console.log(`✅ Deleted ${deletedData.messages} messages`);
                 
-                // 2. Удаляем чаты, где пользователь является участником
-                // Сначала получаем все чаты пользователя
-                const userChats = await pool.query(
-                    `SELECT DISTINCT chat_id FROM messages 
-                     WHERE sender_id = $1 OR receiver_id = $1`,
+                // 2. Удаляем чаты, где пользователь участник
+                const chatsResult = await client.query(
+                    'DELETE FROM chats WHERE user1_id = $1 OR user2_id = $1 RETURNING id',
                     [id]
                 );
-                
-                // Удаляем эти чаты (cascade удалит связанные сообщения)
-                for (const chat of userChats.rows) {
-                    await pool.query(
-                        'DELETE FROM chats WHERE id = $1',
-                        [chat.chat_id]
-                    );
-                }
-                deletedData.chats = userChats.rowCount;
+                deletedData.chats = chatsResult.rowCount;
                 console.log(`✅ Deleted ${deletedData.chats} chats`);
                 
                 // 3. Удаляем избранное
-                const favoritesResult = await pool.query(
+                const favoritesResult = await client.query(
                     'DELETE FROM favorites WHERE user_id = $1 RETURNING id',
                     [id]
                 );
                 deletedData.favorites = favoritesResult.rowCount;
                 console.log(`✅ Deleted ${deletedData.favorites} favorites`);
                 
-                // 4. Удаляем разговоры (conversations)
-               deletedData.conversations = 0;
-                
-                // 5. Удаляем отзывы
-                const reviewsResult = await pool.query(
-                    'DELETE FROM reviews WHERE author_id = $1 OR target_user_id = $1 RETURNING id',
+                // 4. Удаляем записи из chat_list
+                const chatListResult = await client.query(
+                    'DELETE FROM chat_list WHERE user_id = $1 RETURNING id',
                     [id]
                 );
-                deletedData.reviews = reviewsResult.rowCount;
-                console.log(`✅ Deleted ${deletedData.reviews} reviews`);
+                deletedData.chat_list = chatListResult.rowCount;
+                console.log(`✅ Deleted ${deletedData.chat_list} chat_list entries`);
                 
-                // 6. Удаляем сессии
-                const sessionsResult = await pool.query(
-                    'DELETE FROM user_sessions WHERE user_id = $1 RETURNING id',
+                // 5. Удаляем непрочитанные сообщения
+                const unreadMessagesResult = await client.query(
+                    'DELETE FROM unread_messages WHERE user_id = $1 RETURNING id',
                     [id]
                 );
-                deletedData.sessions = sessionsResult.rowCount;
-                console.log(`✅ Deleted ${deletedData.sessions} sessions`);
+                deletedData.unread_messages = unreadMessagesResult.rowCount;
+                console.log(`✅ Deleted ${deletedData.unread_messages} unread messages`);
                 
-                // 7. Удаляем объявления и их фотографии
+                // 6. Удаляем другие связанные данные (по вашим таблицам)
+                const supportMessagesResult = await client.query(
+                    'DELETE FROM support_messages WHERE user_id = $1 RETURNING id',
+                    [id]
+                );
+                deletedData.support_messages = supportMessagesResult.rowCount;
+                
+                const serverMessagesResult = await client.query(
+                    'DELETE FROM server_messages WHERE user_id = $1 RETURNING id',
+                    [id]
+                );
+                deletedData.server_messages = serverMessagesResult.rowCount;
+                
+                const operatorChatMessagesResult = await client.query(
+                    'DELETE FROM operator_chat_messages WHERE user_id = $1 RETURNING id',
+                    [id]
+                );
+                deletedData.operator_chat_messages = operatorChatMessagesResult.rowCount;
+                
+                const storiesResult = await client.query(
+                    'DELETE FROM stories WHERE user_id = $1 RETURNING id',
+                    [id]
+                );
+                deletedData.stories = storiesResult.rowCount;
+                
+                const exchangeChatsResult = await client.query(
+                    'DELETE FROM exchange_chats WHERE user_id = $1 RETURNING id',
+                    [id]
+                );
+                deletedData.exchange_chats = exchangeChatsResult.rowCount;
+                
+                const connectionsResult = await client.query(
+                    'DELETE FROM connections WHERE user_id = $1 RETURNING id',
+                    [id]
+                );
+                deletedData.connections = connectionsResult.rowCount;
+                
+                // 7. Удаляем сделки, где пользователь участвует
+                const dealsResult = await client.query(
+                    'DELETE FROM deals WHERE buyer_id = $1 OR seller_id = $1 RETURNING id',
+                    [id]
+                );
+                deletedData.deals = dealsResult.rowCount;
+                console.log(`✅ Deleted ${deletedData.deals} deals`);
+                
+                // 8. Удаляем объявления и их фотографии
                 if (delete_ads || dependencies.ads.total > 0) {
                     // Получаем ID всех объявлений пользователя
-                    const userAds = await pool.query(
+                    const userAds = await client.query(
                         'SELECT id FROM ads WHERE user_id = $1',
                         [id]
                     );
                     
-                    // Удаляем каждое объявление (cascade удалит фотографии)
+                    // Удаляем фотографии объявлений
                     for (const ad of userAds.rows) {
-                        await pool.query(
-                            'DELETE FROM ads WHERE id = $1',
+                        await client.query(
+                            'DELETE FROM ad_photos WHERE ad_id = $1',
                             [ad.id]
                         );
                     }
-                    deletedData.ads = userAds.rowCount;
+                    
+                    // Удаляем объявления
+                    const adsResult = await client.query(
+                        'DELETE FROM ads WHERE user_id = $1 RETURNING id',
+                        [id]
+                    );
+                    deletedData.ads = adsResult.rowCount;
                     console.log(`✅ Deleted ${deletedData.ads} ads with their photos`);
                 }
             }
-            // Если только деактивировать
+            // Если только деактивировать объявления
             else if (delete_ads && dependencies.ads.total > 0) {
                 // Удаляем только объявления
-                const adsResult = await pool.query(
+                const adsResult = await client.query(
                     'DELETE FROM ads WHERE user_id = $1 RETURNING id',
                     [id]
                 );
@@ -4124,13 +4156,13 @@ app.delete('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
             }
 
             // Удаляем пользователя
-            const deleteUserResult = await pool.query(
+            const deleteUserResult = await client.query(
                 'DELETE FROM users WHERE id = $1 RETURNING id, email, username',
                 [id]
             );
 
             // Фиксируем транзакцию
-            await pool.query('COMMIT');
+            await client.query('COMMIT');
 
             console.log('✅ User deleted:', deleteUserResult.rows[0].email);
 
@@ -4145,7 +4177,7 @@ app.delete('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
 
         } catch (error) {
             // Откатываем транзакцию при ошибке
-            await pool.query('ROLLBACK');
+            await client.query('ROLLBACK');
             throw error;
         }
 
@@ -4170,6 +4202,8 @@ app.delete('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
             requires_action: statusCode === 409,
             error_code: error.code
         });
+    } finally {
+        client.release();
     }
 });
 
@@ -4270,45 +4304,65 @@ app.post('/api/admin/users/:id/deactivate', checkAdminSimple, async (req, res) =
 // Функция для проверки всех зависимостей пользователя
 async function checkAllDependencies(userId) {
     try {
+        // Проверяем только существующие таблицы из вашего списка
         const [
             adsCount,
             activeAdsCount,
-            messagesSentCount,
-            messagesReceivedCount,
+            messagesCount,
             favoritesCount,
-            reviewsAuthorCount,
-            reviewsTargetCount,
-            sessionsCount,
-            chatsCount
+            chatListCount,
+            chatsCount,
+            unreadMessagesCount,
+            supportMessagesCount,
+            serverMessagesCount,
+            operatorChatMessagesCount,
+            storiesCount,
+            exchangeChatsCount,
+            connectionsCount,
+            dealsCount
         ] = await Promise.all([
-            // 1. Объявления
+            // 1. Объявления (ads - таблица №2)
             pool.query('SELECT COUNT(*) as count FROM ads WHERE user_id = $1', [userId]),
             pool.query('SELECT COUNT(*) as count FROM ads WHERE user_id = $1 AND is_active = true', [userId]),
             
-            // 2. Сообщения (отправленные)
-            pool.query('SELECT COUNT(*) as count FROM messages WHERE sender_id = $1', [userId]),
+            // 2. Сообщения (messages - таблица №13)
+            pool.query('SELECT COUNT(*) as count FROM messages WHERE sender_id = $1 OR receiver_id = $1', [userId]),
             
-            // 3. Сообщения (полученные)
-            pool.query('SELECT COUNT(*) as count FROM messages WHERE receiver_id = $1', [userId]),
-            
-            // 4. Избранное
+            // 3. Избранное (favorites - таблица №12)
             pool.query('SELECT COUNT(*) as count FROM favorites WHERE user_id = $1', [userId]),
             
-            // 5. Отзывы (как автор)
-            pool.query('SELECT COUNT(*) as count FROM reviews WHERE author_id = $1', [userId]),
+            // 4. Список чатов (chat_list - таблица №4)
+            pool.query('SELECT COUNT(*) as count FROM chat_list WHERE user_id = $1', [userId]),
             
-            // 6. Отзывы (как получатель)
-            pool.query('SELECT COUNT(*) as count FROM reviews WHERE target_user_id = $1', [userId]),
-            
-            // 7. Сессии
-            pool.query('SELECT COUNT(*) as count FROM user_sessions WHERE user_id = $1', [userId]),
-            
-            // 8. Чаты (через сообщения)
+            // 5. Чаты (chats - таблица №5) - где пользователь участник
             pool.query(`
-                SELECT COUNT(DISTINCT chat_id) as count 
-                FROM messages 
-                WHERE sender_id = $1 OR receiver_id = $1
-            `, [userId])
+                SELECT COUNT(*) as count FROM chats 
+                WHERE user1_id = $1 OR user2_id = $1
+            `, [userId]),
+            
+            // 6. Непрочитанные сообщения (unread_messages - таблица №28)
+            pool.query('SELECT COUNT(*) as count FROM unread_messages WHERE user_id = $1', [userId]),
+            
+            // 7. Сообщения поддержки (support_messages - таблица №27)
+            pool.query('SELECT COUNT(*) as count FROM support_messages WHERE user_id = $1', [userId]),
+            
+            // 8. Серверные сообщения (server_messages - таблица №22)
+            pool.query('SELECT COUNT(*) as count FROM server_messages WHERE user_id = $1', [userId]),
+            
+            // 9. Сообщения оператора (operator_chat_messages - таблица №15)
+            pool.query('SELECT COUNT(*) as count FROM operator_chat_messages WHERE user_id = $1', [userId]),
+            
+            // 10. Истории (stories - таблица №26)
+            pool.query('SELECT COUNT(*) as count FROM stories WHERE user_id = $1', [userId]),
+            
+            // 11. Чаты обмена (exchange_chats - таблица №11)
+            pool.query('SELECT COUNT(*) as count FROM exchange_chats WHERE user_id = $1', [userId]),
+            
+            // 12. Подключения (connections - таблица №6)
+            pool.query('SELECT COUNT(*) as count FROM connections WHERE user_id = $1', [userId]),
+            
+            // 13. Сделки (deals - таблица №10)
+            pool.query('SELECT COUNT(*) as count FROM deals WHERE buyer_id = $1 OR seller_id = $1', [userId])
         ]);
 
         const dependencies = {
@@ -4316,37 +4370,44 @@ async function checkAllDependencies(userId) {
                 total: parseInt(adsCount.rows[0].count),
                 active: parseInt(activeAdsCount.rows[0].count)
             },
-            messages: {
-                sent: parseInt(messagesSentCount.rows[0].count),
-                received: parseInt(messagesReceivedCount.rows[0].count),
-                total: parseInt(messagesSentCount.rows[0].count) + parseInt(messagesReceivedCount.rows[0].count)
-            },
+            messages: parseInt(messagesCount.rows[0].count),
             favorites: parseInt(favoritesCount.rows[0].count),
-            reviews: {
-                as_author: parseInt(reviewsAuthorCount.rows[0].count),
-                as_target: parseInt(reviewsTargetCount.rows[0].count),
-                total: parseInt(reviewsAuthorCount.rows[0].count) + parseInt(reviewsTargetCount.rows[0].count)
-            },
-            sessions: parseInt(sessionsCount.rows[0].count),
-            chats: parseInt(chatsCount.rows[0].count)
+            chat_list: parseInt(chatListCount.rows[0].count),
+            chats: parseInt(chatsCount.rows[0].count),
+            unread_messages: parseInt(unreadMessagesCount.rows[0].count),
+            support_messages: parseInt(supportMessagesCount.rows[0].count),
+            server_messages: parseInt(serverMessagesCount.rows[0].count),
+            operator_chat_messages: parseInt(operatorChatMessagesCount.rows[0].count),
+            stories: parseInt(storiesCount.rows[0].count),
+            exchange_chats: parseInt(exchangeChatsCount.rows[0].count),
+            connections: parseInt(connectionsCount.rows[0].count),
+            deals: parseInt(dealsCount.rows[0].count)
         };
 
         dependencies.hasAnyDependencies = 
             dependencies.ads.total > 0 ||
-            dependencies.messages.total > 0 ||
+            dependencies.messages > 0 ||
             dependencies.favorites > 0 ||
-            dependencies.reviews.total > 0 ||
-            dependencies.sessions > 0 ||
-            dependencies.chats > 0;
+            dependencies.chat_list > 0 ||
+            dependencies.chats > 0 ||
+            dependencies.unread_messages > 0 ||
+            dependencies.support_messages > 0 ||
+            dependencies.server_messages > 0 ||
+            dependencies.operator_chat_messages > 0 ||
+            dependencies.stories > 0 ||
+            dependencies.exchange_chats > 0 ||
+            dependencies.connections > 0 ||
+            dependencies.deals > 0;
 
         // Создаем читаемое описание зависимостей
         const summaryParts = [];
         if (dependencies.ads.total > 0) summaryParts.push(`${dependencies.ads.total} объявлений`);
-        if (dependencies.messages.total > 0) summaryParts.push(`${dependencies.messages.total} сообщений`);
+        if (dependencies.messages > 0) summaryParts.push(`${dependencies.messages} сообщений`);
         if (dependencies.favorites > 0) summaryParts.push(`${dependencies.favorites} избранных`);
-        if (dependencies.reviews.total > 0) summaryParts.push(`${dependencies.reviews.total} отзывов`);
-        if (dependencies.sessions > 0) summaryParts.push(`${dependencies.sessions} сессий`);
         if (dependencies.chats > 0) summaryParts.push(`${dependencies.chats} чатов`);
+        if (dependencies.deals > 0) summaryParts.push(`${dependencies.deals} сделок`);
+        if (dependencies.stories > 0) summaryParts.push(`${dependencies.stories} историй`);
+        // Добавьте другие зависимости по необходимости
         
         dependencies.summary = summaryParts.join(', ');
         dependencies.detailed_summary = `Пользователь имеет: ${summaryParts.join(', ')}.`;
