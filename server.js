@@ -4439,6 +4439,231 @@ app.get('/api/admin/users/:id/ads', checkAdminSimple, async (req, res) => {
     }
 });
 
+// ====================== ДОПОЛНИТЕЛЬНЫЕ ENDPOINTS ДЛЯ ОБЪЯВЛЕНИЙ ======================
+
+// Получить все объявления с информацией о пользователях
+app.get('/api/admin/ads', checkAdminSimple, async (req, res) => {
+    try {
+        console.log('🔐 Admin fetching all ads');
+        
+        const result = await pool.query(`
+            SELECT 
+                a.*,
+                u.username as user_username,
+                u.email as user_email,
+                u.full_name as user_name,
+                c.name as category_name,
+                COALESCE(array_agg(DISTINCT ap.image_data) FILTER (WHERE ap.image_data IS NOT NULL), ARRAY[]::text[]) as image_urls
+            FROM ads a
+            LEFT JOIN users u ON a.user_id = u.id
+            LEFT JOIN categories c ON a.category_id = c.id
+            LEFT JOIN ad_photos ap ON a.id = ap.ad_id
+            GROUP BY a.id, u.id, c.id
+            ORDER BY a.created_at DESC
+        `);
+
+        res.json({
+            success: true,
+            ads: result.rows,
+            count: result.rows.length,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('❌ Get ads error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка получения объявлений' 
+        });
+    }
+});
+
+// Получить конкретное объявление по ID
+app.get('/api/admin/ads/:id', checkAdminSimple, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        console.log(`🔐 Admin fetching ad ID: ${id}`);
+        
+        const result = await pool.query(`
+            SELECT 
+                a.*,
+                u.username as user_username,
+                u.email as user_email,
+                u.full_name as user_name,
+                c.name as category_name,
+                COALESCE(array_agg(DISTINCT ap.image_data) FILTER (WHERE ap.image_data IS NOT NULL), ARRAY[]::text[]) as image_urls
+            FROM ads a
+            LEFT JOIN users u ON a.user_id = u.id
+            LEFT JOIN categories c ON a.category_id = c.id
+            LEFT JOIN ad_photos ap ON a.id = ap.ad_id
+            WHERE a.id = $1
+            GROUP BY a.id, u.id, c.id
+        `, [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ 
+                success: false,
+                error: 'Объявление не найдено' 
+            });
+        }
+
+        res.json({
+            success: true,
+            ad: result.rows[0]
+        });
+    } catch (error) {
+        console.error('❌ Get ad error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка получения объявления' 
+        });
+    }
+});
+
+// Переключить статус объявления (активно/неактивно)
+app.put('/api/admin/ads/:id/toggle', checkAdminSimple, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { is_active } = req.body;
+
+        console.log(`🔐 Admin toggling ad ID: ${id}, is_active: ${is_active}`);
+
+        const result = await pool.query(
+            `UPDATE ads 
+             SET is_active = $1, updated_at = CURRENT_TIMESTAMP 
+             WHERE id = $2 
+             RETURNING id, title, is_active`,
+            [is_active, id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ 
+                success: false,
+                error: 'Объявление не найдено' 
+            });
+        }
+
+        console.log('✅ Ad status updated:', result.rows[0].title);
+
+        res.json({
+            success: true,
+            message: `Объявление успешно ${is_active ? 'активировано' : 'деактивировано'}`,
+            ad: result.rows[0]
+        });
+
+    } catch (error) {
+        console.error('❌ Toggle ad error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка обновления статуса объявления' 
+        });
+    }
+});
+
+// Удалить объявление
+app.delete('/api/admin/ads/:id', checkAdminSimple, async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        console.log(`🔐 Admin deleting ad ID: ${id}`);
+
+        // Начинаем транзакцию
+        await pool.query('BEGIN');
+
+        try {
+            // Получаем информацию об объявлении для логов
+            const adInfo = await pool.query(
+                'SELECT title, user_id FROM ads WHERE id = $1',
+                [id]
+            );
+
+            if (adInfo.rows.length === 0) {
+                await pool.query('ROLLBACK');
+                return res.status(404).json({ 
+                    success: false,
+                    error: 'Объявление не найдено' 
+                });
+            }
+
+            // Удаляем фотографии объявлений (cascade должно сработать автоматически)
+            // Удаляем само объявление
+            const result = await pool.query(
+                'DELETE FROM ads WHERE id = $1 RETURNING id, title, user_id',
+                [id]
+            );
+
+            // Фиксируем транзакцию
+            await pool.query('COMMIT');
+
+            console.log('✅ Ad deleted:', result.rows[0].title);
+
+            res.json({
+                success: true,
+                message: 'Объявление удалено',
+                deleted_ad: result.rows[0]
+            });
+
+        } catch (error) {
+            // Откатываем транзакцию при ошибке
+            await pool.query('ROLLBACK');
+            throw error;
+        }
+
+    } catch (error) {
+        console.error('❌ Delete ad error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка удаления объявления' 
+        });
+    }
+});
+
+// Обновить статистику для админ-панели (вместо существующего /api/admin/stats)
+app.get('/api/admin/stats', checkAdminSimple, async (req, res) => {
+    try {
+        const totalUsers = await pool.query('SELECT COUNT(*) as count FROM users');
+        const activeUsers = await pool.query('SELECT COUNT(*) as count FROM users WHERE is_active = true');
+        const adminUsers = await pool.query('SELECT COUNT(*) as count FROM users WHERE role = \'admin\'');
+        const googleUsers = await pool.query('SELECT COUNT(*) as count FROM users WHERE auth_method = \'google\'');
+        const emailUsers = await pool.query('SELECT COUNT(*) as count FROM users WHERE auth_method = \'email\'');
+        
+        const totalAds = await pool.query('SELECT COUNT(*) as count FROM ads');
+        const activeAds = await pool.query('SELECT COUNT(*) as count FROM ads WHERE is_active = true');
+        const urgentAds = await pool.query('SELECT COUNT(*) as count FROM ads WHERE is_urgent = true');
+        const usersWithAds = await pool.query(`
+            SELECT COUNT(DISTINCT user_id) as count 
+            FROM ads 
+            WHERE user_id IN (SELECT id FROM users)
+        `);
+
+        res.json({
+            success: true,
+            stats: {
+                total: parseInt(totalUsers.rows[0].count),
+                active: parseInt(activeUsers.rows[0].count),
+                admins: parseInt(adminUsers.rows[0].count),
+                google: parseInt(googleUsers.rows[0].count),
+                email: parseInt(emailUsers.rows[0].count),
+                inactive: parseInt(totalUsers.rows[0].count) - parseInt(activeUsers.rows[0].count),
+                ads_total: parseInt(totalAds.rows[0].count),
+                active_ads: parseInt(activeAds.rows[0].count),
+                urgent_ads: parseInt(urgentAds.rows[0].count),
+                users_with_ads: parseInt(usersWithAds.rows[0].count)
+            }
+        });
+    } catch (error) {
+        console.error('❌ Get stats error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка получения статистики' 
+        });
+    }
+});
+
+
+
+
+
 
 
 
