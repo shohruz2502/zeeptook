@@ -3974,7 +3974,7 @@ app.put('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
     }
 });
 
-// Удалить пользователя
+// Удалить пользователя (обновленная версия с обработкой всех зависимостей)
 app.delete('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
     try {
         const { id } = req.params;
@@ -4003,34 +4003,19 @@ app.delete('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
             });
         }
 
-        // Проверяем наличие объявлений у пользователя
-        const adsCount = await pool.query(
-            'SELECT COUNT(*) as count FROM ads WHERE user_id = $1',
-            [id]
-        );
+        // Проверяем наличие зависимостей
+        const dependencies = await checkAllDependencies(id);
+        const hasDependencies = dependencies.hasAnyDependencies;
 
-        const hasAds = parseInt(adsCount.rows[0].count) > 0;
-
-        // Если есть объявления и не указан параметр force
-        if (hasAds && !force && !delete_ads) {
-            // Получаем информацию об объявлениях
-            const activeAdsResult = await pool.query(
-                'SELECT COUNT(*) as count FROM ads WHERE user_id = $1 AND is_active = true',
-                [id]
-            );
-            
-            const activeAdsCount = parseInt(activeAdsResult.rows[0].count);
-            
+        // Если есть зависимости и не указан параметр force
+        if (hasDependencies && !force) {
             return res.status(409).json({
                 success: false,
-                error: 'У пользователя есть объявления',
+                error: 'У пользователя есть связанные данные',
                 requires_action: true,
-                dependencies: {
-                    total_ads: parseInt(adsCount.rows[0].count),
-                    active_ads: activeAdsCount,
-                    user: userExists.rows[0]
-                },
-                message: `У пользователя ${userExists.rows[0].email} найдено ${parseInt(adsCount.rows[0].count)} объявлений (${activeAdsCount} активных).`
+                dependencies: dependencies,
+                user: userExists.rows[0],
+                message: `У пользователя ${userExists.rows[0].email} найдены связанные данные: ${dependencies.summary}`
             });
         }
 
@@ -4039,55 +4024,103 @@ app.delete('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
 
         try {
             const user = userExists.rows[0];
-            let deletedAdsCount = 0;
-            let deactivatedAdsCount = 0;
+            let deletedData = {
+                ads: 0,
+                messages: 0,
+                chats: 0,
+                favorites: 0,
+                conversations: 0,
+                reviews: 0,
+                sessions: 0
+            };
 
-            // Если есть объявления и нужно удалить их
-            if (hasAds && (force || delete_ads)) {
-                console.log(`🗑️ Deleting ads for user ${user.email}`);
+            // Если нужно удалить все данные пользователя
+            if (force) {
+                console.log(`🗑️ Force deleting all data for user ${user.email}`);
                 
-                // Сначала удаляем фотографии объявлений (cascade должно сработать)
-                // Затем удаляем сами объявления
-                const deleteAdsResult = await pool.query(
+                // 1. Удаляем сообщения пользователя (и как отправителя, и как получателя)
+                const messagesResult = await pool.query(
+                    `DELETE FROM messages 
+                     WHERE sender_id = $1 OR receiver_id = $1 
+                     RETURNING id`,
+                    [id]
+                );
+                deletedData.messages = messagesResult.rowCount;
+                console.log(`✅ Deleted ${deletedData.messages} messages`);
+                
+                // 2. Удаляем чаты, где пользователь является участником
+                // Сначала получаем все чаты пользователя
+                const userChats = await pool.query(
+                    `SELECT DISTINCT chat_id FROM messages 
+                     WHERE sender_id = $1 OR receiver_id = $1`,
+                    [id]
+                );
+                
+                // Удаляем эти чаты (cascade удалит связанные сообщения)
+                for (const chat of userChats.rows) {
+                    await pool.query(
+                        'DELETE FROM chats WHERE id = $1',
+                        [chat.chat_id]
+                    );
+                }
+                deletedData.chats = userChats.rowCount;
+                console.log(`✅ Deleted ${deletedData.chats} chats`);
+                
+                // 3. Удаляем избранное
+                const favoritesResult = await pool.query(
+                    'DELETE FROM favorites WHERE user_id = $1 RETURNING id',
+                    [id]
+                );
+                deletedData.favorites = favoritesResult.rowCount;
+                console.log(`✅ Deleted ${deletedData.favorites} favorites`);
+                
+                // 4. Удаляем разговоры (conversations)
+               deletedData.conversations = 0;
+                
+                // 5. Удаляем отзывы
+                const reviewsResult = await pool.query(
+                    'DELETE FROM reviews WHERE author_id = $1 OR target_user_id = $1 RETURNING id',
+                    [id]
+                );
+                deletedData.reviews = reviewsResult.rowCount;
+                console.log(`✅ Deleted ${deletedData.reviews} reviews`);
+                
+                // 6. Удаляем сессии
+                const sessionsResult = await pool.query(
+                    'DELETE FROM user_sessions WHERE user_id = $1 RETURNING id',
+                    [id]
+                );
+                deletedData.sessions = sessionsResult.rowCount;
+                console.log(`✅ Deleted ${deletedData.sessions} sessions`);
+                
+                // 7. Удаляем объявления и их фотографии
+                if (delete_ads || dependencies.ads.total > 0) {
+                    // Получаем ID всех объявлений пользователя
+                    const userAds = await pool.query(
+                        'SELECT id FROM ads WHERE user_id = $1',
+                        [id]
+                    );
+                    
+                    // Удаляем каждое объявление (cascade удалит фотографии)
+                    for (const ad of userAds.rows) {
+                        await pool.query(
+                            'DELETE FROM ads WHERE id = $1',
+                            [ad.id]
+                        );
+                    }
+                    deletedData.ads = userAds.rowCount;
+                    console.log(`✅ Deleted ${deletedData.ads} ads with their photos`);
+                }
+            }
+            // Если только деактивировать
+            else if (delete_ads && dependencies.ads.total > 0) {
+                // Удаляем только объявления
+                const adsResult = await pool.query(
                     'DELETE FROM ads WHERE user_id = $1 RETURNING id',
                     [id]
                 );
-                
-                deletedAdsCount = deleteAdsResult.rowCount;
-                console.log(`✅ Deleted ${deletedAdsCount} ads`);
-            }
-            // Если есть объявления и НЕ нужно удалять, но force = true
-            else if (hasAds && force) {
-                // Просто деактивируем пользователя вместо удаления
-                await pool.query(
-                    'UPDATE users SET is_active = false WHERE id = $1',
-                    [id]
-                );
-                
-                // Деактивируем все объявления пользователя
-                const deactivateResult = await pool.query(
-                    'UPDATE ads SET is_active = false WHERE user_id = $1 RETURNING id',
-                    [id]
-                );
-                
-                deactivatedAdsCount = deactivateResult.rowCount;
-                
-                await pool.query('COMMIT');
-                
-                return res.json({
-                    success: true,
-                    message: 'Пользователь и его объявления деактивированы',
-                    action: 'deactivated',
-                    user: {
-                        id: user.id,
-                        email: user.email,
-                        username: user.username
-                    },
-                    stats: {
-                        ads_deactivated: deactivatedAdsCount,
-                        user_deactivated: true
-                    }
-                });
+                deletedData.ads = adsResult.rowCount;
+                console.log(`✅ Deleted ${deletedData.ads} ads`);
             }
 
             // Удаляем пользователя
@@ -4104,12 +4137,10 @@ app.delete('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
             res.json({
                 success: true,
                 message: 'Пользователь удален',
-                action: hasAds ? 'user_and_ads_deleted' : 'user_deleted',
+                action: hasDependencies ? 'user_and_all_data_deleted' : 'user_deleted',
                 deleted_user: deleteUserResult.rows[0],
-                stats: {
-                    ads_deleted: deletedAdsCount,
-                    user_deleted: true
-                }
+                stats: deletedData,
+                dependencies_handled: hasDependencies
             });
 
         } catch (error) {
@@ -4136,7 +4167,8 @@ app.delete('/api/admin/users/:id', checkAdminSimple, async (req, res) => {
             success: false,
             error: errorMessage,
             details: process.env.NODE_ENV === 'development' ? error.message : undefined,
-            requires_action: statusCode === 409
+            requires_action: statusCode === 409,
+            error_code: error.code
         });
     }
 });
@@ -4234,6 +4266,142 @@ app.post('/api/admin/users/:id/deactivate', checkAdminSimple, async (req, res) =
         });
     }
 });
+
+// Функция для проверки всех зависимостей пользователя
+async function checkAllDependencies(userId) {
+    try {
+        const [
+            adsCount,
+            activeAdsCount,
+            messagesSentCount,
+            messagesReceivedCount,
+            favoritesCount,
+            reviewsAuthorCount,
+            reviewsTargetCount,
+            sessionsCount,
+            chatsCount
+        ] = await Promise.all([
+            // 1. Объявления
+            pool.query('SELECT COUNT(*) as count FROM ads WHERE user_id = $1', [userId]),
+            pool.query('SELECT COUNT(*) as count FROM ads WHERE user_id = $1 AND is_active = true', [userId]),
+            
+            // 2. Сообщения (отправленные)
+            pool.query('SELECT COUNT(*) as count FROM messages WHERE sender_id = $1', [userId]),
+            
+            // 3. Сообщения (полученные)
+            pool.query('SELECT COUNT(*) as count FROM messages WHERE receiver_id = $1', [userId]),
+            
+            // 4. Избранное
+            pool.query('SELECT COUNT(*) as count FROM favorites WHERE user_id = $1', [userId]),
+            
+            // 5. Отзывы (как автор)
+            pool.query('SELECT COUNT(*) as count FROM reviews WHERE author_id = $1', [userId]),
+            
+            // 6. Отзывы (как получатель)
+            pool.query('SELECT COUNT(*) as count FROM reviews WHERE target_user_id = $1', [userId]),
+            
+            // 7. Сессии
+            pool.query('SELECT COUNT(*) as count FROM user_sessions WHERE user_id = $1', [userId]),
+            
+            // 8. Чаты (через сообщения)
+            pool.query(`
+                SELECT COUNT(DISTINCT chat_id) as count 
+                FROM messages 
+                WHERE sender_id = $1 OR receiver_id = $1
+            `, [userId])
+        ]);
+
+        const dependencies = {
+            ads: {
+                total: parseInt(adsCount.rows[0].count),
+                active: parseInt(activeAdsCount.rows[0].count)
+            },
+            messages: {
+                sent: parseInt(messagesSentCount.rows[0].count),
+                received: parseInt(messagesReceivedCount.rows[0].count),
+                total: parseInt(messagesSentCount.rows[0].count) + parseInt(messagesReceivedCount.rows[0].count)
+            },
+            favorites: parseInt(favoritesCount.rows[0].count),
+            reviews: {
+                as_author: parseInt(reviewsAuthorCount.rows[0].count),
+                as_target: parseInt(reviewsTargetCount.rows[0].count),
+                total: parseInt(reviewsAuthorCount.rows[0].count) + parseInt(reviewsTargetCount.rows[0].count)
+            },
+            sessions: parseInt(sessionsCount.rows[0].count),
+            chats: parseInt(chatsCount.rows[0].count)
+        };
+
+        dependencies.hasAnyDependencies = 
+            dependencies.ads.total > 0 ||
+            dependencies.messages.total > 0 ||
+            dependencies.favorites > 0 ||
+            dependencies.reviews.total > 0 ||
+            dependencies.sessions > 0 ||
+            dependencies.chats > 0;
+
+        // Создаем читаемое описание зависимостей
+        const summaryParts = [];
+        if (dependencies.ads.total > 0) summaryParts.push(`${dependencies.ads.total} объявлений`);
+        if (dependencies.messages.total > 0) summaryParts.push(`${dependencies.messages.total} сообщений`);
+        if (dependencies.favorites > 0) summaryParts.push(`${dependencies.favorites} избранных`);
+        if (dependencies.reviews.total > 0) summaryParts.push(`${dependencies.reviews.total} отзывов`);
+        if (dependencies.sessions > 0) summaryParts.push(`${dependencies.sessions} сессий`);
+        if (dependencies.chats > 0) summaryParts.push(`${dependencies.chats} чатов`);
+        
+        dependencies.summary = summaryParts.join(', ');
+        dependencies.detailed_summary = `Пользователь имеет: ${summaryParts.join(', ')}.`;
+
+        return dependencies;
+        
+    } catch (error) {
+        console.error('❌ Check dependencies error:', error);
+        return {
+            hasAnyDependencies: true,
+            summary: 'Ошибка при проверке зависимостей',
+            error: error.message
+        };
+    }
+}
+
+
+// Эндпоинт для проверки зависимостей пользователя
+app.get('/api/admin/users/:id/dependencies-detailed', checkAdminSimple, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        console.log(`🔐 Checking detailed dependencies for user ID: ${id}`);
+        
+        // Проверяем существование пользователя
+        const userExists = await pool.query(
+            'SELECT id, username, email, full_name FROM users WHERE id = $1',
+            [id]
+        );
+
+        if (userExists.rows.length === 0) {
+            return res.status(404).json({ 
+                success: false,
+                error: 'Пользователь не найден' 
+            });
+        }
+
+        const dependencies = await checkAllDependencies(id);
+        
+        res.json({
+            success: true,
+            user: userExists.rows[0],
+            dependencies: dependencies,
+            requires_force_delete: dependencies.hasAnyDependencies
+        });
+
+    } catch (error) {
+        console.error('❌ Get detailed dependencies error:', error);
+        res.status(500).json({ 
+            success: false,
+            error: 'Ошибка проверки зависимостей' 
+        });
+    }
+});
+
 
 // Создать нового пользователя
 app.post('/api/admin/users', checkAdminSimple, async (req, res) => {
